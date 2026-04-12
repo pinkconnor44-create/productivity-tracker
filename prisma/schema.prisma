@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Task {
+  id             Int              @id @default(autoincrement())
+  title          String
+  description    String?
+  dueDate        String?          // YYYY-MM-DD (start date for recurring)
+  time           String?          // HH:MM
+  endTime        String?          // HH:MM
+  completed      Boolean          @default(false)
+  completedAt    String?          // YYYY-MM-DD (non-recurring only)
+  recurringType  String?          // null | daily | weekdays | weekends | weekly | monthly
+  recurringDays  String?          // comma-separated day indices 0-6 (for weekly type)
+  recurringEnd   String?          // YYYY-MM-DD end date (null = forever)
+  weight         Int              @default(1) // 1=normal, 2=important, 3=critical
+  active         Boolean          @default(true)
+  deletedAt      String?          // YYYY-MM-DD — set on soft-delete to preserve history
+  createdAt      DateTime         @default(now())
+  completions    TaskCompletion[]
+  skips          TaskSkip[]
+}
+
+model TaskCompletion {
+  id      Int    @id @default(autoincrement())
+  taskId  Int
+  date    String // YYYY-MM-DD
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, date])
+}
+
+model TaskSkip {
+  id     Int    @id @default(autoincrement())
+  taskId Int
+  date   String // YYYY-MM-DD
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, date])
+}
+
+model Habit {
+  id             Int               @id @default(autoincrement())
+  name           String
+  description    String?
+  active         Boolean           @default(true)
+  recurringDays  String?           // null = every day; "1,2,3,4,5" = weekdays; "0,6" = weekends; custom
+  weight         Int               @default(1) // 1=normal, 2=important, 3=critical
+  createdAt      DateTime          @default(now())
+  completions    HabitCompletion[]
+  skips          HabitSkip[]
+}
+
+model Scratchpad {
+  id        Int      @id @default(1)
+  notes     String   @default("")
+  checklist String   @default("[]") // JSON: [{id,text,done}]
+  updatedAt DateTime @updatedAt
+}
+
+model DayNote {
+  id        Int      @id @default(autoincrement())
+  date      String   @unique // YYYY-MM-DD
+  content   String
+  updatedAt DateTime @updatedAt
+}
+
+model HabitCompletion {
+  id      Int    @id @default(autoincrement())
+  habitId Int
+  date    String // YYYY-MM-DD
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+}
+
+model HabitSkip {
+  id      Int    @id @default(autoincrement())
+  habitId Int
+  date    String // YYYY-MM-DD
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+}
+
+model MatrixItem {
+  id        Int      @id @default(autoincrement())
+  title     String
+  quadrant  Int      // 1=Do, 2=Schedule, 3=Delegate, 4=Eliminate
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model InboxItem {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model WeeklyReview {
+  id        Int      @id @default(autoincrement())
+  weekStart String   @unique // YYYY-MM-DD (Monday)
+  wins      String   @default("")
+  lessons   String   @default("")
+  focus     String   @default("")
+  updatedAt DateTime @updatedAt
+}
