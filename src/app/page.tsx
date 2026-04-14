@@ -116,8 +116,13 @@ export default function Home() {
 
   useEffect(() => {
     const t = today()
-    fetch(`/api/scores?startDate=${t.slice(0, 4)}-01-01&endDate=${t}`)
-      .then(r => r.ok ? r.json() : {}).then(setScores)
+    const refresh = () => {
+      fetch(`/api/scores?startDate=${t.slice(0, 4)}-01-01&endDate=${t}`)
+        .then(r => r.ok ? r.json() : {}).then(setScores)
+    }
+    refresh()
+    window.addEventListener('score-refresh', refresh)
+    return () => window.removeEventListener('score-refresh', refresh)
   }, [activeTab])
 
   useEffect(() => {

@@ -172,6 +172,7 @@ export default function TasksView() {
       if (!res.ok) throw new Error()
       if (!task.completed) toast('Task complete ✓')
       fetchTasks()
+      window.dispatchEvent(new Event('score-refresh'))
     } catch { toast('Failed to update task', 'warning') }
   }
   async function toggleRecurringToday(task: Task) {
@@ -181,6 +182,7 @@ export default function TasksView() {
       if (!res.ok) throw new Error()
       if (completing) toast('Task complete ✓')
       fetchTasks()
+      window.dispatchEvent(new Event('score-refresh'))
     } catch { toast('Failed to update task', 'warning') }
   }
   async function deleteTask(id: number) {

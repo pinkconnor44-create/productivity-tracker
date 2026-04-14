@@ -142,6 +142,7 @@ export default function HabitsView() {
       const res = await fetch('/api/habit-completions',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ habitId, date:todayStr }) })
       if (!res.ok) throw new Error()
       fetchHabits()
+      window.dispatchEvent(new Event('score-refresh'))
     } catch { toast('Failed to update habit', 'warning') }
   }
   async function deleteHabit(id: number) {
