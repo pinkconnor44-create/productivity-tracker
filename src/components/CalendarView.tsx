@@ -1085,9 +1085,9 @@ function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTas
   const isToday = date === today()
   const isFuture = date > today()
   return (
-    <div className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[999] flex items-end sm:items-center justify-center p-0 sm:p-4"
+    <div className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[999] flex items-end sm:items-start justify-center p-0 sm:p-4 sm:pt-24"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="glass rounded-t-2xl sm:rounded-2xl border w-full sm:max-w-lg max-h-[90vh] flex flex-col">
+      <div className="glass rounded-t-2xl sm:rounded-2xl border w-full sm:max-w-lg max-h-[90vh] sm:max-h-[calc(100vh-7rem)] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50 dark:border-violet-700">
           <div>
             <div className="text-xs text-slate-600 dark:text-slate-300 font-medium uppercase tracking-wide">{WEEKDAYS[d.getDay()]}</div>
