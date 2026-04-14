@@ -187,7 +187,7 @@ export default function TasksView() {
   }
   async function deleteTask(id: number) {
     try {
-      const res = await fetch(`/api/tasks/${id}`,{ method:'DELETE' })
+      const res = await fetch(`/api/tasks/${id}?date=${today()}`,{ method:'DELETE' })
       if (!res.ok) throw new Error()
       toast('Task deleted', 'warning')
       fetchTasks()

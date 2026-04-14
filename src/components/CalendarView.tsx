@@ -284,7 +284,7 @@ export default function CalendarView() {
   }
 
   async function deleteTask(id: number) {
-    await fetch(`/api/tasks/${id}`, { method: 'DELETE' })
+    await fetch(`/api/tasks/${id}?date=${today()}`, { method: 'DELETE' })
     toast('Task deleted', 'warning')
     fetchData(); fetchScores(); fetchSummary()
   }

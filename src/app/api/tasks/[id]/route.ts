@@ -42,14 +42,15 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: idStr } = await params
   const id = parseInt(idStr)
+  const date = req.nextUrl.searchParams.get('date') || localDateString()
   await prisma.task.update({
     where: { id },
-    data: { active: false, deletedAt: localDateString() },
+    data: { active: false, deletedAt: date },
   })
   return NextResponse.json({ success: true })
 }
