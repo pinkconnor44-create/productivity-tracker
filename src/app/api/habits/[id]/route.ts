@@ -3,9 +3,10 @@ import { prisma } from '@/lib/prisma'
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id)
+  const { id: idStr } = await params
+  const id = parseInt(idStr)
   const body = await req.json()
   const { name, description, recurringDays, weight } = body
 
@@ -24,9 +25,10 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = parseInt(params.id)
+  const { id: idStr } = await params
+  const id = parseInt(idStr)
   await prisma.habit.update({
     where: { id },
     data: { active: false },

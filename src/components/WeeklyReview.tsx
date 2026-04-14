@@ -152,10 +152,10 @@ export default function WeeklyReview() {
       fetch('/api/habits'),
       fetch('/api/tasks'),
     ])
-    setScores(await scoresRes.json())
-    setPrevScores(await prevRes.json())
-    setHabits(await habitsRes.json())
-    setTasks(await tasksRes.json())
+    if (scoresRes.ok) setScores(await scoresRes.json())
+    if (prevRes.ok) setPrevScores(await prevRes.json())
+    if (habitsRes.ok) setHabits(await habitsRes.json())
+    if (tasksRes.ok) setTasks(await tasksRes.json())
     setLoading(false)
   }, [])
 

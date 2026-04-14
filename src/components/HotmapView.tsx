@@ -86,7 +86,7 @@ export default function HotmapView() {
 
   useEffect(() => {
     fetch(`/api/scores?startDate=${startDate}&endDate=${todayStr}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : {})
       .then(d => { setScores(d); setLoading(false) })
   }, [])
 

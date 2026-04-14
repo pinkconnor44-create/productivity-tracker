@@ -137,7 +137,7 @@ export default function TasksView() {
 
   const fetchTasks = useCallback(async () => {
     const res = await fetch('/api/tasks')
-    setTasks(await res.json())
+    if (res.ok) setTasks(await res.json())
     setLoading(false)
   }, [])
   useEffect(() => { fetchTasks() }, [fetchTasks])

@@ -229,14 +229,14 @@ button, input, textarea, select {
 
 /* ── Glassmorphism card ── */
 .glass {
-  background: rgba(255,255,255,0.78) !important;
+  background: rgba(255,255,255,0.97) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-color: rgba(255,255,255,0.6) !important;
   box-shadow: 0 8px 32px rgba(var(--c-glow), 0.07), 0 1px 4px rgba(0,0,0,0.04) !important;
 }
 .dark .glass {
-  background: rgba(255,255,255,0.04) !important;
+  background: rgb(22, 22, 30) !important;
   border-color: rgba(var(--c-p), 0.22) !important;
   box-shadow: 0 8px 32px rgba(0,0,0,0.45) !important;
 }

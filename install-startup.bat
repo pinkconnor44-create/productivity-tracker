@@ -1,7 +1,6 @@
 @echo off
 echo Building app for production...
 cd /d "C:\Users\jesse\OneDrive\Desktop\productivity-tracker"
-set DATABASE_URL=file:C:\Users\jesse\OneDrive\Desktop\productivity-tracker\prisma\dev.db
 call npm run build
 if %errorlevel% neq 0 (
   echo Build failed. Check for errors above.

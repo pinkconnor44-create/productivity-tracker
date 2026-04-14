@@ -12,6 +12,7 @@ function addDays(dateStr: string, n: number): string {
 // Returns: { [date]: { completed: number, total: number, pct: number } }
 // Each task and habit counts as 1. pct = completed/total * 100.
 export async function GET(req: NextRequest) {
+  try {
   const { searchParams } = new URL(req.url)
   const startDate = searchParams.get('startDate') ?? '2000-01-01'
   const endDate = searchParams.get('endDate') ?? '2099-12-31'
@@ -89,4 +90,8 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json(scores)
+  } catch (e) {
+    console.error('[/api/scores]', e)
+    return NextResponse.json({}, { status: 500 })
+  }
 }

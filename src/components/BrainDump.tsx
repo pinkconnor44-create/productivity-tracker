@@ -24,7 +24,7 @@ export default function BrainDump() {
 
   useEffect(() => {
     fetch('/api/inbox')
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : [])
       .then(data => { setItems(data); setLoading(false) })
   }, [])
 
@@ -57,7 +57,7 @@ export default function BrainDump() {
         })
       } else if (action === 'note') {
         // Append to scratchpad notes
-        const current = await fetch('/api/scratchpad').then(r => r.json())
+        const current = await fetch('/api/scratchpad').then(r => r.ok ? r.json() : { notes: '', checklist: [] })
         const appended = current.notes
           ? current.notes + '\n\n' + item.text
           : item.text
@@ -67,7 +67,7 @@ export default function BrainDump() {
           body: JSON.stringify({ notes: appended }),
         })
       } else if (action === 'checklist') {
-        const current = await fetch('/api/scratchpad').then(r => r.json())
+        const current = await fetch('/api/scratchpad').then(r => r.ok ? r.json() : { notes: '', checklist: [] })
         const newItem = { id: Date.now().toString(), text: item.text, done: false }
         await fetch('/api/scratchpad', {
           method: 'POST',

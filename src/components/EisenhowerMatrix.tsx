@@ -61,7 +61,7 @@ export default function EisenhowerMatrix() {
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/matrix')
-    setItems(await res.json())
+    if (res.ok) setItems(await res.json())
     setLoading(false)
   }, [])
 

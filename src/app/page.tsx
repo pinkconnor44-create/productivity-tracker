@@ -117,7 +117,7 @@ export default function Home() {
   useEffect(() => {
     const t = today()
     fetch(`/api/scores?startDate=${t.slice(0, 4)}-01-01&endDate=${t}`)
-      .then(r => r.json()).then(setScores)
+      .then(r => r.ok ? r.json() : {}).then(setScores)
   }, [activeTab])
 
   useEffect(() => {

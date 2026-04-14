@@ -109,7 +109,8 @@ export default function HabitsView() {
   const todayStr = today()
   const fetchHabits = useCallback(async () => {
     const res = await fetch('/api/habits')
-    setHabits(await res.json()); setLoading(false)
+    if (res.ok) setHabits(await res.json())
+    setLoading(false)
   }, [])
   useEffect(() => { fetchHabits() }, [fetchHabits])
 

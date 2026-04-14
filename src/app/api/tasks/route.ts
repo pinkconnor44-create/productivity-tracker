@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  const tasks = await prisma.task.findMany({
-    where: { active: true },
-    orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
-    include: { completions: true, skips: true },
-  })
-  return NextResponse.json(tasks)
+  try {
+    const tasks = await prisma.task.findMany({
+      where: { active: true },
+      orderBy: [{ completed: 'asc' }, { dueDate: 'asc' }, { createdAt: 'desc' }],
+      include: { completions: true, skips: true },
+    })
+    return NextResponse.json(tasks)
+  } catch (e) {
+    console.error('[/api/tasks GET]', e)
+    return NextResponse.json([], { status: 500 })
+  }
 }
 
 export async function POST(req: NextRequest) {

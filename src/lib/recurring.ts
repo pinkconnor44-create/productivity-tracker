@@ -2,8 +2,11 @@ export type RecurringType = 'daily' | 'weekdays' | 'weekends' | 'weekly' | 'mont
 
 // Convert a createdAt value (Date object or ISO string) to YYYY-MM-DD
 function toDateStr(createdAt: string | Date): string {
-  if (createdAt instanceof Date) return createdAt.toISOString().slice(0, 10)
-  return String(createdAt).slice(0, 10)
+  const d = createdAt instanceof Date ? createdAt : new Date(createdAt)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function isTaskActiveOnDate(

@@ -168,14 +168,17 @@ export default function CalendarView() {
 
   const fetchData = useCallback(async () => {
     const [tr, hr] = await Promise.all([fetch('/api/tasks'), fetch('/api/habits')])
-    const [t, h] = await Promise.all([tr.json(), hr.json()])
+    const [t, h] = await Promise.all([
+      tr.ok ? tr.json() : [],
+      hr.ok ? hr.json() : [],
+    ])
     setTasks(t); setHabits(h)
   }, [])
 
   const fetchSummary = useCallback(async () => {
     const t = today()
     const res = await fetch(`/api/scores?startDate=${t.slice(0, 4)}-01-01&endDate=${t}`)
-    setSummaryScores(await res.json())
+    if (res.ok) setSummaryScores(await res.json())
   }, [])
 
   const fetchScores = useCallback(async () => {
@@ -191,8 +194,8 @@ export default function CalendarView() {
       fetch(`/api/scores?startDate=${start}&endDate=${end}`),
       fetch(`/api/notes?startDate=${start}&endDate=${end}`)
     ])
-    setScores(await scoresRes.json())
-    setNotes(await notesRes.json())
+    if (scoresRes.ok) setScores(await scoresRes.json())
+    if (notesRes.ok) setNotes(await notesRes.json())
   }, [currentDate, view])
 
   useEffect(() => {

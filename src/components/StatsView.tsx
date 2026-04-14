@@ -169,7 +169,7 @@ export default function StatsView() {
     const t = today()
     const start = addDays(t, -(parseInt(range)-1))
     fetch(`/api/scores?startDate=${start}&endDate=${t}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : {})
       .then(data => { setScores(data); setLoading(false) })
   }, [range])
 
