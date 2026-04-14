@@ -53,6 +53,7 @@ model Habit {
   active         Boolean           @default(true)
   recurringDays  String?           // null = every day; "1,2,3,4,5" = weekdays; "0,6" = weekends; custom
   weight         Int               @default(1) // 1=normal, 2=important, 3=critical
+  startDate      String?           // YYYY-MM-DD local date when habit was created
   createdAt      DateTime          @default(now())
   completions    HabitCompletion[]
   skips          HabitSkip[]

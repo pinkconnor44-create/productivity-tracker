@@ -30,14 +30,13 @@ export function isTaskActiveOnDate(
 }
 
 export function isHabitActiveOnDate(
-  habit: { recurringDays?: string | null; createdAt?: string | Date | null },
+  habit: { recurringDays?: string | null; createdAt?: string | Date | null; startDate?: string | null },
   date: string
 ): boolean {
   // Never count a habit as active before it was created
-  if (habit.createdAt) {
-    const startDate = toDateStr(habit.createdAt)
-    if (date < startDate) return false
-  }
+  // Prefer startDate (local date string) over createdAt (UTC timestamp) to avoid timezone issues
+  const start = habit.startDate || (habit.createdAt ? toDateStr(habit.createdAt) : null)
+  if (start && date < start) return false
   if (!habit.recurringDays) return true // every day
   return matchesPattern('weekly', habit.recurringDays, date)
 }

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Name is required' }, { status: 400 })
   }
 
-  const { recurringDays, weight } = body
+  const { recurringDays, weight, startDate } = body
 
   const habit = await prisma.habit.create({
     data: {
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       recurringDays: recurringDays || null,
       weight: weight && [1,2,3].includes(weight) ? weight : 1,
+      startDate: startDate || null,
     },
     include: { completions: true, skips: true },
   })

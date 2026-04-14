@@ -130,7 +130,7 @@ export default function HabitsView() {
     if (form.schedulePreset === 'custom' && form.customDays.length === 0) return
     setSubmitting(true)
     try {
-      const res = await fetch('/api/habits',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:form.name, description:form.description, recurringDays:resolvedRecurringDays(), weight:form.weight }) })
+      const res = await fetch('/api/habits',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name:form.name, description:form.description, recurringDays:resolvedRecurringDays(), weight:form.weight, startDate:todayStr }) })
       if (!res.ok) throw new Error()
       toast('Habit added', 'info')
       setForm(blankForm()); setShowForm(false); fetchHabits()
