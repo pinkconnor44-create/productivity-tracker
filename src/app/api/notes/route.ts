@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/notes?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 // Returns { [date]: content }
 export async function GET(req: NextRequest) {
@@ -16,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const map: Record<string, string> = {}
   for (const n of notes) map[n.date] = n.content
-  return NextResponse.json(map)
+  return NextResponse.json(map, { headers: { 'Cache-Control': 'no-store' } })
 }
 
 // POST /api/notes { date, content }

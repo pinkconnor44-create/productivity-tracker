@@ -192,7 +192,7 @@ export default function CalendarView() {
     } else { start = end = currentDate }
     const [scoresRes, notesRes] = await Promise.all([
       fetch(`/api/scores?startDate=${start}&endDate=${end}`),
-      fetch(`/api/notes?startDate=${start}&endDate=${end}`)
+      fetch(`/api/notes?startDate=${start}&endDate=${end}`, { cache: 'no-store' })
     ])
     if (scoresRes.ok) setScores(await scoresRes.json())
     if (notesRes.ok) setNotes(await notesRes.json())
@@ -916,15 +916,30 @@ function NoteEditor({ date, note, onSave }: { date: string; note: string; onSave
   const [value, setValue] = useState(note)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const statusTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => { setValue(note) }, [note])
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedValue = useRef(note)
+  useEffect(() => { setValue(note); savedValue.current = note }, [note])
 
-  async function handleBlur() {
-    if (value === note) return
+  async function doSave(val: string) {
     setSaveStatus('saving')
-    await onSave(date, value)
+    await onSave(date, val)
+    savedValue.current = val
     setSaveStatus('saved')
     if (statusTimer.current) clearTimeout(statusTimer.current)
     statusTimer.current = setTimeout(() => setSaveStatus('idle'), 2000)
+  }
+
+  function handleChange(val: string) {
+    setValue(val)
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      if (val !== savedValue.current) doSave(val)
+    }, 800)
+  }
+
+  async function handleBlur() {
+    if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null }
+    if (value !== savedValue.current) await doSave(value)
   }
 
   return (
@@ -939,7 +954,7 @@ function NoteEditor({ date, note, onSave }: { date: string; note: string; onSave
       </div>
       <textarea
         value={value}
-        onChange={e => setValue(e.target.value)}
+        onChange={e => handleChange(e.target.value)}
         onBlur={handleBlur}
         placeholder="Add a note for this day..."
         rows={3}
