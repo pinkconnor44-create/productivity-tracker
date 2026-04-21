@@ -7,6 +7,7 @@ import StatsView from '@/components/StatsView'
 import WeeklyReview from '@/components/WeeklyReview'
 import HotmapView from '@/components/HotmapView'
 import SettingsView, { applyTheme } from '@/components/SettingsView'
+import LiftTracker from '@/components/LiftTracker'
 import ToastContainer from '@/components/ToastContainer'
 
 function greeting(): string {
@@ -16,7 +17,7 @@ function greeting(): string {
   return 'Good evening'
 }
 
-type Tab = 'calendar' | 'tasks' | 'habits' | 'stats' | 'weekly-review' | 'hotmap' | 'settings'
+type Tab = 'calendar' | 'tasks' | 'habits' | 'stats' | 'weekly-review' | 'hotmap' | 'lifts' | 'settings'
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
 
@@ -61,6 +62,7 @@ const MORE_TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'stats',         label: 'Stats',         icon: '📊' },
   { id: 'weekly-review', label: 'Weekly Review', icon: '📋' },
   { id: 'hotmap',        label: 'Hotmap',        icon: '🟩' },
+  { id: 'lifts',         label: 'Lift Tracker',  icon: '🏋️' },
   { id: 'settings',      label: 'Settings',      icon: '⚙️' },
 ]
 
@@ -281,6 +283,7 @@ export default function Home() {
           {activeTab === 'stats'         && <StatsView />}
           {activeTab === 'weekly-review' && <WeeklyReview />}
           {activeTab === 'hotmap'        && <HotmapView />}
+          {activeTab === 'lifts'         && <LiftTracker />}
           {activeTab === 'settings'      && <SettingsView />}
         </div>
       </main>

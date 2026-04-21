@@ -105,6 +105,16 @@ model InboxItem {
   createdAt DateTime @default(now())
 }
 
+model LiftEntry {
+  id        Int      @id @default(autoincrement())
+  date      String   // YYYY-MM-DD
+  name      String
+  weight    Float
+  sets      String   // JSON: [8,10,8] — reps per set
+  totalReps Int
+  createdAt DateTime @default(now())
+}
+
 model WeeklyReview {
   id        Int      @id @default(autoincrement())
   weekStart String   @unique // YYYY-MM-DD (Monday)
