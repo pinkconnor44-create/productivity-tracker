@@ -35,9 +35,11 @@ export default function Scratchpad() {
         setNotes(data.notes ?? '')
         setChecklist(data.checklist ?? [])
         setLoaded(true)
-        setTimeout(adjustHeight, 0)
       })
   }, [])
+
+  // Expand textarea to fit content whenever notes change
+  useEffect(() => { adjustHeight() }, [notes, adjustHeight])
 
   // Auto-save notes after 800ms of no typing
   function handleNotesChange(val: string) {
