@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const row = await prisma.scratchpad.findUnique({ where: { id: 1 } })
     if (!row) return NextResponse.json({ notes: '', checklist: [] })
-    return NextResponse.json({ notes: row.notes, checklist: JSON.parse(row.checklist) })
+    return NextResponse.json({ notes: row.notes, checklist: JSON.parse(row.checklist) }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (e) {
     console.error('[/api/scratchpad GET]', e)
     return NextResponse.json({ notes: '', checklist: [] }, { status: 500 })

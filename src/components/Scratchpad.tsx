@@ -29,7 +29,7 @@ export default function Scratchpad() {
 
   // Load on mount
   useEffect(() => {
-    fetch('/api/scratchpad')
+    fetch('/api/scratchpad', { cache: 'no-store' })
       .then(r => r.json().catch(() => ({ notes: '', checklist: [] })))
       .then(data => {
         setNotes(data.notes ?? '')
