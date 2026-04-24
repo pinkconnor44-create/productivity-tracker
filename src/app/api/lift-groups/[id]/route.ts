@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const id = Number(params.id)
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: rawId } = await params
+  const id = Number(rawId)
   const { name, exercises } = await req.json()
 
   const group = await prisma.liftGroup.update({
@@ -17,7 +18,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ ...group, exercises: JSON.parse(group.exercises) })
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  await prisma.liftGroup.delete({ where: { id: Number(params.id) } })
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  await prisma.liftGroup.delete({ where: { id: Number(id) } })
   return NextResponse.json({ ok: true })
 }
