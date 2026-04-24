@@ -115,6 +115,14 @@ model LiftEntry {
   createdAt DateTime @default(now())
 }
 
+model LiftGroup {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  exercises String   @default("[]") // JSON: ["Bench Press", "Squat"]
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model WeeklyReview {
   id        Int      @id @default(autoincrement())
   weekStart String   @unique // YYYY-MM-DD (Monday)
