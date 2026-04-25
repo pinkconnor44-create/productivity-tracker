@@ -25,4 +25,7 @@ Analytical, concise, no nonsense.
 **Gotchas**
 - Next.js 16: route handler `params` is `Promise<{...}>` — always `await params`
 - Schema changes auto-migrate via `prisma db push` on build (no migration files needed)
+- `position: fixed` gets trapped by any ancestor with a CSS `transform` — `.neon-card:hover` applies `translateY(-2px)`, creating a new stacking context. Tooltips inside `.neon-card` must be lifted to the component root level to render correctly
+- Completion window denominators must be capped to the item's start date (`habitStart`), not the full window size — use `max(windowStart, habitStart)` as the cursor start
+- SVG chart tooltips: use `onMouseEnter`/`onMouseMove` on a `<g>` with a transparent hit-area circle (`r="8"`, `fill="transparent"`) over the visible dot
 
