@@ -375,17 +375,28 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
       </button>
       <button onClick={onSelect} className="flex-1 min-w-0 text-left">
         <div className={`text-sm font-medium ${skipped ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>{habit.name}</div>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           {skipped
-            ? <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
+            ? <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-700/40">⏸ Excused today</span>
             : <>
-                {streak > 0 && <span className="text-[10px] font-semibold text-orange-500">🔥 {streak}d</span>}
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">{rowStats.w7.done}/{rowStats.w7.scheduled} wk</span>
-                <span className="text-[10px] text-slate-300 dark:text-slate-600">·</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">{rowStats.w30.done}/{rowStats.w30.scheduled} mo</span>
-                <span className="text-[10px] text-slate-300 dark:text-slate-600">·</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">{rowStats.all.done}/{rowStats.all.scheduled} all</span>
-                {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
+                {streak > 0 && (
+                  <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-700/40">
+                    🔥 {streak}d
+                  </span>
+                )}
+                <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md border border-violet-200 dark:border-violet-700/40">
+                  {rowStats.w7.done}/{rowStats.w7.scheduled} wk
+                </span>
+                <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md border border-violet-200 dark:border-violet-700/40">
+                  {rowStats.w30.done}/{rowStats.w30.scheduled} mo
+                </span>
+                <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md border border-violet-200 dark:border-violet-700/40">
+                  {rowStats.all.done}/{rowStats.all.scheduled} all
+                </span>
+                {w > 1 && <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                  w === 2 ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/40'
+                          : 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/40'
+                }`}>{W_LABEL[w]}</span>}
               </>
           }
         </div>
