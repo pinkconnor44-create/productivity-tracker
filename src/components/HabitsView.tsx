@@ -385,14 +385,14 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
 
   const habitStart = habit.createdAt.slice(0, 10)
   const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
-  const w7  = countInWindow(habit.completions, habit.recurringDays, 7,  habitStart)
-  const w30 = countInWindow(habit.completions, habit.recurringDays, 30, habitStart)
-  const allTime = habit.completions.length
+  const w7  = countInWindow(habit.completions, habit.recurringDays, 7,     habitStart)
+  const w30 = countInWindow(habit.completions, habit.recurringDays, 30,    habitStart)
+  const wAll = countInWindow(habit.completions, habit.recurringDays, 10000, habitStart)
 
   const stats = [
-    { label: '7-day',    value: `${w7.done}/${w7.scheduled}`   },
-    { label: '30-day',   value: `${w30.done}/${w30.scheduled}` },
-    { label: 'All time', value: String(allTime)                 },
+    { label: '7-day',    value: `${w7.done}/${w7.scheduled}`     },
+    { label: '30-day',   value: `${w30.done}/${w30.scheduled}`   },
+    { label: 'All time', value: `${wAll.done}/${wAll.scheduled}` },
     { label: 'Streak',   value: streak > 0 ? `🔥 ${streak}d` : '—' },
   ]
 
