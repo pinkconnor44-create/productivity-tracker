@@ -1,40 +1,28 @@
 # About Me
-
-I am a very analytical person who likes concise output with no nonsense. 
+Analytical, concise, no nonsense.
 
 # Rules
+- Ask clarifying questions before complex tasks; show plan before executing
+- Bullets over paragraphs; cite sources in research
+- Never hardcode secrets — use `.env`
 
-- Always ask clarifying questions before starting a complex task
-- show plan and steps before executing
-- keep reports and summaries concise (bullets before paragraphs)
-- save all outputs to the output folder
-- cite all sources when doing research
-- Environment: Use '.env' for API keys; never hardcode
+# Productivity Tracker
 
-# 🎯 PROJECT-SPECIFIC: Productivity Tracker
+**Stack:** Next.js 16 App Router, React 19, TypeScript, Prisma + PostgreSQL (Neon), Tailwind CSS
+- No UI component libraries; SVG charts only (no chart libraries)
+- PWA (manifest + service worker); dark/light mode via `dark` class on `<html>` + localStorage
 
-# Context & Goals
-- Personal productivity tracker deployed to Vercel, tracking tasks, habits, lifts, and daily score over time
+**Features:** Tasks, Habits, Lift Tracker (with workout groups), Inbox, Eisenhower Matrix, Notes, Scratchpad, Weekly Review, Daily Score
 
-# Tech Stack
-- Next.js 16 App Router, React 19, TypeScript
-- Prisma ORM + PostgreSQL (Neon hosted)
-- Tailwind CSS — no UI component libraries
-- No charting libraries — SVG charts built inline
-- Deployed to Vercel (prod alias: productivity-tracker-murex.vercel.app)
+**Data:** All data via `/api/*` route handlers (Prisma). Scores: `/api/scores`. Gmail import: `/api/gmail-import`
 
-# Features
-- Tasks, Habits, Lift Tracker, Inbox, Eisenhower Matrix, Notes, Scratchpad, Weekly Review, Daily Score
-- PWA-enabled (manifest + service worker)
-- Dark/light mode via localStorage + `dark` class on `<html>`
+**Deployment**
+- `npx vercel --prod` — Vercel is NOT connected to GitHub auto-deploy; always deploy manually
+- Build: `prisma generate && prisma db push && next build`
+- Env vars in `.env` (never commit) + Vercel dashboard
+- Prod: `productivity-tracker-murex.vercel.app`
 
-# Data / API
-- All data via /api/* route handlers using Prisma
-- Scores computed server-side in /api/scores
-- Gmail import endpoint at /api/gmail-import
-
-# Deployment
-- Deploy with: `npx vercel --prod`
-- Env vars live in .env (never commit) — also set in Vercel dashboard
-- Build runs: `prisma generate && prisma db push && next build`
+**Gotchas**
+- Next.js 16: route handler `params` is `Promise<{...}>` — always `await params`
+- Schema changes auto-migrate via `prisma db push` on build (no migration files needed)
 

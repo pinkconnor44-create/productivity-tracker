@@ -7,7 +7,7 @@ export async function GET() {
       where: { active: true },
       orderBy: { createdAt: 'asc' },
       include: {
-        completions: { orderBy: { date: 'desc' }, take: 60 },
+        completions: { orderBy: { date: 'desc' }, take: 400 },
         skips: true,
       },
     })

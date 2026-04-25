@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isHabitActiveOnDate } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
 
@@ -55,15 +55,52 @@ function countInWindow(completions: HabitCompletion[], recurringDays: string|nul
   const t = today()
   const windowStart = addDays(t, -(windowDays - 1))
   const start = habitStart && habitStart > windowStart ? habitStart : windowStart
+  const doneSet = new Set(completions.map(c => c.date))
   let scheduled = 0, done = 0, cursor = start
   while (cursor <= t) {
     if (isHabitActiveOnDate({ recurringDays }, cursor)) {
       scheduled++
-      if (completions.some(c => c.date === cursor)) done++
+      if (doneSet.has(cursor)) done++
     }
     cursor = addDays(cursor, 1)
   }
   return { done, scheduled }
+}
+function getMondayOf(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  const day = d.getDay()
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+function getWeeklyData(completions: HabitCompletion[], recurringDays: string|null|undefined, habitStart: string, weeks = 16) {
+  const t = today()
+  const doneSet = new Set(completions.map(c => c.date))
+  const currentMonday = getMondayOf(t)
+  const result: { weekLabel: string; pct: number; done: number; scheduled: number }[] = []
+  for (let w = weeks - 1; w >= 0; w--) {
+    const weekStart = addDays(currentMonday, -w * 7)
+    if (weekStart < habitStart) continue
+    const weekEnd = addDays(weekStart, 6)
+    const effectiveEnd = weekEnd > t ? t : weekEnd
+    let scheduled = 0, done = 0, cursor = weekStart
+    while (cursor <= effectiveEnd) {
+      if (isHabitActiveOnDate({ recurringDays }, cursor)) {
+        scheduled++
+        if (doneSet.has(cursor)) done++
+      }
+      cursor = addDays(cursor, 1)
+    }
+    if (scheduled > 0) {
+      const d = new Date(weekStart + 'T12:00:00')
+      result.push({
+        weekLabel: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        pct: Math.round((done / scheduled) * 100),
+        done,
+        scheduled,
+      })
+    }
+  }
+  return result
 }
 function blankForm() {
   return { name:'', description:'', schedulePreset:null as string|null, customDays:[] as number[], weight:1 }
@@ -317,6 +354,15 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
   const [confirming, setConfirming] = useState(false)
   const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
   const w = habit.weight ?? 1
+  const rowStats = useMemo(() => {
+    const hs = habit.createdAt.slice(0, 10)
+    return {
+      w7:  countInWindow(habit.completions, habit.recurringDays, 7,     hs),
+      w30: countInWindow(habit.completions, habit.recurringDays, 30,    hs),
+      all: countInWindow(habit.completions, habit.recurringDays, 10000, hs),
+    }
+  }, [habit.completions, habit.recurringDays, habit.createdAt])
+
   return (
     <div className={`flex items-center gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-50/60 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
       <button onClick={() => !skipped && onToggle(habit.id)} disabled={!!skipped}
@@ -334,7 +380,11 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
             ? <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
             : <>
                 {streak > 0 && <span className="text-[10px] font-semibold text-orange-500">🔥 {streak}d</span>}
-                <span className="text-[10px] text-slate-600 dark:text-slate-300">{scheduleLabel(habit.recurringDays)}</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">{rowStats.w7.done}/{rowStats.w7.scheduled} wk</span>
+                <span className="text-[10px] text-slate-300 dark:text-slate-600">·</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">{rowStats.w30.done}/{rowStats.w30.scheduled} mo</span>
+                <span className="text-[10px] text-slate-300 dark:text-slate-600">·</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">{rowStats.all.done}/{rowStats.all.scheduled} all</span>
                 {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
               </>
           }
@@ -384,45 +434,89 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
   }, [])
 
   const habitStart = habit.createdAt.slice(0, 10)
-  const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
-  const w7  = countInWindow(habit.completions, habit.recurringDays, 7,     habitStart)
-  const w30 = countInWindow(habit.completions, habit.recurringDays, 30,    habitStart)
-  const wAll = countInWindow(habit.completions, habit.recurringDays, 10000, habitStart)
-
-  const stats = [
-    { label: '7-day',    value: `${w7.done}/${w7.scheduled}`     },
-    { label: '30-day',   value: `${w30.done}/${w30.scheduled}`   },
-    { label: 'All time', value: `${wAll.done}/${wAll.scheduled}` },
-    { label: 'Streak',   value: streak > 0 ? `🔥 ${streak}d` : '—' },
-  ]
+  const weeklyData = useMemo(
+    () => getWeeklyData(habit.completions, habit.recurringDays, habitStart),
+    [habit.completions, habit.recurringDays, habitStart]
+  )
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-sm bg-white dark:bg-[#16161e] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-100 dark:border-violet-700">
+      <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#16161e] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-100 dark:border-violet-700">
         <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-violet-700">
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 truncate">{habit.name}</h2>
-            {habit.description && <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{habit.description}</p>}
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{scheduleLabel(habit.recurringDays)}</p>
           </div>
           <button onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-sm font-bold">
             ✕
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-px bg-slate-100 dark:bg-white/[0.06] m-4 rounded-xl overflow-hidden">
-          {stats.map(s => (
-            <div key={s.label} className="bg-white dark:bg-[#16161e] px-4 py-4 flex flex-col gap-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{s.label}</span>
-              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{s.value}</span>
-            </div>
-          ))}
-        </div>
-        <div className="px-4 pb-4 text-[11px] text-slate-400 dark:text-slate-500">
-          {scheduleLabel(habit.recurringDays)}
+        <div className="px-5 py-4">
+          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-3">
+            Weekly completion %
+          </p>
+          <WeeklyCompletionChart data={weeklyData} />
         </div>
       </div>
     </div>
+  )
+}
+
+function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: number; done: number; scheduled: number }[] }) {
+  if (data.length < 2) return (
+    <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">Not enough data yet — check back after a few weeks</div>
+  )
+
+  const W = 300, H = 130
+  const PAD = { left: 32, right: 14, top: 14, bottom: 28 }
+  const plotW = W - PAD.left - PAD.right
+  const plotH = H - PAD.top - PAD.bottom
+
+  function cx(i: number) { return PAD.left + (i / (data.length - 1)) * plotW }
+  function cy(pct: number) { return PAD.top + plotH - (pct / 100) * plotH }
+
+  const polyline = data.map((d, i) => `${cx(i)},${cy(d.pct)}`).join(' ')
+
+  const maxLabels = 5
+  const labelIndices: number[] = []
+  if (data.length <= maxLabels) {
+    data.forEach((_, i) => labelIndices.push(i))
+  } else {
+    for (let i = 0; i < maxLabels; i++) {
+      labelIndices.push(Math.round((i / (maxLabels - 1)) * (data.length - 1)))
+    }
+  }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 130 }} aria-hidden="true">
+      {[0, 50, 100].map(v => (
+        <line key={v} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
+          stroke="currentColor" strokeWidth="0.5"
+          className="text-slate-100 dark:text-white/[0.06]" strokeDasharray="3 3" />
+      ))}
+      {[0, 50, 100].map(v => (
+        <text key={v} x={PAD.left - 4} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+          {v}%
+        </text>
+      ))}
+      <polygon
+        points={`${cx(0)},${PAD.top + plotH} ${polyline} ${cx(data.length - 1)},${PAD.top + plotH}`}
+        fill="#7c3aed" opacity="0.08" />
+      <polyline points={polyline} fill="none" stroke="#7c3aed" strokeWidth="2"
+        strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
+      {data.map((d, i) => (
+        <circle key={i} cx={cx(i)} cy={cy(d.pct)} r="3" fill="#7c3aed" opacity="0.9">
+          <title>{d.weekLabel}: {d.done}/{d.scheduled} ({d.pct}%)</title>
+        </circle>
+      ))}
+      {labelIndices.map(i => (
+        <text key={i} x={cx(i)} y={H - 4} textAnchor="middle" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+          {data[i].weekLabel}
+        </text>
+      ))}
+    </svg>
   )
 }
 
