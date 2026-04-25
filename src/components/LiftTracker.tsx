@@ -497,6 +497,7 @@ function ExerciseModal({
 }
 
 function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
   const sorted = sessions.slice().sort((a, b) => a.date.localeCompare(b.date))
   const points = sorted.map(s => ({ date: s.date, volume: s.weight * s.totalReps }))
 
@@ -531,7 +532,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
 
   const yTicks = [minV, minV + vRange / 2, maxV]
 
-  return (
+  return (<>
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 130 }} aria-hidden="true">
       {yTicks.map((v, i) => (
         <line key={i} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
@@ -552,15 +553,34 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
           points={`${cx(0)},${PAD.top + plotH} ${polyline} ${cx(points.length - 1)},${PAD.top + plotH}`}
           fill="#7c3aed" opacity="0.08" />
       )}
-      {points.map((p, i) => (
-        <circle key={i} cx={cx(i)} cy={cy(p.volume)} r="3" fill="#7c3aed" opacity="0.9" />
-      ))}
+      {points.map((p, i) => {
+        const volLabel = p.volume >= 1000 ? `${(p.volume / 1000).toFixed(1)}k` : String(p.volume)
+        return (
+          <g key={i}
+            onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, text: `${shortDate(p.date)} · ${volLabel} lbs` })}
+            onMouseMove={e => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setTooltip(null)}
+            style={{ cursor: 'default' }}>
+            <circle cx={cx(i)} cy={cy(p.volume)} r="8" fill="transparent" />
+            <circle cx={cx(i)} cy={cy(p.volume)} r="3" fill="#7c3aed" opacity="0.9" />
+          </g>
+        )
+      })}
       {labelIndices.map(i => (
         <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
           {shortDate(points[i].date)}
         </text>
       ))}
     </svg>
+    {tooltip && (
+      <div className="fixed z-50 pointer-events-none"
+        style={{ left: tooltip.x, top: tooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
+        <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+          {tooltip.text}
+        </div>
+      </div>
+    )}
+  </>
   )
 }
 

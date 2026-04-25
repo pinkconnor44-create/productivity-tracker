@@ -477,6 +477,8 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
 }
 
 function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: number; done: number; scheduled: number }[] }) {
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
+
   if (data.length < 2) return (
     <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">Not enough data yet — check back after a few weeks</div>
   )
@@ -502,33 +504,48 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
   }
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 130 }} aria-hidden="true">
-      {[0, 50, 100].map(v => (
-        <line key={v} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
-          stroke="currentColor" strokeWidth="0.5"
-          className="text-slate-100 dark:text-white/[0.06]" strokeDasharray="3 3" />
-      ))}
-      {[0, 50, 100].map(v => (
-        <text key={v} x={PAD.left - 4} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
-          {v}%
-        </text>
-      ))}
-      <polygon
-        points={`${cx(0)},${PAD.top + plotH} ${polyline} ${cx(data.length - 1)},${PAD.top + plotH}`}
-        fill="#7c3aed" opacity="0.08" />
-      <polyline points={polyline} fill="none" stroke="#7c3aed" strokeWidth="2"
-        strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
-      {data.map((d, i) => (
-        <circle key={i} cx={cx(i)} cy={cy(d.pct)} r="3" fill="#7c3aed" opacity="0.9">
-          <title>{d.weekLabel}: {d.done}/{d.scheduled} ({d.pct}%)</title>
-        </circle>
-      ))}
-      {labelIndices.map(i => (
-        <text key={i} x={cx(i)} y={H - 4} textAnchor="middle" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
-          {data[i].weekLabel}
-        </text>
-      ))}
-    </svg>
+    <>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 130 }} aria-hidden="true">
+        {[0, 50, 100].map(v => (
+          <line key={v} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
+            stroke="currentColor" strokeWidth="0.5"
+            className="text-slate-100 dark:text-white/[0.06]" strokeDasharray="3 3" />
+        ))}
+        {[0, 50, 100].map(v => (
+          <text key={v} x={PAD.left - 4} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+            {v}%
+          </text>
+        ))}
+        <polygon
+          points={`${cx(0)},${PAD.top + plotH} ${polyline} ${cx(data.length - 1)},${PAD.top + plotH}`}
+          fill="#7c3aed" opacity="0.08" />
+        <polyline points={polyline} fill="none" stroke="#7c3aed" strokeWidth="2"
+          strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
+        {data.map((d, i) => (
+          <g key={i}
+            onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, text: `${d.weekLabel} · ${d.done}/${d.scheduled} · ${d.pct}%` })}
+            onMouseMove={e => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
+            onMouseLeave={() => setTooltip(null)}
+            style={{ cursor: 'default' }}>
+            <circle cx={cx(i)} cy={cy(d.pct)} r="8" fill="transparent" />
+            <circle cx={cx(i)} cy={cy(d.pct)} r="3" fill="#7c3aed" opacity="0.9" />
+          </g>
+        ))}
+        {labelIndices.map(i => (
+          <text key={i} x={cx(i)} y={H - 4} textAnchor="middle" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+            {data[i].weekLabel}
+          </text>
+        ))}
+      </svg>
+      {tooltip && (
+        <div className="fixed z-[60] pointer-events-none"
+          style={{ left: tooltip.x, top: tooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
+          <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+            {tooltip.text}
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
