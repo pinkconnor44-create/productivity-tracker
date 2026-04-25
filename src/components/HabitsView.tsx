@@ -79,10 +79,11 @@ function getWeeklyData(completions: HabitCompletion[], recurringDays: string|nul
   const result: { weekLabel: string; pct: number; done: number; scheduled: number }[] = []
   for (let w = weeks - 1; w >= 0; w--) {
     const weekStart = addDays(currentMonday, -w * 7)
-    if (weekStart < habitStart) continue
     const weekEnd = addDays(weekStart, 6)
+    const effectiveStart = weekStart < habitStart ? habitStart : weekStart
     const effectiveEnd = weekEnd > t ? t : weekEnd
-    let scheduled = 0, done = 0, cursor = weekStart
+    if (effectiveStart > effectiveEnd) continue
+    let scheduled = 0, done = 0, cursor = effectiveStart
     while (cursor <= effectiveEnd) {
       if (isHabitActiveOnDate({ recurringDays }, cursor)) {
         scheduled++
@@ -91,7 +92,7 @@ function getWeeklyData(completions: HabitCompletion[], recurringDays: string|nul
       cursor = addDays(cursor, 1)
     }
     if (scheduled > 0) {
-      const d = new Date(weekStart + 'T12:00:00')
+      const d = new Date(effectiveStart + 'T12:00:00')
       result.push({
         weekLabel: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         pct: Math.round((done / scheduled) * 100),
