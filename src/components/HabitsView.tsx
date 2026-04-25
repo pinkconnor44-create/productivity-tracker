@@ -58,6 +58,18 @@ function calcCompletionRate(completions: HabitCompletion[], recurringDays?: stri
   if (!scheduled) return 0
   return Math.round((completions.filter(c=>c.date>=start&&c.date<=t).length/scheduled)*100)
 }
+function countInWindow(completions: HabitCompletion[], recurringDays: string|null|undefined, windowDays: number): { done: number; scheduled: number } {
+  const t = today(), start = addDays(t, -(windowDays - 1))
+  let scheduled = 0, done = 0
+  for (let i = 0; i < windowDays; i++) {
+    const d = addDays(start, i)
+    if (isHabitActiveOnDate({ recurringDays }, d)) {
+      scheduled++
+      if (completions.some(c => c.date === d)) done++
+    }
+  }
+  return { done, scheduled }
+}
 function last7Days(): string[] {
   return Array.from({length:7},(_,i)=>addDays(today(),i-6))
 }
@@ -105,6 +117,7 @@ export default function HabitsView() {
   const [form, setForm] = useState(blankForm())
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null)
 
   const todayStr = today()
   const fetchHabits = useCallback(async () => {
@@ -305,7 +318,7 @@ export default function HabitsView() {
                   {activeToday.map(habit =>
                     editingId === habit.id
                       ? <InlineHabitEditor key={habit.id} habit={habit} onSave={saveHabit} onCancel={() => setEditingId(null)} />
-                      : <HabitRow key={habit.id} habit={habit} date={todayStr} days={days} onToggle={toggleToday} onDelete={deleteHabit} onEdit={() => setEditingId(habit.id)} onSkip={() => skipHabit(habit.id)} skipped={habit.skips?.some(s => s.date===todayStr)} />
+                      : <HabitRow key={habit.id} habit={habit} date={todayStr} onToggle={toggleToday} onDelete={deleteHabit} onEdit={() => setEditingId(habit.id)} onSkip={() => skipHabit(habit.id)} skipped={habit.skips?.some(s => s.date===todayStr)} onSelect={() => setSelectedHabit(habit)} />
                   )}
                 </div>
               </div>
@@ -347,6 +360,10 @@ export default function HabitsView() {
           <p className="leading-relaxed">Each task and habit counts toward your score by its weight (1–3). Your score is the % of weighted points earned vs. scheduled.</p>
         </div>
       )}
+
+      {selectedHabit && (
+        <HabitDetailModal habit={selectedHabit} onClose={() => setSelectedHabit(null)} />
+      )}
     </div>
   )
 }
@@ -369,13 +386,12 @@ function TodayWheel({ done, total }: { done: number; total: number }) {
   )
 }
 
-function HabitRow({ habit, date, days, onToggle, onDelete, onEdit, onSkip, skipped }: {
-  habit: Habit; date: string; days: string[]
+function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, skipped }: {
+  habit: Habit; date: string
   onToggle: (id: number) => void; onDelete: (id: number) => void; onEdit: () => void
-  onSkip?: () => void; skipped?: boolean
+  onSkip?: () => void; onSelect: () => void; skipped?: boolean
 }) {
   const [confirming, setConfirming] = useState(false)
-  const rate = calcCompletionRate(habit.completions, habit.recurringDays)
   const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
   const w = habit.weight ?? 1
   return (
@@ -388,7 +404,7 @@ function HabitRow({ habit, date, days, onToggle, onDelete, onEdit, onSkip, skipp
         }`}>
         {!skipped && habit.completions.some(c=>c.date===date) && <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
-      <div className="flex-1 min-w-0">
+      <button onClick={onSelect} className="flex-1 min-w-0 text-left">
         <div className={`text-sm font-medium ${skipped ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>{habit.name}</div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {skipped
@@ -396,30 +412,11 @@ function HabitRow({ habit, date, days, onToggle, onDelete, onEdit, onSkip, skipp
             : <>
                 {streak > 0 && <span className="text-[10px] font-semibold text-orange-500">🔥 {streak}d</span>}
                 <span className="text-[10px] text-slate-600 dark:text-slate-300">{scheduleLabel(habit.recurringDays)}</span>
-                <span className="text-[10px] text-slate-600 dark:text-slate-300">{rate}% / 30d</span>
                 {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
               </>
           }
         </div>
-      </div>
-      {/* 7-day mini dots */}
-      <div className="hidden sm:flex items-center gap-1 shrink-0">
-        {days.map(d => {
-          const active = isHabitActiveOnDate(habit, d)
-          const done = habit.completions.some(c => c.date===d)
-          const isToday = d===date
-          const isSkipped = isToday && skipped
-          return (
-            <div key={d} className={`w-4 h-4 rounded-md transition-colors ${
-              isSkipped ? 'bg-amber-200 dark:bg-amber-800/40'
-              : !active ? 'bg-slate-50 dark:bg-white/[0.03]'
-              : done ? 'bg-emerald-500'
-              : isToday ? 'bg-slate-200 dark:bg-white/10 ring-1 ring-violet-400'
-              : 'bg-slate-100 dark:bg-white/[0.05]'
-            }`} title={isSkipped ? 'Excused' : d} />
-          )
-        })}
-      </div>
+      </button>
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {onSkip && (
           <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
@@ -453,6 +450,54 @@ function AllHabitsRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelet
       ) : (
         <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
       )}
+    </div>
+  )
+}
+
+function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => void }) {
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
+  const w7  = countInWindow(habit.completions, habit.recurringDays, 7)
+  const w30 = countInWindow(habit.completions, habit.recurringDays, 30)
+  const allTime = habit.completions.length
+
+  const stats = [
+    { label: '7-day',    value: `${w7.done}/${w7.scheduled}`   },
+    { label: '30-day',   value: `${w30.done}/${w30.scheduled}` },
+    { label: 'All time', value: String(allTime)                 },
+    { label: 'Streak',   value: streak > 0 ? `🔥 ${streak}d` : '—' },
+  ]
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full sm:max-w-sm bg-white dark:bg-[#16161e] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-100 dark:border-violet-700">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-violet-700">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 truncate">{habit.name}</h2>
+            {habit.description && <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{habit.description}</p>}
+          </div>
+          <button onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-sm font-bold">
+            ✕
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-px bg-slate-100 dark:bg-white/[0.06] m-4 rounded-xl overflow-hidden">
+          {stats.map(s => (
+            <div key={s.label} className="bg-white dark:bg-[#16161e] px-4 py-4 flex flex-col gap-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{s.label}</span>
+              <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{s.value}</span>
+            </div>
+          ))}
+        </div>
+        <div className="px-4 pb-4 text-[11px] text-slate-400 dark:text-slate-500">
+          {scheduleLabel(habit.recurringDays)}
+        </div>
+      </div>
     </div>
   )
 }
