@@ -51,13 +51,6 @@ function calcStreak(completions: HabitCompletion[], skips: {date:string}[], recu
   }
   return streak
 }
-function calcCompletionRate(completions: HabitCompletion[], recurringDays?: string|null, days=30): number {
-  const t=today(), start=addDays(t,-(days-1))
-  let scheduled=0
-  for (let i=0;i<days;i++) { const d=addDays(start,i); if (isHabitActiveOnDate({recurringDays},d)) scheduled++ }
-  if (!scheduled) return 0
-  return Math.round((completions.filter(c=>c.date>=start&&c.date<=t).length/scheduled)*100)
-}
 function countInWindow(completions: HabitCompletion[], recurringDays: string|null|undefined, windowDays: number): { done: number; scheduled: number } {
   const t = today(), start = addDays(t, -(windowDays - 1))
   let scheduled = 0, done = 0
@@ -69,9 +62,6 @@ function countInWindow(completions: HabitCompletion[], recurringDays: string|nul
     }
   }
   return { done, scheduled }
-}
-function last7Days(): string[] {
-  return Array.from({length:7},(_,i)=>addDays(today(),i-6))
 }
 function blankForm() {
   return { name:'', description:'', schedulePreset:null as string|null, customDays:[] as number[], weight:1 }
@@ -181,12 +171,8 @@ export default function HabitsView() {
     } catch { toast('Failed to save habit', 'warning') }
   }
 
-  const activeToday  = habits.filter(h => isHabitActiveOnDate(h, todayStr))
-  const notToday     = habits.filter(h => !isHabitActiveOnDate(h, todayStr))
-  const skippedToday = activeToday.filter(h => h.skips?.some(s => s.date===todayStr))
-  const doneToday    = activeToday.filter(h => !h.skips?.some(s => s.date===todayStr) && h.completions.some(c => c.date===todayStr)).length
-  const effectiveTotal = activeToday.length - skippedToday.length
-  const days = last7Days()
+  const activeToday = habits.filter(h => isHabitActiveOnDate(h, todayStr))
+  const notToday    = habits.filter(h => !isHabitActiveOnDate(h, todayStr))
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -196,53 +182,6 @@ export default function HabitsView() {
 
   return (
     <div className="space-y-4">
-
-      {/* Today summary */}
-      {habits.length > 0 && (
-        <div className="glass rounded-2xl border p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-0.5">Today</p>
-              <p className="text-2xl font-bold text-slate-900 dark:text-white leading-none">
-                {doneToday}<span className="text-slate-300 dark:text-slate-600 font-normal">/{effectiveTotal}</span>
-              </p>
-              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                habits done{skippedToday.length > 0 ? ` · ${skippedToday.length} excused` : ''}{notToday.length > 0 ? ` · ${notToday.length} not today` : ''}
-              </p>
-            </div>
-            <TodayWheel done={doneToday} total={effectiveTotal} />
-          </div>
-
-          {/* 7-day heatmap */}
-          <div>
-            <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">Last 7 days</p>
-            <div className="flex gap-1.5">
-              {days.map(date => {
-                const scheduled = habits.filter(h => isHabitActiveOnDate(h, date))
-                const done = scheduled.filter(h => h.completions.some(c=>c.date===date)).length
-                const pct = scheduled.length>0 ? done/scheduled.length : 0
-                const isToday = date===todayStr
-                const d = new Date(date+'T12:00:00')
-                return (
-                  <div key={date} className="flex-1 flex flex-col items-center gap-1.5">
-                    <div className={`w-full h-7 rounded-lg transition-colors ${
-                      scheduled.length===0 ? 'bg-slate-50 dark:bg-white/[0.03]'
-                      : done===0 ? 'bg-slate-100 dark:bg-white/[0.05]'
-                      : pct>=1 ? 'bg-emerald-500'
-                      : pct>=0.5 ? 'bg-emerald-400'
-                      : 'bg-emerald-200 dark:bg-emerald-900/40'
-                    } ${isToday ? 'ring-2 ring-violet-400 ring-offset-1 ring-offset-white dark:ring-offset-[#16161e]' : ''}`}
-                    title={`${date}: ${done}/${scheduled.length}`} />
-                    <span className={`text-[9px] font-semibold leading-none ${isToday ? 'text-violet-500 dark:text-violet-400' : 'text-slate-300 dark:text-slate-600'}`}>
-                      {['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add habit */}
       {!showForm ? (
@@ -311,7 +250,7 @@ export default function HabitsView() {
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                 <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Today's Habits</span>
-                <span className="ml-auto text-[10px] text-slate-600 dark:text-slate-300 font-medium">{doneToday}/{activeToday.length}</span>
+                <span className="ml-auto text-[10px] text-slate-600 dark:text-slate-300 font-medium">{activeToday.filter(h => h.completions.some(c => c.date===todayStr)).length}/{activeToday.length}</span>
               </div>
               <div className={card}>
                 <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
@@ -364,24 +303,6 @@ export default function HabitsView() {
       {selectedHabit && (
         <HabitDetailModal habit={selectedHabit} onClose={() => setSelectedHabit(null)} />
       )}
-    </div>
-  )
-}
-
-function TodayWheel({ done, total }: { done: number; total: number }) {
-  const pct = total > 0 ? Math.round((done/total)*100) : 0
-  const r = 15.9, circ = 2 * Math.PI * r
-  const fill = (pct/100) * circ
-  const color = pct>=80 ? '#10b981' : pct>=50 ? '#7c3aed' : total>0 ? '#f43f5e' : '#94a3b8'
-  return (
-    <div className="relative w-16 h-16 shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-        <circle cx="18" cy="18" r={r} fill="none" className="stroke-slate-100 dark:stroke-white/[0.08]" strokeWidth="3.5" />
-        {total > 0 && <circle cx="18" cy="18" r={r} fill="none" stroke={color} strokeWidth="3.5" strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" />}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-sm font-bold leading-none" style={{ color }}>{total>0 ? `${pct}%` : '—'}</span>
-      </div>
     </div>
   )
 }
