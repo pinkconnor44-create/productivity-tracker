@@ -61,9 +61,7 @@ function calcLongestStreak(scores: ScoreData): number {
 type Range = '30' | '90' | '365'
 
 // SVG line chart — pure SVG, no library
-function TrendChart({ data }: { data: { date: string; pct: number }[] }) {
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
-
+function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; onHover: (tip: { x: number; y: number; text: string } | null) => void }) {
   if (data.length === 0) return (
     <div className="flex flex-col items-center justify-center h-40 gap-2">
       <span className="text-2xl">📊</span>
@@ -92,7 +90,7 @@ function TrendChart({ data }: { data: { date: string; pct: number }[] }) {
   // X-axis label step
   const step = n <= 30 ? 7 : n <= 90 ? 14 : 60
 
-  return (<>
+  return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       <defs>
         <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
@@ -132,9 +130,9 @@ function TrendChart({ data }: { data: { date: string; pct: number }[] }) {
         const r = isToday ? 3.5 : n > 60 ? 1.5 : 2.5
         return (
           <g key={i}
-            onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
-            onMouseMove={e => setTooltip(t => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
-            onMouseLeave={() => setTooltip(null)}
+            onMouseEnter={e => onHover({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
+            onMouseMove={e => onHover({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
+            onMouseLeave={() => onHover(null)}
             style={{ cursor: 'default' }}>
             <circle cx={p.x} cy={p.y} r={Math.max(r, 6)} fill="transparent" />
             <circle cx={p.x} cy={p.y} r={r}
@@ -156,15 +154,6 @@ function TrendChart({ data }: { data: { date: string; pct: number }[] }) {
         )
       })}
     </svg>
-    {tooltip && (
-      <div className="fixed z-50 pointer-events-none"
-        style={{ left: tooltip.x, top: tooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
-        <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
-          {tooltip.text}
-        </div>
-      </div>
-    )}
-  </>
   )
 }
 
@@ -182,6 +171,7 @@ export default function StatsView() {
   const [range, setRange] = useState<Range>('30')
   const [scores, setScores] = useState<ScoreData>({})
   const [loading, setLoading] = useState(true)
+  const [chartTip, setChartTip] = useState<{ x: number; y: number; text: string } | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -240,7 +230,7 @@ export default function StatsView() {
         {loading ? (
           <div className="flex items-center justify-center h-40 text-slate-600 dark:text-slate-300 text-sm">Loading...</div>
         ) : (
-          <TrendChart data={chartData} />
+          <TrendChart data={chartData} onHover={setChartTip} />
         )}
         <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-600 dark:text-slate-300">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>≥80%</span>
@@ -282,6 +272,15 @@ export default function StatsView() {
                 </div>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {chartTip && (
+        <div className="fixed z-50 pointer-events-none"
+          style={{ left: chartTip.x, top: chartTip.y - 10, transform: 'translate(-50%, -100%)' }}>
+          <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+            {chartTip.text}
           </div>
         </div>
       )}
