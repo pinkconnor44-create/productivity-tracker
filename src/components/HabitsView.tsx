@@ -51,15 +51,17 @@ function calcStreak(completions: HabitCompletion[], skips: {date:string}[], recu
   }
   return streak
 }
-function countInWindow(completions: HabitCompletion[], recurringDays: string|null|undefined, windowDays: number): { done: number; scheduled: number } {
-  const t = today(), start = addDays(t, -(windowDays - 1))
-  let scheduled = 0, done = 0
-  for (let i = 0; i < windowDays; i++) {
-    const d = addDays(start, i)
-    if (isHabitActiveOnDate({ recurringDays }, d)) {
+function countInWindow(completions: HabitCompletion[], recurringDays: string|null|undefined, windowDays: number, habitStart?: string): { done: number; scheduled: number } {
+  const t = today()
+  const windowStart = addDays(t, -(windowDays - 1))
+  const start = habitStart && habitStart > windowStart ? habitStart : windowStart
+  let scheduled = 0, done = 0, cursor = start
+  while (cursor <= t) {
+    if (isHabitActiveOnDate({ recurringDays }, cursor)) {
       scheduled++
-      if (completions.some(c => c.date === d)) done++
+      if (completions.some(c => c.date === cursor)) done++
     }
+    cursor = addDays(cursor, 1)
   }
   return { done, scheduled }
 }
@@ -381,9 +383,10 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
     return () => { document.body.style.overflow = '' }
   }, [])
 
+  const habitStart = habit.createdAt.slice(0, 10)
   const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
-  const w7  = countInWindow(habit.completions, habit.recurringDays, 7)
-  const w30 = countInWindow(habit.completions, habit.recurringDays, 30)
+  const w7  = countInWindow(habit.completions, habit.recurringDays, 7,  habitStart)
+  const w30 = countInWindow(habit.completions, habit.recurringDays, 30, habitStart)
   const allTime = habit.completions.length
 
   const stats = [
