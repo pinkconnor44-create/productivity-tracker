@@ -690,27 +690,29 @@ function Stopwatch() {
 
   return (
     <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
-      <div className="px-4 py-3 flex items-center gap-3">
-        <span className="text-base">⏱</span>
-        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Rest Timer</span>
-        <span className={`ml-auto text-xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-600 dark:text-violet-400' : ms > 0 ? 'text-slate-500 dark:text-slate-400' : 'text-slate-300 dark:text-slate-600'}`}>
+      <div className="px-6 pt-5 pb-5 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">⏱</span>
+          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rest Timer</span>
+        </div>
+        <span className={`text-6xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-600 dark:text-violet-400' : ms > 0 ? 'text-slate-500 dark:text-slate-400' : 'text-slate-300 dark:text-slate-600'}`}>
           {display}
         </span>
-        <div className="flex gap-1.5">
+        <div className="flex gap-3 w-full">
           {!running ? (
             <button onClick={start}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-violet-600 text-white hover:bg-violet-700 transition-colors shadow-sm">
+              className="flex-1 py-3 text-base font-bold rounded-xl bg-violet-600 text-white hover:bg-violet-700 active:bg-violet-800 transition-colors shadow-sm">
               {ms > 0 ? 'Resume' : 'Start'}
             </button>
           ) : (
             <button onClick={stop}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-sm">
+              className="flex-1 py-3 text-base font-bold rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 transition-colors shadow-sm">
               Stop
             </button>
           )}
           {ms > 0 && (
             <button onClick={reset}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-violet-700/60 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-700/60 transition-colors">
+              className="px-6 py-3 text-base font-bold rounded-xl border border-slate-200 dark:border-violet-700/60 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-700/60 transition-colors">
               Reset
             </button>
           )}
