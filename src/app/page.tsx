@@ -56,13 +56,13 @@ const PRIMARY_TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Calendar', icon: '📅' },
   { id: 'tasks',    label: 'Tasks',    icon: '✓'  },
   { id: 'habits',   label: 'Habits',   icon: '🔄' },
+  { id: 'lifts',    label: 'Lifts',    icon: '🏋️' },
 ]
 
 const MORE_TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'stats',         label: 'Stats',         icon: '📊' },
   { id: 'weekly-review', label: 'Weekly Review', icon: '📋' },
   { id: 'hotmap',        label: 'Hotmap',        icon: '🟩' },
-  { id: 'lifts',         label: 'Lift Tracker',  icon: '🏋️' },
   { id: 'settings',      label: 'Settings',      icon: '⚙️' },
 ]
 
