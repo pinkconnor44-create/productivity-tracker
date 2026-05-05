@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { isTaskActiveOnDate, isHabitActiveOnDate, recurringLabel } from '@/lib/recurring'
 import Scratchpad from '@/components/Scratchpad'
 import { toast } from '@/lib/toast'
@@ -394,7 +395,9 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
   const d = new Date(currentDate + 'T12:00:00')
   const days = getMonthDays(d.getFullYear(), d.getMonth())
   const todayStr = today()
-  const [hoveredDate, setHoveredDate] = useState<string | null>(null)
+  const [hover, setHover] = useState<{ date: string; rect: DOMRect; col: number; row: number } | null>(null)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
 
   return (
     <div className="glass rounded-2xl border overflow-hidden">
@@ -418,8 +421,8 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
 
           return (
             <div key={i} className="relative"
-              onMouseEnter={() => isCurrentMonth && setHoveredDate(date)}
-              onMouseLeave={() => setHoveredDate(null)}
+              onMouseEnter={(e) => isCurrentMonth && setHover({ date, rect: (e.currentTarget as HTMLDivElement).getBoundingClientRect(), col, row })}
+              onMouseLeave={() => setHover(null)}
             >
               <button onClick={() => onSelectDay(date)}
                 className={`w-full h-[115px] sm:h-[90px] overflow-hidden p-1.5 border-b border-r border-outline-variant/40 text-left transition-colors flex flex-col gap-0.5
@@ -466,48 +469,59 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                 {notes[date] && <span className={`w-1.5 h-1.5 rounded-full bg-amber-400 mt-auto shrink-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`} title="Has note" />}
               </button>
 
-              {/* Hover popover */}
-              {hoveredDate === date && (dayTasks.length > 0 || !!notes[date]) && (
-                <div className={`absolute z-30 w-52 rounded-xl border border-outline-variant/60 shadow-2xl p-3 pointer-events-none
-                  bg-surface-container
-                  ${col >= 4 ? 'right-0' : 'left-0'}
-                  ${row === 0 ? 'top-full mt-1' : 'bottom-full mb-1'}
-                `}>
-                  <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-                    {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                  </div>
-                  <div className="space-y-1.5">
-                    {dayTasks.map(task => {
-                      const done = isTaskDone(task, date)
-                      const skipped = task.skips?.some(s => s.date === date)
-                      return (
-                        <div key={task.id} className="flex items-start gap-2">
-                          <span className={`text-xs mt-0.5 shrink-0 ${skipped ? 'text-amber-400' : done ? 'text-emerald-500' : 'text-on-surface-variant/30'}`}>
-                            {skipped ? '⏸' : done ? '✓' : '○'}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className={`text-xs font-medium truncate ${done ? 'line-through text-on-surface-variant/40' : 'text-on-surface'}`}>
-                              {task.title}
-                            </div>
-                            {task.time && (
-                              <div className="text-[10px] text-violet-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  {notes[date] && (
-                    <div className="text-[10px] text-amber-500 mt-2 pt-2 border-t border-outline-variant">
-                      📝 {notes[date].length > 60 ? notes[date].slice(0, 60) + '…' : notes[date]}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )
         })}
       </div>
+      {mounted && hover && (() => {
+        const popTasks = tasksForDate(hover.date)
+        const hasNote = !!notes[hover.date]
+        if (popTasks.length === 0 && !hasNote) return null
+        const POP_W = 208
+        const estH = 60 + popTasks.length * 32 + (hasNote ? 40 : 0)
+        const above = hover.row >= 4
+        const top = above ? Math.max(8, hover.rect.top - estH - 4) : hover.rect.bottom + 4
+        const left = hover.col >= 4
+          ? Math.max(8, hover.rect.right - POP_W)
+          : Math.min(window.innerWidth - POP_W - 8, hover.rect.left)
+        return createPortal(
+          <div
+            className="glass fixed z-[9999] w-52 rounded-xl p-3 pointer-events-none"
+            style={{ top, left }}
+          >
+            <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+              {new Date(hover.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </div>
+            <div className="space-y-1.5">
+              {popTasks.map(task => {
+                const done = isTaskDone(task, hover.date)
+                const skipped = task.skips?.some(s => s.date === hover.date)
+                return (
+                  <div key={task.id} className="flex items-start gap-2">
+                    <span className={`text-xs mt-0.5 shrink-0 ${skipped ? 'text-amber-400' : done ? 'text-emerald-500' : 'text-on-surface-variant/30'}`}>
+                      {skipped ? '⏸' : done ? '✓' : '○'}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-xs font-medium truncate ${done ? 'line-through text-on-surface-variant/40' : 'text-on-surface'}`}>
+                        {task.title}
+                      </div>
+                      {task.time && (
+                        <div className="text-[10px] text-violet-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {hasNote && (
+              <div className="text-[10px] text-amber-400 mt-2 pt-2 border-t border-outline-variant">
+                📝 {notes[hover.date].length > 60 ? notes[hover.date].slice(0, 60) + '…' : notes[hover.date]}
+              </div>
+            )}
+          </div>,
+          document.body
+        )
+      })()}
     </div>
   )
 }
