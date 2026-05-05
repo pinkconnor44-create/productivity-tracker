@@ -154,10 +154,10 @@ export default function Scratchpad() {
       <div className="glass card-lift rounded-2xl border overflow-hidden">
 
         {/* Notes */}
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
           <span className="text-base">📝</span>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Notes</h3>
-          <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 font-medium">auto-saved</span>
+          <h3 className="text-sm font-semibold text-on-surface">Notes</h3>
+          <span className="ml-auto text-[10px] text-on-surface-variant/30 font-medium">auto-saved</span>
         </div>
         <textarea
           ref={textareaRef}
@@ -165,22 +165,22 @@ export default function Scratchpad() {
           onChange={e => handleNotesChange(e.target.value)}
           placeholder="Jot down anything on your mind…"
           style={{ minHeight: '60px' }}
-          className="w-full px-4 py-3 text-sm text-slate-700 dark:text-slate-200 bg-transparent placeholder-white/70 resize-none outline-none leading-relaxed overflow-hidden"
+          className="w-full px-4 py-3 text-sm text-on-surface bg-transparent placeholder-white/70 resize-none outline-none leading-relaxed overflow-hidden"
         />
 
         {/* Checklist */}
         <div>
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
           <span className="text-base">☑</span>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Checklist</h3>
+          <h3 className="text-sm font-semibold text-on-surface">Checklist</h3>
           {checklist.length > 0 && (
-            <span className="ml-1 text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+            <span className="ml-1 text-[10px] text-on-surface-variant font-medium">
               {doneCount}/{checklist.length}
             </span>
           )}
           {doneCount > 0 && (
             <button onClick={clearDone}
-              className="ml-auto text-[11px] text-slate-600 dark:text-slate-300 hover:text-rose-400 dark:hover:text-rose-400 font-medium transition-colors">
+              className="ml-auto text-[11px] text-on-surface-variant hover:text-rose-400 font-medium transition-colors">
               Clear done
             </button>
           )}
@@ -188,7 +188,7 @@ export default function Scratchpad() {
 
         {/* Items */}
         {checklist.length > 0 && (
-          <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+          <div className="divide-y divide-outline-variant/40">
             {checklist.map((item, index) => (
               <div
                 key={item.id}
@@ -199,21 +199,21 @@ export default function Scratchpad() {
                 onDragEnd={handleDragEnd}
                 className={`flex items-start gap-2 px-3 py-2.5 group transition-all cursor-default ${
                   draggingIndex === index
-                    ? 'opacity-40 scale-[0.98] bg-slate-50 dark:bg-white/[0.03]'
+                    ? 'opacity-40 scale-[0.98] bg-surface-container-lowest'
                     : dragOver === index && dragIndex.current !== index
-                      ? 'bg-violet-50 dark:bg-violet-900/20 border-t-2 border-violet-400'
-                      : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'
+                      ? 'bg-violet-500/15 border-t-2 border-violet-400'
+                      : 'hover:bg-surface-container-low'
                 }`}
               >
                 {/* Drag handle */}
-                <span className="shrink-0 mt-0.5 text-slate-200 dark:text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-xs select-none leading-[20px]">
+                <span className="shrink-0 mt-0.5 text-on-surface opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-xs select-none leading-[20px]">
                   ⠿
                 </span>
                 <button onClick={() => toggleItem(item.id)}
                   className={`mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                     item.done
                       ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : 'border-slate-200 dark:border-violet-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                      : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
                   }`}>
                   {item.done && (
                     <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
@@ -229,13 +229,13 @@ export default function Scratchpad() {
                     onChange={e => setEditText(e.target.value)}
                     onBlur={() => commitEdit(item.id)}
                     onKeyDown={e => handleEditKeyDown(e, item.id)}
-                    className="flex-1 text-sm bg-transparent border-0 border-b border-violet-400 outline-none text-slate-700 dark:text-slate-200 pb-0.5"
+                    className="flex-1 text-sm bg-transparent border-0 border-b border-violet-400 outline-none text-on-surface pb-0.5"
                   />
                 ) : (
                   <span
                     onDoubleClick={() => !item.done && startEdit(item)}
                     className={`flex-1 text-sm leading-snug pt-0.5 ${
-                      item.done ? 'line-through text-slate-300 dark:text-slate-600' : 'text-slate-700 dark:text-slate-200'
+                      item.done ? 'line-through text-on-surface-variant/30' : 'text-on-surface'
                     }`}
                   >
                     {item.text}
@@ -245,12 +245,12 @@ export default function Scratchpad() {
                   <>
                     {!item.done && (
                       <button onClick={() => startEdit(item)}
-                        className="shrink-0 mt-0.5 p-1 rounded-lg text-slate-200 dark:text-slate-700 hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 opacity-0 group-hover:opacity-100 transition-all text-xs">
+                        className="shrink-0 mt-0.5 p-1 rounded-lg text-on-surface hover:text-violet-400 hover:bg-violet-500/10 opacity-0 group-hover:opacity-100 transition-all text-xs">
                         ✏
                       </button>
                     )}
                     <button onClick={() => deleteItem(item.id)}
-                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 opacity-0 group-hover:opacity-100 transition-all">
+                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 opacity-0 group-hover:opacity-100 transition-all">
                       ✕
                     </button>
                   </>
@@ -261,8 +261,8 @@ export default function Scratchpad() {
         )}
 
         {/* Add item input */}
-        <div className="flex items-center gap-2 px-4 py-3 border-t border-slate-50 dark:border-violet-700">
-          <div className="shrink-0 w-5 h-5 rounded-md border-2 border-dashed border-slate-200 dark:border-violet-700 flex items-center justify-center text-slate-300 dark:text-slate-600 text-xs font-bold">
+        <div className="flex items-center gap-2 px-4 py-3 border-t border-outline-variant/40">
+          <div className="shrink-0 w-5 h-5 rounded-md border-2 border-dashed border-outline-variant flex items-center justify-center text-on-surface-variant/30 text-xs font-bold">
             +
           </div>
           <input
@@ -272,7 +272,7 @@ export default function Scratchpad() {
             onChange={e => setNewItem(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Add an item…"
-            className="flex-1 text-sm bg-transparent border-0 outline-none text-slate-700 dark:text-slate-200 placeholder-white/70"
+            className="flex-1 text-sm bg-transparent border-0 outline-none text-on-surface placeholder-white/70"
           />
           {newItem.trim() && (
             <button onClick={addItem}

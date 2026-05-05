@@ -8,7 +8,39 @@ const config: Config = {
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        surface: 'var(--surface)',
+        'surface-dim': 'var(--surface-dim)',
+        'surface-bright': 'var(--surface-bright)',
+        'surface-container-lowest': 'var(--surface-container-lowest)',
+        'surface-container-low': 'var(--surface-container-low)',
+        'surface-container': 'var(--surface-container)',
+        'surface-container-high': 'var(--surface-container-high)',
+        'surface-container-highest': 'var(--surface-container-highest)',
+        'on-surface': 'var(--on-surface)',
+        'on-surface-variant': 'var(--on-surface-variant)',
+        outline: 'var(--outline)',
+        'outline-variant': 'var(--outline-variant)',
+        primary: 'rgb(var(--c-p) / <alpha-value>)',
+        secondary: 'var(--secondary)',
+        'secondary-container': 'var(--secondary-container)',
+      },
+      fontFamily: {
+        display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: {
+        sm: '0.25rem',
+        DEFAULT: '0.5rem',
+        md: '0.75rem',
+        lg: '1rem',
+        xl: '1.5rem',
+      },
+      maxWidth: {
+        container: '1280px',
+      },
+    },
   },
   plugins: [],
 }

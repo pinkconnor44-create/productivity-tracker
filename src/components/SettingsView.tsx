@@ -52,11 +52,11 @@ export default function SettingsView() {
       <h2 className="font-bold text-lg gradient-text">Settings</h2>
 
       {/* Accent Color */}
-      <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-6 shadow-sm">
-        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-6 shadow-sm">
+        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
           Accent Color
         </div>
-        <p className="text-xs text-slate-600 dark:text-slate-300 mb-5">
+        <p className="text-xs text-on-surface-variant mb-5">
           Changes the neon glow, gradients, aurora, and all UI accents throughout the app.
         </p>
 
@@ -88,7 +88,7 @@ export default function SettingsView() {
                   {active ? (
                     <span style={{ color: theme.hex }}>{theme.label}</span>
                   ) : (
-                    <span className="text-slate-600 dark:text-slate-300">{theme.label}</span>
+                    <span className="text-on-surface-variant">{theme.label}</span>
                   )}
                 </span>
               </button>
@@ -97,8 +97,8 @@ export default function SettingsView() {
         </div>
 
         {/* Active theme preview strip */}
-        <div className="mt-6 pt-5 border-t border-slate-100 dark:border-violet-700/40">
-          <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3">Preview</div>
+        <div className="mt-6 pt-5 border-t border-outline-variant/40">
+          <div className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mb-3">Preview</div>
           <div className="flex items-center gap-3 flex-wrap">
             {/* Gradient text sample */}
             <span className="text-sm font-bold gradient-text">Gradient Text</span>
@@ -124,24 +124,24 @@ export default function SettingsView() {
       </div>
 
       {/* Shutdown */}
-      <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-6 shadow-sm">
-        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Server</div>
-        <p className="text-xs text-slate-600 dark:text-slate-300 mb-4">Stop the local server. The app will stop working until you restart it.</p>
+      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-6 shadow-sm">
+        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Server</div>
+        <p className="text-xs text-on-surface-variant mb-4">Stop the local server. The app will stop working until you restart it.</p>
         {shutdownState === 'idle' && (
           <button onClick={() => setShutdownState('confirm')}
-            className="px-4 py-2 rounded-xl text-xs font-semibold border border-rose-200 dark:border-rose-800/60 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">
+            className="px-4 py-2 rounded-xl text-xs font-semibold border border-rose-800/60 text-rose-400 hover:bg-rose-500/15 transition-all">
             Stop Server
           </button>
         )}
         {shutdownState === 'confirm' && (
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-600 dark:text-slate-300">Are you sure?</span>
+            <span className="text-xs text-on-surface-variant">Are you sure?</span>
             <button onClick={shutdown}
               className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-all">
               Yes, stop it
             </button>
             <button onClick={() => setShutdownState('idle')}
-              className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-all">
+              className="px-4 py-2 rounded-xl text-xs font-semibold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-all">
               Cancel
             </button>
           </div>
@@ -152,20 +152,20 @@ export default function SettingsView() {
       </div>
 
       {/* About */}
-      <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-6 shadow-sm">
-        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3">About</div>
+      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-6 shadow-sm">
+        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">About</div>
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-600 dark:text-slate-300">App</span>
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Productivity Tracker</span>
+            <span className="text-xs text-on-surface-variant">App</span>
+            <span className="text-xs font-semibold text-on-surface">Productivity Tracker</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-600 dark:text-slate-300">Theme engine</span>
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">CSS Custom Properties</span>
+            <span className="text-xs text-on-surface-variant">Theme engine</span>
+            <span className="text-xs font-semibold text-on-surface">CSS Custom Properties</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-xs text-slate-600 dark:text-slate-300">Dark mode</span>
-            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Toggle via header ☀️/🌙</span>
+            <span className="text-xs text-on-surface-variant">Mode</span>
+            <span className="text-xs font-semibold text-on-surface">Dark only (Lumina)</span>
           </div>
         </div>
       </div>

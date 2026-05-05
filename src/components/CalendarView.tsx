@@ -88,7 +88,7 @@ function MiniWheel({ pct, size = 28 }: { pct: number; size?: number }) {
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="-rotate-90" width={size} height={size} viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r={r} fill="none" className="stroke-slate-100 dark:stroke-white/[0.08]" strokeWidth="2.5" />
+        <circle cx="12" cy="12" r={r} fill="none" className="stroke-outline-variant/40" strokeWidth="2.5" />
         <circle cx="12" cy="12" r={r} fill="none" stroke={wheelGrad(pct)} strokeWidth="2.5"
           strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
           style={{ transition: 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
@@ -114,7 +114,7 @@ function SummaryWheel({ label, pct, compact = false }: { label: string; pct: num
     <div className="flex flex-col items-center gap-1">
       <div className="relative" style={{ width: dim, height: dim }}>
         <svg className="w-full h-full -rotate-90" viewBox={vb}>
-          <circle cx={cx} cy={cx} r={r} fill="none" className="stroke-slate-100 dark:stroke-white/[0.08]" strokeWidth={sw} />
+          <circle cx={cx} cy={cx} r={r} fill="none" className="stroke-outline-variant/40" strokeWidth={sw} />
           {pct !== null && (
             <circle cx={cx} cy={cx} r={r} fill="none" stroke={wheelGrad(pct)} strokeWidth={sw}
               strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
@@ -127,7 +127,7 @@ function SummaryWheel({ label, pct, compact = false }: { label: string; pct: num
           </span>
         </div>
       </div>
-      <span className={`font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider ${compact ? 'text-[9px]' : 'text-[10px]'}`}>{label}</span>
+      <span className={`font-semibold text-on-surface-variant uppercase tracking-wider ${compact ? 'text-[9px]' : 'text-[10px]'}`}>{label}</span>
     </div>
   )
 }
@@ -311,7 +311,7 @@ export default function CalendarView() {
     fetchData(); fetchScores(); fetchSummary()
   }
 
-  if (loading) return <div className="flex items-center justify-center py-20 text-slate-400">Loading...</div>
+  if (loading) return <div className="flex items-center justify-center py-20 text-on-surface-variant/60">Loading...</div>
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[96px_3fr_2fr] gap-4 items-start">
@@ -319,11 +319,11 @@ export default function CalendarView() {
       {/* Score wheels column — desktop sidebar */}
       <div className="hidden lg:flex sticky top-[120px] flex-col items-center gap-5 py-2 glass card-lift rounded-2xl border">
         <SummaryWheel label="Day"   pct={dayPct}   />
-        <div className="w-8 h-px bg-slate-100 dark:bg-white/[0.06]" />
+        <div className="w-8 h-px bg-surface-container-low" />
         <SummaryWheel label="Week"  pct={weekPct}  />
-        <div className="w-8 h-px bg-slate-100 dark:bg-white/[0.06]" />
+        <div className="w-8 h-px bg-surface-container-low" />
         <SummaryWheel label="Month" pct={monthPct} />
-        <div className="w-8 h-px bg-slate-100 dark:bg-white/[0.06]" />
+        <div className="w-8 h-px bg-surface-container-low" />
         <SummaryWheel label="Year"  pct={yearPct}  />
       </div>
 
@@ -333,28 +333,28 @@ export default function CalendarView() {
         {/* Score wheels row — mobile only */}
         <div className="flex lg:hidden justify-around items-center glass card-lift rounded-2xl border px-3 py-3 mb-4">
           <SummaryWheel label="Day"   pct={dayPct}   compact />
-          <div className="h-10 w-px bg-slate-100 dark:bg-white/[0.06]" />
+          <div className="h-10 w-px bg-surface-container-low" />
           <SummaryWheel label="Week"  pct={weekPct}  compact />
-          <div className="h-10 w-px bg-slate-100 dark:bg-white/[0.06]" />
+          <div className="h-10 w-px bg-surface-container-low" />
           <SummaryWheel label="Month" pct={monthPct} compact />
-          <div className="h-10 w-px bg-slate-100 dark:bg-white/[0.06]" />
+          <div className="h-10 w-px bg-surface-container-low" />
           <SummaryWheel label="Year"  pct={yearPct}  compact />
         </div>
 
         {/* Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <div className="flex bg-white dark:bg-slate-800 border border-slate-200 dark:border-violet-700 rounded-lg p-1 gap-1">
+          <div className="flex bg-surface-container border border-outline-variant rounded-lg p-1 gap-1">
             {(['month','week','day'] as View[]).map(v => (
               <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
-                view === v ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-200'
+                view === v ? 'bg-violet-600 text-white shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
               }`}>{v}</button>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">←</button>
-            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 min-w-[180px] text-center">{periodLabel()}</span>
-            <button onClick={() => navigate(1)} className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all">→</button>
-            <button onClick={() => setCurrentDate(today())} className="ml-1 px-3 py-1.5 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-violet-900 rounded-lg text-slate-600 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-500 transition-colors">Today</button>
+            <button onClick={() => navigate(-1)} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:shadow-sm border border-transparent hover:border-outline-variant transition-all">←</button>
+            <span className="text-sm font-semibold text-on-surface min-w-[180px] text-center">{periodLabel()}</span>
+            <button onClick={() => navigate(1)} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:shadow-sm border border-transparent hover:border-outline-variant transition-all">→</button>
+            <button onClick={() => setCurrentDate(today())} className="ml-1 px-3 py-1.5 text-xs font-medium bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:text-violet-400 hover:border-violet-300 transition-colors">Today</button>
           </div>
         </div>
 
@@ -378,9 +378,9 @@ export default function CalendarView() {
 }
 
 function scoreTint(pct: number) {
-  if (pct >= 75) return 'bg-emerald-50/70 dark:bg-emerald-900/[0.12]'
-  if (pct >= 50) return 'bg-amber-50/70 dark:bg-amber-900/[0.12]'
-  return 'bg-rose-50/50 dark:bg-rose-900/[0.10]'
+  if (pct >= 75) return 'bg-emerald-500/10'
+  if (pct >= 50) return 'bg-amber-500/10'
+  return 'bg-rose-500/10'
 }
 
 function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDone, onSelectDay, notes, isModalOpen }: {
@@ -398,9 +398,9 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
 
   return (
     <div className="glass rounded-2xl border overflow-hidden">
-      <div className="grid grid-cols-7 border-b border-slate-50 dark:border-violet-700">
+      <div className="grid grid-cols-7 border-b border-outline-variant/40">
         {WEEKDAYS.map(wd => (
-          <div key={wd} className="py-2 text-center text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">{wd}</div>
+          <div key={wd} className="py-2 text-center text-xs font-semibold text-on-surface-variant uppercase tracking-wider">{wd}</div>
         ))}
       </div>
       <div className="grid grid-cols-7">
@@ -422,18 +422,18 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
               onMouseLeave={() => setHoveredDate(null)}
             >
               <button onClick={() => onSelectDay(date)}
-                className={`w-full h-[115px] sm:h-[90px] overflow-hidden p-1.5 border-b border-r border-slate-100 dark:border-violet-700 text-left transition-colors flex flex-col gap-0.5
+                className={`w-full h-[115px] sm:h-[90px] overflow-hidden p-1.5 border-b border-r border-outline-variant/40 text-left transition-colors flex flex-col gap-0.5
                   ${!isCurrentMonth ? 'opacity-30' : ''}
                   ${score && !isFuture && isCurrentMonth ? scoreTint(score.pct) : ''}
-                  hover:brightness-95 dark:hover:brightness-110`}
+                  hover:brightness-110`}
               >
                 <div className="flex items-center justify-between w-full mb-0.5">
                   <span className={`text-xs font-semibold w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full shrink-0 transition-opacity duration-200 ${
-                    isToday ? 'bg-violet-600 text-white' : 'text-slate-600 dark:text-slate-300'
+                    isToday ? 'bg-violet-600 text-white' : 'text-on-surface-variant'
                   } ${isModalOpen ? 'opacity-20' : ''}`}>{dayNum}</span>
                   {dayHabits.length > 0 && isCurrentMonth && (
                     <span className={`hidden sm:inline text-[9px] font-semibold tabular-nums leading-none transition-opacity duration-200 ${
-                      dayHabitsDone === dayHabits.length ? 'text-emerald-500' : 'text-slate-600 dark:text-slate-300'
+                      dayHabitsDone === dayHabits.length ? 'text-emerald-500' : 'text-on-surface-variant'
                     } ${isModalOpen ? 'opacity-20' : ''}`}>{dayHabitsDone}/{dayHabits.length}</span>
                   )}
                   {score && !isFuture && <MiniWheel pct={score.pct} size={24} />}
@@ -449,7 +449,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                           const done = isTaskDone(task, date)
                           return (
                             <div key={task.id}
-                              className={`w-full text-[10px] font-semibold leading-tight px-1 py-0.5 rounded ${done ? 'text-slate-300 dark:text-slate-600 line-through' : ''}`}
+                              className={`w-full text-[10px] font-semibold leading-tight px-1 py-0.5 rounded ${done ? 'text-on-surface-variant/30 line-through' : ''}`}
                               style={!done ? { backgroundColor: 'rgba(var(--c-p), 0.12)', color: 'var(--c-p-hex)' } : undefined}
                             >
                               {formatTime(task.time!)}
@@ -468,12 +468,12 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
 
               {/* Hover popover */}
               {hoveredDate === date && (dayTasks.length > 0 || !!notes[date]) && (
-                <div className={`absolute z-30 w-52 rounded-xl border border-slate-200 dark:border-violet-700/60 shadow-2xl p-3 pointer-events-none
-                  bg-white dark:bg-slate-900
+                <div className={`absolute z-30 w-52 rounded-xl border border-outline-variant/60 shadow-2xl p-3 pointer-events-none
+                  bg-surface-container
                   ${col >= 4 ? 'right-0' : 'left-0'}
                   ${row === 0 ? 'top-full mt-1' : 'bottom-full mb-1'}
                 `}>
-                  <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                     {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </div>
                   <div className="space-y-1.5">
@@ -482,15 +482,15 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                       const skipped = task.skips?.some(s => s.date === date)
                       return (
                         <div key={task.id} className="flex items-start gap-2">
-                          <span className={`text-xs mt-0.5 shrink-0 ${skipped ? 'text-amber-400' : done ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}>
+                          <span className={`text-xs mt-0.5 shrink-0 ${skipped ? 'text-amber-400' : done ? 'text-emerald-500' : 'text-on-surface-variant/30'}`}>
                             {skipped ? '⏸' : done ? '✓' : '○'}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <div className={`text-xs font-medium truncate ${done ? 'line-through text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-200'}`}>
+                            <div className={`text-xs font-medium truncate ${done ? 'line-through text-on-surface-variant/40' : 'text-on-surface'}`}>
                               {task.title}
                             </div>
                             {task.time && (
-                              <div className="text-[10px] text-violet-500 dark:text-violet-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
+                              <div className="text-[10px] text-violet-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
                             )}
                           </div>
                         </div>
@@ -498,7 +498,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                     })}
                   </div>
                   {notes[date] && (
-                    <div className="text-[10px] text-amber-500 mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                    <div className="text-[10px] text-amber-500 mt-2 pt-2 border-t border-outline-variant">
                       📝 {notes[date].length > 60 ? notes[date].slice(0, 60) + '…' : notes[date]}
                     </div>
                   )}
@@ -554,9 +554,9 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
           if (isToday && !nowInserted && (!task.time || task.time > nowTime)) {
             items.push(
               <div key="now-line" className="flex items-center gap-1 py-0.5 my-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                <div className="flex-1 h-px bg-rose-400/70" />
-                <span className="text-[9px] font-bold text-rose-500 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-primary neon-pulse shrink-0" />
+                <div className="flex-1 h-px bg-violet-400/50" />
+                <span className="text-[9px] font-bold text-violet-400 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
               </div>
             )
             nowInserted = true
@@ -565,12 +565,12 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
           items.push(
             <button key={task.id} onClick={() => onToggleTask(task, date)}
               className={`w-full text-left text-[10px] px-1.5 py-1.5 rounded-lg flex flex-col gap-0.5 transition-colors ${
-                done ? 'text-slate-300 dark:text-slate-600 bg-slate-50 dark:bg-slate-700/50' : 'text-slate-600 dark:text-slate-300'
+                done ? 'text-on-surface-variant/30 bg-surface-container-low' : 'text-on-surface-variant'
               }`}
               style={!done ? { backgroundColor: 'rgba(var(--c-p), 0.10)' } : undefined}
             >
               {task.time && (
-                <span className={`font-semibold ${done ? 'text-slate-300 dark:text-slate-600' : ''}`}
+                <span className={`font-semibold ${done ? 'text-on-surface-variant/30' : ''}`}
                   style={!done ? { color: 'var(--c-p-hex)' } : undefined}
                 >
                   {formatTime(task.time)}
@@ -583,9 +583,9 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
         if (isToday && !nowInserted) {
           items.push(
             <div key="now-line" className="flex items-center gap-1 py-0.5 my-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-              <div className="flex-1 h-px bg-rose-400/70" />
-              <span className="text-[9px] font-bold text-rose-500 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary neon-pulse shrink-0" />
+              <div className="flex-1 h-px bg-violet-400/50" />
+              <span className="text-[9px] font-bold text-violet-400 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
             </div>
           )
         }
@@ -597,16 +597,16 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
             <button onClick={() => onSelectDay(date)} className={`w-full p-2 text-center border-b flex flex-col items-center ${
               isToday
                 ? 'bg-gradient-to-b from-violet-500 to-violet-700 text-white border-violet-600'
-                : 'bg-slate-50 dark:bg-slate-700 border-slate-100 dark:border-violet-700 text-slate-700 dark:text-slate-200'
+                : 'bg-surface-container-high border-outline-variant/40 text-on-surface'
             }`}>
               <div className="text-[10px] font-semibold uppercase tracking-wide opacity-75">{WEEKDAYS[d.getDay()]}</div>
               <div className="text-lg font-bold leading-tight">{d.getDate()}</div>
               {score && !isFuture && (
-                <div className={`text-[10px] font-bold mt-0.5 ${isToday ? 'text-violet-200' : 'text-violet-600 dark:text-violet-400'}`}>{score.pct}%</div>
+                <div className={`text-[10px] font-bold mt-0.5 ${isToday ? 'text-violet-200' : 'text-violet-400'}`}>{score.pct}%</div>
               )}
             </button>
             <div className="p-1.5 space-y-0.5">
-              {items.length === 0 && <p className="text-[10px] text-slate-300 dark:text-slate-600 text-center py-2">—</p>}
+              {items.length === 0 && <p className="text-[10px] text-on-surface-variant/30 text-center py-2">—</p>}
               {items}
             </div>
           </div>
@@ -637,16 +637,16 @@ function DayDetail({ date, score, tasks, habits, isTaskDone, onToggleTask, onTog
     <div className="space-y-4">
       <div className="glass rounded-xl border p-5 flex items-center justify-between">
         <div>
-          <div className="text-sm text-slate-600 dark:text-slate-300 font-medium">{WEEKDAYS[d.getDay()]}</div>
-          <div className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          <div className="text-sm text-on-surface-variant font-medium">{WEEKDAYS[d.getDay()]}</div>
+          <div className="text-2xl font-bold text-on-surface">
             {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
-            {isToday && <span className="ml-2 text-sm font-semibold text-violet-600 bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded-full">Today</span>}
+            {isToday && <span className="ml-2 text-sm font-semibold text-violet-600 bg-violet-500/20 px-2 py-0.5 rounded-full">Today</span>}
           </div>
         </div>
         {score && !isFuture ? (
           <DayScoreWheel score={score} />
         ) : (
-          <div className="text-slate-300 dark:text-slate-600 text-sm">{isFuture ? 'Future' : 'Nothing scheduled'}</div>
+          <div className="text-on-surface-variant/30 text-sm">{isFuture ? 'Future' : 'Nothing scheduled'}</div>
         )}
       </div>
       <QuickAddTask date={date} onAdd={onAddTask} />
@@ -667,14 +667,14 @@ function DayScoreWheel({ score }: { score: DayScore }) {
     <div className="flex flex-col items-center">
       <div className="relative w-16 h-16">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-          <circle cx="18" cy="18" r={r} fill="none" className="stroke-slate-100 dark:stroke-white/[0.08]" strokeWidth="3" />
+          <circle cx="18" cy="18" r={r} fill="none" className="stroke-outline-variant/40" strokeWidth="3" />
           <circle cx="18" cy="18" r={r} fill="none" stroke={wheelGrad(score.pct)} strokeWidth="3"
             strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
             style={{ transition: 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-sm font-bold leading-none" style={{ color }}>{display}%</span>
-          <span className="text-[9px] text-slate-600 dark:text-slate-300 mt-0.5">{animCompleted}/{score.total}</span>
+          <span className="text-[9px] text-on-surface-variant mt-0.5">{animCompleted}/{score.total}</span>
         </div>
       </div>
     </div>
@@ -688,14 +688,14 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
   const [endTime, setEndTime] = useState(task.endTime ?? '')
 
   return (
-    <div className="px-4 py-3 bg-violet-50/60 dark:bg-violet-900/10 space-y-2.5">
+    <div className="px-4 py-3 bg-violet-50/60 space-y-2.5">
       <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Task name"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-violet-700 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 outline-none focus:border-violet-400 dark:focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-violet-700 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 outline-none focus:border-violet-400 dark:focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
       <div className="flex items-end gap-2 flex-wrap">
         <TimePickerInput value={startTime} onChange={setStartTime} label="Start" />
-        <span className="text-slate-300 dark:text-slate-600 text-xs pb-2.5">→</span>
+        <span className="text-on-surface-variant/30 text-xs pb-2.5">→</span>
         <TimePickerInput value={endTime} onChange={setEndTime} label="End" />
       </div>
       <div className="flex gap-2">
@@ -704,7 +704,7 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
           className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors">
           Save
         </button>
-        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
       </div>
     </div>
   )
@@ -715,18 +715,18 @@ function DayHabitEditForm({ habit, onSave, onCancel }: { habit: Habit; onSave: (
   const [description, setDescription] = useState(habit.description ?? '')
 
   return (
-    <div className="px-4 py-3 bg-violet-50/60 dark:bg-violet-900/10 space-y-2.5">
+    <div className="px-4 py-3 bg-violet-50/60 space-y-2.5">
       <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Habit name"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-violet-700 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 outline-none focus:border-violet-400 dark:focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-violet-700 bg-white dark:bg-white/[0.05] text-slate-700 dark:text-slate-200 outline-none focus:border-violet-400 dark:focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
       <div className="flex gap-2">
         <button onClick={() => onSave({ name: name.trim(), description: description.trim() || null })}
           disabled={!name.trim()}
           className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors">
           Save
         </button>
-        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
       </div>
     </div>
   )
@@ -781,32 +781,32 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
   return (
     <>
       <div className="glass card-lift rounded-2xl border overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center justify-between">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200">Tasks</h3>
-          <span className="text-xs text-slate-600 dark:text-slate-300">{tasks.filter(t => isTaskDone(t, date)).length}/{tasks.length} done</span>
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center justify-between">
+          <h3 className="font-semibold text-on-surface">Tasks</h3>
+          <span className="text-xs text-on-surface-variant">{tasks.filter(t => isTaskDone(t, date)).length}/{tasks.length} done</span>
         </div>
         {tasks.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-600 dark:text-slate-300 text-center">No tasks this day</p>
+          <p className="px-4 py-6 text-sm text-on-surface-variant text-center">No tasks this day</p>
         ) : (
-          <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+          <div className="divide-y divide-outline-variant/40">
             {tasks.map(task => {
               const isEditing = editState?.type === 'task' && editState.task.id === task.id
               if (isEditing && editState.type === 'task') {
                 if (editState.scope === 'choose') {
                   return (
-                    <div key={task.id} className="px-4 py-3 space-y-2 bg-violet-50/60 dark:bg-violet-900/10">
-                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">This is a recurring task. What would you like to edit?</p>
+                    <div key={task.id} className="px-4 py-3 space-y-2 bg-violet-50/60">
+                      <p className="text-xs font-semibold text-on-surface-variant">This is a recurring task. What would you like to edit?</p>
                       <div className="flex gap-2 flex-wrap">
                         <button onClick={() => setEditState({ type: 'task', task, scope: 'all' })}
                           className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
                           All occurrences
                         </button>
                         <button onClick={() => setEditState({ type: 'task', task, scope: 'day' })}
-                          className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-white/[0.08] border border-slate-200 dark:border-violet-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.12] transition-colors">
+                          className="px-3 py-1.5 text-xs font-semibold bg-surface-container border border-outline-variant text-on-surface rounded-lg hover:bg-surface-container-lowest transition-colors">
                           Just {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </button>
                         <button onClick={() => setEditState(null)}
-                          className="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                          className="px-3 py-1.5 text-xs text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">
                           Cancel
                         </button>
                       </div>
@@ -821,21 +821,21 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
               const done = isTaskDone(task, date)
               const skipped = task.skips?.some(s => s.date === date)
               return (
-                <div key={task.id} className={`flex items-start gap-3 px-4 py-3 group transition-colors ${skipped ? 'bg-amber-50/60 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
+                <div key={task.id} className={`flex items-start gap-3 px-4 py-3 group transition-colors ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
                   <button onClick={() => { if (!skipped) { if (!done) triggerBurst(task.id); onToggleTask(task, date) } }} disabled={!!skipped}
-                    className={`relative mt-0.5 text-lg leading-none shrink-0 ${skipped ? 'text-amber-300 cursor-not-allowed' : done ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600 hover:text-violet-400'}`}>
+                    className={`relative mt-0.5 text-lg leading-none shrink-0 ${skipped ? 'text-amber-300 cursor-not-allowed' : done ? 'text-emerald-500' : 'text-on-surface-variant/30 hover:text-violet-400'}`}>
                     {skipped ? '⏸' : done ? '✓' : '○'}
                     {burstIds.has(task.id) && (
                       <span className="burst-ring absolute inset-[-6px] rounded-full border-2 border-emerald-400" />
                     )}
                   </button>
                   <div className="min-w-0 flex-1">
-                    <div className={`text-sm font-medium ${skipped ? 'text-slate-600 dark:text-slate-300' : done ? 'line-through text-slate-400 dark:text-slate-600' : 'text-slate-700 dark:text-slate-200'}`}>{task.title}</div>
-                    {task.description && <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 truncate">{task.description}</div>}
+                    <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : done ? 'line-through text-on-surface-variant/40' : 'text-on-surface'}`}>{task.title}</div>
+                    {task.description && <div className="text-xs text-on-surface-variant mt-0.5 truncate">{task.description}</div>}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      {skipped && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">Skipped today</span>}
+                      {skipped && <span className="text-[10px] font-semibold text-amber-400">Skipped today</span>}
                       {!skipped && task.time && (
-                        <span className="text-[10px] text-slate-600 dark:text-slate-300">
+                        <span className="text-[10px] text-on-surface-variant">
                           ⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}
                         </span>
                       )}
@@ -848,16 +848,16 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     </div>
                   </div>
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button onClick={() => startEditTask(task)} className="p-1.5 rounded-lg text-xs text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all">✏</button>
+                    <button onClick={() => startEditTask(task)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipTask(task.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
-                      className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>⏸</button>
+                      className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
                     {confirmDeleteId === task.id ? (
                       <>
                         <button onClick={() => { onDeleteTask(task.id); setConfirmDeleteId(null) }} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+                        <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
                       </>
                     ) : (
-                      <button onClick={() => setConfirmDeleteId(task.id)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
+                      <button onClick={() => setConfirmDeleteId(task.id)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
                     )}
                   </div>
                 </div>
@@ -868,14 +868,14 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
       </div>
 
       <div className="glass card-lift rounded-2xl border overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center justify-between">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200">Habits</h3>
-          <span className="text-xs text-slate-600 dark:text-slate-300">{habits.filter(h => h.completions.some(c => c.date === date)).length}/{habits.length} done</span>
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center justify-between">
+          <h3 className="font-semibold text-on-surface">Habits</h3>
+          <span className="text-xs text-on-surface-variant">{habits.filter(h => h.completions.some(c => c.date === date)).length}/{habits.length} done</span>
         </div>
         {habits.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-600 dark:text-slate-300 text-center">No habits scheduled this day</p>
+          <p className="px-4 py-6 text-sm text-on-surface-variant text-center">No habits scheduled this day</p>
         ) : (
-          <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+          <div className="divide-y divide-outline-variant/40">
             {habits.map(habit => {
               const isEditingHabit = editState?.type === 'habit' && editState.habit.id === habit.id
               if (isEditingHabit && editState.type === 'habit') {
@@ -884,23 +884,23 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
               const done = habit.completions.some(c => c.date === date)
               const skipped = habit.skips?.some(s => s.date === date)
               return (
-                <div key={habit.id} className={`flex items-center gap-3 px-4 py-3 group transition-colors ${skipped ? 'bg-amber-50/60 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
+                <div key={habit.id} className={`flex items-center gap-3 px-4 py-3 group transition-colors ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
                   <button onClick={() => { if (!skipped) { if (!done) triggerBurst(habit.id + 100000); onToggleHabit(habit.id, date) } }} disabled={!!skipped}
-                    className={`relative text-lg leading-none shrink-0 ${skipped ? 'text-amber-300 cursor-not-allowed' : done ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600 hover:text-emerald-400'}`}>
+                    className={`relative text-lg leading-none shrink-0 ${skipped ? 'text-amber-300 cursor-not-allowed' : done ? 'text-emerald-500' : 'text-on-surface-variant/30 hover:text-emerald-400'}`}>
                     {skipped ? '⏸' : done ? '✓' : '○'}
                     {burstIds.has(habit.id + 100000) && (
                       <span className="burst-ring absolute inset-[-6px] rounded-full border-2 border-emerald-400" />
                     )}
                   </button>
                   <div className="min-w-0 flex-1">
-                    <div className={`text-sm font-medium ${skipped ? 'text-slate-600 dark:text-slate-300' : done ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200'}`}>{habit.name}</div>
-                    {skipped && <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">Skipped today</div>}
-                    {habit.description && !skipped && <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{habit.description}</div>}
+                    <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : done ? 'text-emerald-400' : 'text-on-surface'}`}>{habit.name}</div>
+                    {skipped && <div className="text-[10px] font-semibold text-amber-400 mt-0.5">Skipped today</div>}
+                    {habit.description && !skipped && <div className="text-xs text-on-surface-variant mt-0.5">{habit.description}</div>}
                   </div>
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <button onClick={() => startEditHabit(habit)} className="p-1.5 rounded-lg text-xs text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all">✏</button>
+                    <button onClick={() => startEditHabit(habit)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipHabit(habit.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
-                      className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>⏸</button>
+                      className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
                   </div>
                 </div>
               )
@@ -944,11 +944,11 @@ function NoteEditor({ date, note, onSave }: { date: string; note: string; onSave
 
   return (
     <div className="glass card-lift rounded-2xl border overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center gap-2">
+      <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
         <span className="text-amber-400 text-sm">📝</span>
-        <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Note</h3>
+        <h3 className="font-semibold text-on-surface text-sm">Note</h3>
         <span className="ml-auto text-[10px] font-medium transition-colors">
-          {saveStatus === 'saving' && <span className="text-slate-600 dark:text-slate-300">Saving…</span>}
+          {saveStatus === 'saving' && <span className="text-on-surface-variant">Saving…</span>}
           {saveStatus === 'saved'  && <span className="text-emerald-500">Saved ✓</span>}
         </span>
       </div>
@@ -958,7 +958,7 @@ function NoteEditor({ date, note, onSave }: { date: string; note: string; onSave
         onBlur={handleBlur}
         placeholder="Add a note for this day..."
         rows={3}
-        className="w-full px-4 py-3 text-sm text-slate-700 dark:text-slate-200 bg-transparent placeholder-white/70 resize-none outline-none"
+        className="w-full px-4 py-3 text-sm text-on-surface bg-transparent placeholder-white/70 resize-none outline-none"
       />
     </div>
   )
@@ -1024,21 +1024,21 @@ function TimePickerInput({ value, onChange, label }: { value: string; onChange: 
     setAp(next); commit(h, m, next)
   }
 
-  const fieldCls = "w-7 text-sm py-2 bg-transparent text-slate-700 dark:text-slate-200 placeholder-white/70 outline-none text-center font-mono"
+  const fieldCls = "w-7 text-sm py-2 bg-transparent text-on-surface placeholder-white/70 outline-none text-center font-mono"
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 text-center">{label}</span>
+      <span className="text-[10px] font-semibold text-on-surface-variant text-center">{label}</span>
       <div className="flex items-center gap-1">
-        <div className="flex items-center px-1 rounded-xl border border-slate-200 dark:border-violet-700 bg-slate-50 dark:bg-white/[0.04] focus-within:border-violet-400 dark:focus-within:border-violet-500 transition-colors">
+        <div className="flex items-center px-1 rounded-xl border border-outline-variant bg-surface-container-lowest focus-within:border-violet-500 transition-colors">
           <input ref={hourRef} type="text" inputMode="numeric" value={h} onChange={handleHour}
             placeholder="--" className={fieldCls} />
-          <span className="text-slate-600 dark:text-slate-300 font-bold text-sm select-none">:</span>
+          <span className="text-on-surface-variant font-bold text-sm select-none">:</span>
           <input ref={minRef} type="text" inputMode="numeric" value={m} onChange={handleMin}
             onKeyDown={handleMinKeyDown} placeholder="--" className={fieldCls} />
         </div>
         <button type="button" onClick={toggleAp}
-          className="text-[11px] font-bold px-1.5 py-2 rounded-xl border border-slate-200 dark:border-violet-700 bg-slate-50 dark:bg-white/[0.04] text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors w-10 text-center">
+          className="text-[11px] font-bold px-1.5 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-violet-400 hover:bg-violet-500/10 transition-colors w-10 text-center">
           {ap}
         </button>
       </div>
@@ -1063,15 +1063,15 @@ function QuickAddTask({ date, onAdd }: { date: string; onAdd: (title: string, da
 
   return (
     <form onSubmit={submit} className="glass card-lift rounded-2xl border overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700">
-        <h3 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Add Task</h3>
+      <div className="px-4 py-3 border-b border-outline-variant/40">
+        <h3 className="font-semibold text-on-surface text-sm">Add Task</h3>
       </div>
       <div className="p-3 space-y-2">
         <input type="text" value={value} onChange={e => setValue(e.target.value)} placeholder="Task name..."
-          className="w-full text-sm px-3 py-2 rounded-xl border border-slate-200 dark:border-violet-700 bg-slate-50 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 placeholder-white/70 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors" />
+          className="w-full text-sm px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface placeholder-white/70 outline-none focus:border-violet-500 transition-colors" />
         <div className="flex items-end gap-2">
           <TimePickerInput value={startTime} onChange={setStartTime} label="Start" />
-          <span className="text-slate-300 dark:text-slate-600 text-xs pb-2.5">→</span>
+          <span className="text-on-surface-variant/30 text-xs pb-2.5">→</span>
           <TimePickerInput value={endTime} onChange={setEndTime} label="End" />
           <button type="submit" disabled={!value.trim() || loading}
             className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
@@ -1100,20 +1100,20 @@ function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTas
   const isToday = date === today()
   const isFuture = date > today()
   return (
-    <div className="fixed inset-0 bg-black/20 dark:bg-black/40 z-[999] flex items-end sm:items-start justify-center p-0 sm:p-4 sm:pt-24"
+    <div className="fixed inset-0 bg-black/20 z-[999] flex items-end sm:items-start justify-center p-0 sm:p-4 sm:pt-24"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="glass rounded-t-2xl sm:rounded-2xl border w-full sm:max-w-lg max-h-[90vh] sm:max-h-[calc(100vh-7rem)] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-50 dark:border-violet-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant/40">
           <div>
-            <div className="text-xs text-slate-600 dark:text-slate-300 font-medium uppercase tracking-wide">{WEEKDAYS[d.getDay()]}</div>
-            <div className="font-bold text-slate-800 dark:text-slate-100">
+            <div className="text-xs text-on-surface-variant font-medium uppercase tracking-wide">{WEEKDAYS[d.getDay()]}</div>
+            <div className="font-bold text-on-surface">
               {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
-              {isToday && <span className="ml-2 text-xs font-semibold text-violet-600 bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded-full">Today</span>}
+              {isToday && <span className="ml-2 text-xs font-semibold text-violet-600 bg-violet-500/20 px-2 py-0.5 rounded-full">Today</span>}
             </div>
           </div>
           <div className="flex items-center gap-3">
             {score && !isFuture && <DayScoreWheel score={score} />}
-            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl text-base font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/[0.08] hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">✕</button>
+            <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl text-base font-bold text-on-surface-variant bg-surface-container hover:text-rose-500 hover:bg-rose-500/15 transition-colors">✕</button>
           </div>
         </div>
         <div className="overflow-y-auto p-4 space-y-4 flex-1">

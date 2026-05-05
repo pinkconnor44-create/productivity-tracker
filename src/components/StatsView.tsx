@@ -65,8 +65,8 @@ function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; 
   if (data.length === 0) return (
     <div className="flex flex-col items-center justify-center h-40 gap-2">
       <span className="text-2xl">📊</span>
-      <p className="text-sm text-slate-600 dark:text-slate-300">No data yet</p>
-      <p className="text-xs text-slate-300 dark:text-slate-600 text-center max-w-[220px]">Complete tasks and habits to start seeing your trend here.</p>
+      <p className="text-sm text-on-surface-variant">No data yet</p>
+      <p className="text-xs text-on-surface-variant/30 text-center max-w-[220px]">Complete tasks and habits to start seeing your trend here.</p>
     </div>
   )
 
@@ -104,8 +104,8 @@ function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; 
         const y = yOf(pct)
         return (
           <g key={pct}>
-            <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" className="text-slate-900 dark:text-slate-300" />
-            <text x={PL-4} y={y+4} textAnchor="end" fontSize="8" fill="currentColor" className="text-slate-600 dark:text-slate-300" fillOpacity="0.7">{pct}%</text>
+            <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" className="text-on-surface-variant/40" />
+            <text x={PL-4} y={y+4} textAnchor="end" fontSize="8" fill="currentColor" className="text-on-surface-variant" fillOpacity="0.7">{pct}%</text>
           </g>
         )
       })}
@@ -148,7 +148,7 @@ function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; 
         const prevLabel = arr.find(a => a !== p && Math.abs(a.x - p.x) < 40)
         if (isLast && prevLabel) return null
         return (
-          <text key={p.date} x={p.x} y={H-4} textAnchor="middle" fontSize="7.5" fill="currentColor" fillOpacity="0.55" className="text-slate-600 dark:text-slate-400">
+          <text key={p.date} x={p.x} y={H-4} textAnchor="middle" fontSize="7.5" fill="currentColor" fillOpacity="0.55" className="text-on-surface-variant/60">
             {formatLabel(p.date)}
           </text>
         )
@@ -159,10 +159,10 @@ function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; 
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-4 shadow-sm">
-      <div className="text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-2xl font-bold font-mono ${value === '—' ? 'text-slate-300 dark:text-slate-600' : 'gradient-text'}`}>{value}</div>
-      {sub && <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{sub}</div>}
+    <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
+      <div className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">{label}</div>
+      <div className={`text-2xl font-bold font-mono ${value === '—' ? 'text-on-surface-variant/30' : 'gradient-text'}`}>{value}</div>
+      {sub && <div className="text-xs text-on-surface-variant mt-0.5">{sub}</div>}
     </div>
   )
 }
@@ -212,27 +212,27 @@ export default function StatsView() {
       {/* Range selector */}
       <div className="flex items-center justify-between">
         <h2 className="font-bold gradient-text">Trends</h2>
-        <div className="flex bg-slate-100/80 dark:bg-white/[0.05] rounded-xl p-0.5 gap-0.5">
+        <div className="flex bg-surface-container-low/80 rounded-xl p-0.5 gap-0.5">
           {(['30','90','365'] as Range[]).map(r => (
             <button key={r} onClick={() => setRange(r)}
               className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
-                range===r ? 'bg-white dark:bg-white/10 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-slate-600 dark:text-slate-300 hover:text-slate-700 dark:hover:text-slate-200'
+                range===r ? 'bg-surface-container text-violet-400 shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
               }`}>{r}d</button>
           ))}
         </div>
       </div>
 
       {/* Chart */}
-      <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-4 shadow-sm">
-        <div className="text-xs font-medium text-slate-600 dark:text-slate-300 mb-3 uppercase tracking-wide">
+      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
+        <div className="text-xs font-medium text-on-surface-variant mb-3 uppercase tracking-wide">
           Daily completion % — last {range} days
         </div>
         {loading ? (
-          <div className="flex items-center justify-center h-40 text-slate-600 dark:text-slate-300 text-sm">Loading...</div>
+          <div className="flex items-center justify-center h-40 text-on-surface-variant text-sm">Loading...</div>
         ) : (
           <TrendChart data={chartData} onHover={setChartTip} />
         )}
-        <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-600 dark:text-slate-300">
+        <div className="flex items-center gap-4 mt-2 text-[10px] text-on-surface-variant">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>≥80%</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-600 inline-block"/>50–79%</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block"/>&lt;50%</span>
@@ -249,8 +249,8 @@ export default function StatsView() {
 
       {/* Completion breakdown */}
       {activeDays.length > 0 && (
-        <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3">Breakdown</div>
+        <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
+          <div className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-3">Breakdown</div>
           <div className="space-y-2">
             {(['80','50','0'] as const).map((threshold,i) => {
               const labels = ['Great days (≥80%)', 'Good days (50–79%)', 'Tough days (<50%)']
@@ -264,11 +264,11 @@ export default function StatsView() {
               const pct = Math.round((count/activeDays.length)*100)
               return (
                 <div key={threshold} className="flex items-center gap-3">
-                  <div className="text-xs text-slate-600 dark:text-slate-300 w-36 shrink-0">{labels[i]}</div>
-                  <div className="flex-1 bg-slate-100 dark:bg-white/[0.06] rounded-full h-2 overflow-hidden">
+                  <div className="text-xs text-on-surface-variant w-36 shrink-0">{labels[i]}</div>
+                  <div className="flex-1 bg-surface-container-low rounded-full h-2 overflow-hidden">
                     <div className={`h-full rounded-full ${colors[i]}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 w-8 text-right">{count}d</div>
+                  <div className="text-xs font-semibold text-on-surface-variant w-8 text-right">{count}d</div>
                 </div>
               )
             })}
@@ -279,7 +279,7 @@ export default function StatsView() {
       {chartTip && (
         <div className="fixed z-50 pointer-events-none"
           style={{ left: chartTip.x, top: chartTip.y - 10, transform: 'translate(-50%, -100%)' }}>
-          <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+          <div className="bg-surface-container border border-outline-variant text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
             {chartTip.text}
           </div>
         </div>

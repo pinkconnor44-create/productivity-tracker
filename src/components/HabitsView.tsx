@@ -17,9 +17,9 @@ const SCHEDULE_PRESETS = [
   { label: 'Weekends',  value: '0,6' },
   { label: 'Custom',    value: 'custom' },
 ]
-const W_BORDER = ['','border-l-slate-200 dark:border-l-white/[0.06]','border-l-blue-400','border-l-orange-400']
+const W_BORDER = ['','border-l-outline-variant/60','border-l-blue-400','border-l-orange-400']
 const W_LABEL  = ['','Normal','Important','Critical']
-const W_COLOR  = ['','text-slate-600 dark:text-slate-300','text-blue-500','text-orange-500']
+const W_COLOR  = ['','text-on-surface-variant','text-blue-500','text-orange-500']
 
 function today(): string {
   const n = new Date()
@@ -121,21 +121,21 @@ function WeightPicker({ value, onChange }: { value: number; onChange: (w: number
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">Weight</span>
-        <div className="flex bg-slate-100 dark:bg-white/[0.05] rounded-lg p-0.5 gap-0.5">
+        <span className="text-[11px] text-on-surface-variant font-medium">Weight</span>
+        <div className="flex bg-surface-container-low rounded-lg p-0.5 gap-0.5">
           {[1,2,3].map(w => (
             <button key={w} type="button" onClick={() => onChange(w)} title={labels[w]}
               className={`w-6 h-5 rounded-md text-[11px] font-bold transition-all ${
                 value === w
-                  ? w === 1 ? 'bg-white dark:bg-white/10 text-slate-500 shadow-sm'
+                  ? w === 1 ? 'bg-surface-container text-on-surface-variant/70 shadow-sm'
                   : w === 2 ? 'bg-blue-500 text-white shadow-sm'
                   : 'bg-orange-500 text-white shadow-sm'
-                  : 'text-slate-300 dark:text-slate-600 hover:text-slate-500'
+                  : 'text-on-surface-variant/30 hover:text-on-surface-variant/70'
               }`}>{w}</button>
           ))}
         </div>
       </div>
-      <span className="text-[10px] text-slate-300 dark:text-slate-600">{descriptions[value]}</span>
+      <span className="text-[10px] text-on-surface-variant/30">{descriptions[value]}</span>
     </div>
   )
 }
@@ -226,25 +226,25 @@ export default function HabitsView() {
       {/* Add habit */}
       {!showForm ? (
         <button onClick={() => setShowForm(true)}
-          className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-white dark:bg-[#16161e] border border-dashed border-slate-200 dark:border-white/[0.1] rounded-2xl text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-500/50 transition-all text-sm font-medium group">
-          <span className="w-5 h-5 rounded-md border-2 border-slate-200 dark:border-violet-700 flex items-center justify-center text-slate-300 dark:text-slate-600 group-hover:border-violet-400 group-hover:text-violet-400 transition-colors text-xs font-bold">+</span>
+          className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-surface-container border border-dashed border-outline-variant rounded-2xl text-on-surface-variant/60 hover:text-violet-400 hover:border-violet-300/50 transition-all text-sm font-medium group">
+          <span className="w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-on-surface-variant/30 group-hover:border-violet-400 group-hover:text-violet-400 transition-colors text-xs font-bold">+</span>
           New habit
         </button>
       ) : (
         <form onSubmit={createHabit} className="glass rounded-2xl border p-4 space-y-3">
           <input autoFocus type="text" placeholder="Habit name (e.g. Workout, Read, Meditate)" value={form.name}
             onChange={e => setField('name',e.target.value)}
-            className="w-full text-sm font-medium bg-transparent border-0 outline-none text-slate-800 dark:text-slate-100 placeholder-white/70 p-0" />
+            className="w-full text-sm font-medium bg-transparent border-0 outline-none text-on-surface placeholder-white/70 p-0" />
           <input type="text" placeholder="Description (optional)" value={form.description}
             onChange={e => setField('description',e.target.value)}
-            className="w-full text-sm bg-transparent border-0 outline-none text-slate-600 dark:text-slate-300 placeholder-white/70 p-0" />
-          <div className="border-t border-slate-50 dark:border-violet-700 pt-2 space-y-2">
-            <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Schedule</p>
+            className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
+          <div className="border-t border-outline-variant/40 pt-2 space-y-2">
+            <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
             <div className="flex flex-wrap gap-1">
               {SCHEDULE_PRESETS.map(p => (
                 <button key={String(p.value)} type="button" onClick={() => setField('schedulePreset',p.value)}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
-                    form.schedulePreset===p.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'
+                    form.schedulePreset===p.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
                   }`}>{p.label}</button>
               ))}
             </div>
@@ -253,22 +253,22 @@ export default function HabitsView() {
                 <div className="flex gap-1">
                   {DAY_NAMES.map((d,i) => (
                     <button key={i} type="button" onClick={() => toggleCustomDay(i)}
-                      className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.customDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300'}`}>
+                      className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.customDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                       {d[0]}
                     </button>
                   ))}
                 </div>
                 {form.customDays.length === 0 && (
-                  <p className="text-[10px] text-amber-500 dark:text-amber-400">Select at least one day.</p>
+                  <p className="text-[10px] text-amber-500">Select at least one day.</p>
                 )}
               </>
             )}
           </div>
-          <div className="flex items-center justify-between border-t border-slate-50 dark:border-violet-700 pt-2">
+          <div className="flex items-center justify-between border-t border-outline-variant/40 pt-2">
             <WeightPicker value={form.weight} onChange={v => setField('weight',v)} />
             <div className="flex gap-2">
               <button type="button" onClick={() => { setShowForm(false); setForm(blankForm()) }}
-                className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-all">Cancel</button>
+                className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
               <button type="submit" disabled={!form.name.trim()||submitting||(form.schedulePreset==='custom'&&form.customDays.length===0)}
                 className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Add Habit</button>
             </div>
@@ -278,9 +278,9 @@ export default function HabitsView() {
 
       {/* Habit list */}
       {habits.length === 0 ? (
-        <div className="text-center py-16 text-slate-600 dark:text-slate-300">
-          <div className="w-14 h-14 bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">🔄</div>
-          <p className="font-semibold text-slate-600 dark:text-slate-400">No habits yet</p>
+        <div className="text-center py-16 text-on-surface-variant">
+          <div className="w-14 h-14 bg-surface-container rounded-2xl border border-outline-variant/40 flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">🔄</div>
+          <p className="font-semibold text-on-surface-variant/60">No habits yet</p>
           <p className="text-sm mt-1">Build your routine by adding your first habit.</p>
         </div>
       ) : (
@@ -289,11 +289,11 @@ export default function HabitsView() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Today's Habits</span>
-                <span className="ml-auto text-[10px] text-slate-600 dark:text-slate-300 font-medium">{activeToday.filter(h => h.completions.some(c => c.date===todayStr)).length}/{activeToday.length}</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Today's Habits</span>
+                <span className="ml-auto text-[10px] text-on-surface-variant font-medium">{activeToday.filter(h => h.completions.some(c => c.date===todayStr)).length}/{activeToday.length}</span>
               </div>
               <div className={card}>
-                <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+                <div className="divide-y divide-outline-variant/40">
                   {activeToday.map(habit =>
                     editingId === habit.id
                       ? <InlineHabitEditor key={habit.id} habit={habit} onSave={saveHabit} onCancel={() => setEditingId(null)} />
@@ -307,20 +307,20 @@ export default function HabitsView() {
           {notToday.length > 0 && (
             <div className="opacity-50">
               <div className="flex items-center gap-2 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Not Today</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/30 shrink-0" />
+                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Not Today</span>
               </div>
               <div className={card}>
-                <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+                <div className="divide-y divide-outline-variant/40">
                   {notToday.map(habit =>
                     editingId === habit.id
                       ? <InlineHabitEditor key={habit.id} habit={habit} onSave={saveHabit} onCancel={() => setEditingId(null)} />
                       : (
-                        <div key={habit.id} className="flex items-center gap-3 pl-0 pr-4 py-3 group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors border-l-[3px] border-l-transparent">
-                          <div className="ml-4 shrink-0 w-7 h-7 rounded-xl border-2 border-slate-100 dark:border-violet-700 flex items-center justify-center text-slate-300 dark:text-slate-600 text-xs">—</div>
+                        <div key={habit.id} className="flex items-center gap-3 pl-0 pr-4 py-3 group hover:bg-surface-container-low transition-colors border-l-[3px] border-l-transparent">
+                          <div className="ml-4 shrink-0 w-7 h-7 rounded-xl border-2 border-outline-variant/40 flex items-center justify-center text-on-surface-variant/30 text-xs">—</div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-slate-600 dark:text-slate-300">{habit.name}</div>
-                            <div className="text-[10px] text-slate-600 dark:text-slate-300 mt-0.5">{scheduleLabel(habit.recurringDays)}</div>
+                            <div className="text-sm font-medium text-on-surface-variant">{habit.name}</div>
+                            <div className="text-[10px] text-on-surface-variant mt-0.5">{scheduleLabel(habit.recurringDays)}</div>
                           </div>
                           <AllHabitsRowActions onEdit={() => setEditingId(habit.id)} onDelete={() => deleteHabit(habit.id)} />
                         </div>
@@ -334,8 +334,8 @@ export default function HabitsView() {
       )}
 
       {habits.length > 0 && (
-        <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-4 text-xs text-slate-600 dark:text-slate-300">
-          <p className="font-semibold text-slate-600 dark:text-slate-300 mb-1">How scoring works</p>
+        <div className="bg-surface-container rounded-2xl border border-outline-variant/40 p-4 text-xs text-on-surface-variant">
+          <p className="font-semibold text-on-surface-variant mb-1">How scoring works</p>
           <p className="leading-relaxed">Each task and habit counts toward your score by its weight (1–3). Your score is the % of weighted points earned vs. scheduled.</p>
         </div>
       )}
@@ -365,38 +365,38 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
   }, [habit.completions, habit.recurringDays, habit.createdAt])
 
   return (
-    <div className={`flex items-center gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-50/60 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
+    <div className={`flex items-center gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
       <button onClick={() => !skipped && onToggle(habit.id)} disabled={!!skipped}
         className={`ml-4 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-          skipped ? 'border-amber-200 dark:border-violet-700 bg-amber-50 dark:bg-amber-900/20 cursor-not-allowed'
+          skipped ? 'border-amber-500/30 bg-amber-500/15 cursor-not-allowed'
           : habit.completions.some(c=>c.date===date) ? 'bg-emerald-500 border-emerald-500 text-white'
-          : 'border-slate-200 dark:border-violet-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'
+          : 'border-outline-variant hover:border-emerald-400 hover:bg-emerald-500/15'
         }`}>
         {!skipped && habit.completions.some(c=>c.date===date) && <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
       <button onClick={onSelect} className="flex-1 min-w-0 text-left">
-        <div className={`text-sm font-medium ${skipped ? 'text-slate-600 dark:text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>{habit.name}</div>
+        <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : 'text-on-surface'}`}>{habit.name}</div>
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           {skipped
-            ? <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-700/40">⏸ Excused today</span>
+            ? <span className="text-[11px] font-semibold text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-700/40">⏸ Excused today</span>
             : <>
                 {streak > 0 && (
-                  <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-md border border-orange-200 dark:border-orange-700/40">
+                  <span className="text-[11px] font-bold text-orange-400 bg-orange-500/15 px-2 py-0.5 rounded-md border border-orange-700/40">
                     🔥 {streak}d
                   </span>
                 )}
-                <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md border border-violet-200 dark:border-violet-700/40">
+                <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
                   {rowStats.w7.done}/{rowStats.w7.scheduled} wk
                 </span>
-                <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md border border-violet-200 dark:border-violet-700/40">
+                <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
                   {rowStats.w30.done}/{rowStats.w30.scheduled} mo
                 </span>
-                <span className="text-[11px] font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md border border-violet-200 dark:border-violet-700/40">
+                <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
                   {rowStats.all.done}/{rowStats.all.scheduled} all
                 </span>
                 {w > 1 && <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
-                  w === 2 ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/40'
-                          : 'text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/40'
+                  w === 2 ? 'text-blue-300 bg-blue-500/15 border-blue-700/40'
+                          : 'text-orange-300 bg-orange-500/15 border-orange-700/40'
                 }`}>{W_LABEL[w]}</span>}
               </>
           }
@@ -405,16 +405,16 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {onSkip && (
           <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
-            className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20 opacity-100' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>⏸</button>
+            className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
         )}
-        <button onClick={onEdit} className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-xs">✏</button>
+        <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
         {confirming ? (
           <>
             <button onClick={() => onDelete(habit.id)} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-            <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+            <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
           </>
         ) : (
-          <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
+          <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
         )}
       </div>
     </div>
@@ -426,14 +426,14 @@ function AllHabitsRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelet
   const [confirming, setConfirming] = useState(false)
   return (
     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-      <button onClick={onEdit} className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-xs">✏</button>
+      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
       {confirming ? (
         <>
           <button onClick={onDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
         </>
       ) : (
-        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
+        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       )}
     </div>
   )
@@ -454,19 +454,19 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#16161e] rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-100 dark:border-violet-700">
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-violet-700">
+      <div className="relative w-full sm:max-w-lg bg-surface-container rounded-t-3xl sm:rounded-2xl shadow-2xl border border-outline-variant/40">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-outline-variant/40">
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 truncate">{habit.name}</h2>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{scheduleLabel(habit.recurringDays)}</p>
+            <h2 className="text-base font-bold text-on-surface truncate">{habit.name}</h2>
+            <p className="text-[11px] text-on-surface-variant/50 mt-0.5">{scheduleLabel(habit.recurringDays)}</p>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-sm font-bold">
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant/50 hover:text-on-surface-variant transition-colors text-sm font-bold">
             ✕
           </button>
         </div>
         <div className="px-5 py-4">
-          <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-3">
+          <p className="text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wide mb-3">
             Weekly completion %
           </p>
           <WeeklyCompletionChart data={weeklyData} />
@@ -480,7 +480,7 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
 
   if (data.length < 2) return (
-    <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">Not enough data yet — check back after a few weeks</div>
+    <div className="py-8 text-center text-xs text-on-surface-variant/50">Not enough data yet — check back after a few weeks</div>
   )
 
   const W = 300, H = 130
@@ -509,10 +509,10 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
         {[0, 50, 100].map(v => (
           <line key={v} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
             stroke="currentColor" strokeWidth="0.5"
-            className="text-slate-100 dark:text-white/[0.06]" strokeDasharray="3 3" />
+            className="text-on-surface-variant/[0.08]" strokeDasharray="3 3" />
         ))}
         {[0, 50, 100].map(v => (
-          <text key={v} x={PAD.left - 4} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+          <text key={v} x={PAD.left - 4} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-on-surface-variant/40">
             {v}%
           </text>
         ))}
@@ -532,7 +532,7 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
           </g>
         ))}
         {labelIndices.map(i => (
-          <text key={i} x={cx(i)} y={H - 4} textAnchor="middle" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+          <text key={i} x={cx(i)} y={H - 4} textAnchor="middle" fontSize="9" className="fill-on-surface-variant/40">
             {data[i].weekLabel}
           </text>
         ))}
@@ -540,7 +540,7 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
       {tooltip && (
         <div className="fixed z-[60] pointer-events-none"
           style={{ left: tooltip.x, top: tooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
-          <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+          <div className="bg-surface-container border border-outline-variant text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
             {tooltip.text}
           </div>
         </div>
@@ -575,17 +575,17 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-violet-50/50 dark:bg-violet-900/10 border-l-[3px] border-l-violet-400">
+    <div className="px-4 py-3 space-y-3 bg-violet-500/10 border-l-[3px] border-l-violet-400">
       <input autoFocus type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Habit name"
-        className="w-full text-sm font-medium bg-transparent border-0 outline-none text-slate-800 dark:text-slate-100 placeholder-white/70 p-0" />
+        className="w-full text-sm font-medium bg-transparent border-0 outline-none text-on-surface placeholder-white/70 p-0" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description"
-        className="w-full text-sm bg-transparent border-0 outline-none text-slate-600 dark:text-slate-300 placeholder-white/70 p-0" />
-      <div className="border-t border-violet-100 dark:border-violet-700 pt-2 space-y-2">
-        <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">Schedule</p>
+        className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
+      <div className="border-t border-violet-500/30 pt-2 space-y-2">
+        <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
         <div className="flex flex-wrap gap-1">
           {SCHEDULE_PRESETS.map(p => (
             <button key={String(p.value)} type="button" onClick={() => setSchedulePreset(p.value)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${schedulePreset===p.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-white dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10'}`}>
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${schedulePreset===p.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
               {p.label}
             </button>
           ))}
@@ -595,21 +595,21 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
             <div className="flex gap-1">
               {DAY_NAMES.map((d,i) => (
                 <button key={i} type="button" onClick={() => toggleCustomDay(i)}
-                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${customDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-white dark:bg-white/[0.05] text-slate-600 dark:text-slate-300'}`}>
+                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${customDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                   {d[0]}
                 </button>
               ))}
             </div>
             {customDays.length === 0 && (
-              <p className="text-[10px] text-amber-500 dark:text-amber-400">Select at least one day.</p>
+              <p className="text-[10px] text-amber-500">Select at least one day.</p>
             )}
           </>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-violet-100 dark:border-violet-700 pt-2">
+      <div className="flex items-center justify-between border-t border-violet-500/30 pt-2">
         <WeightPicker value={weight} onChange={setWeight} />
         <div className="flex gap-2">
-          <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-white dark:hover:bg-white/[0.05] transition-all">Cancel</button>
+          <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
           <button type="button" onClick={handleSave} disabled={!name.trim()||(schedulePreset==='custom'&&customDays.length===0)} className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>
         </div>
       </div>

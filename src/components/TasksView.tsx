@@ -20,10 +20,10 @@ const RECURRING_TYPES = [
 ]
 
 // Weight styling
-const W_BORDER = ['','border-l-slate-200 dark:border-l-white/[0.06]','border-l-blue-400','border-l-orange-400']
+const W_BORDER = ['','border-l-outline-variant/60','border-l-blue-400','border-l-orange-400']
 const W_LABEL  = ['','Normal','Important','Critical']
-const W_COLOR  = ['','text-slate-600 dark:text-slate-300','text-blue-500','text-orange-500']
-const W_BG     = ['','bg-slate-50 dark:bg-white/[0.03]','bg-blue-50 dark:bg-blue-900/20','bg-orange-50 dark:bg-orange-900/20']
+const W_COLOR  = ['','text-on-surface-variant','text-blue-500','text-orange-500']
+const W_BG     = ['','bg-surface-container-lowest','bg-blue-500/15','bg-orange-500/15']
 
 function today(): string {
   const n = new Date()
@@ -78,7 +78,7 @@ function TimeInput({ value, onChange, placeholder = 'e.g. 9a' }: {
   return (
     <input type="text" value={text} onChange={e => setText(e.target.value)} onBlur={handleBlur}
       placeholder={placeholder}
-      className="text-[11px] text-slate-600 dark:text-slate-300 bg-transparent border-0 outline-none w-16" />
+      className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none w-16" />
   )
 }
 function groupTasks(tasks: Task[]) {
@@ -107,17 +107,17 @@ const card = 'glass card-lift rounded-2xl border overflow-hidden'
 function WeightPicker({ value, onChange }: { value: number; onChange: (w: number) => void }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">Weight</span>
-      <div className="flex bg-slate-100 dark:bg-white/[0.05] rounded-lg p-0.5 gap-0.5">
+      <span className="text-[11px] text-on-surface-variant font-medium">Weight</span>
+      <div className="flex bg-surface-container-low rounded-lg p-0.5 gap-0.5">
         {[1,2,3].map(w => (
           <button key={w} type="button" onClick={() => onChange(w)}
             title={W_LABEL[w]}
             className={`w-6 h-5 rounded-md text-[11px] font-bold transition-all ${
               value === w
-                ? w === 1 ? 'bg-white dark:bg-white/10 text-slate-500 shadow-sm'
+                ? w === 1 ? 'bg-surface-container text-on-surface-variant/70 shadow-sm'
                 : w === 2 ? 'bg-blue-500 text-white shadow-sm'
                 : 'bg-orange-500 text-white shadow-sm'
-                : 'text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400'
+                : 'text-on-surface-variant/30 hover:text-on-surface-variant/70'
             }`}>{w}</button>
         ))}
       </div>
@@ -216,10 +216,10 @@ export default function TasksView() {
 
   const groupConfig = [
     { key:'overdue',   label:'Overdue',    color:'text-rose-500',   dot:'bg-rose-400' },
-    { key:'today',     label:'Today',      color:'text-violet-600 dark:text-violet-400', dot:'bg-violet-500' },
-    { key:'thisWeek',  label:'This Week',  color:'text-blue-600 dark:text-blue-400',    dot:'bg-blue-400' },
-    { key:'later',     label:'Later',      color:'text-slate-500',  dot:'bg-slate-300 dark:bg-slate-600' },
-    { key:'noDueDate', label:'Someday',    color:'text-slate-400',  dot:'bg-slate-200 dark:bg-slate-700' },
+    { key:'today',     label:'Today',      color:'text-violet-400', dot:'bg-violet-500' },
+    { key:'thisWeek',  label:'This Week',  color:'text-blue-400',    dot:'bg-blue-400' },
+    { key:'later',     label:'Later',      color:'text-on-surface-variant/70',  dot:'bg-on-surface-variant/30' },
+    { key:'noDueDate', label:'Someday',    color:'text-on-surface-variant/60',  dot:'bg-surface-container-high' },
   ]
 
   if (loading) return (
@@ -234,8 +234,8 @@ export default function TasksView() {
       {/* Add task */}
       {!showForm ? (
         <button onClick={() => setShowForm(true)}
-          className="w-full flex items-center gap-2.5 px-4 py-3.5 glass border border-dashed rounded-2xl text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 dark:hover:border-violet-500/50 transition-all text-sm font-medium group">
-          <span className="w-5 h-5 rounded-md border-2 border-slate-200 dark:border-violet-700 flex items-center justify-center text-slate-300 dark:text-slate-600 group-hover:border-violet-400 group-hover:text-violet-400 transition-colors text-xs font-bold">+</span>
+          className="w-full flex items-center gap-2.5 px-4 py-3.5 glass border border-dashed rounded-2xl text-on-surface-variant/60 hover:text-violet-400 hover:border-violet-300/50 transition-all text-sm font-medium group">
+          <span className="w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-on-surface-variant/30 group-hover:border-violet-400 group-hover:text-violet-400 transition-colors text-xs font-bold">+</span>
           New task
         </button>
       ) : (
@@ -244,33 +244,33 @@ export default function TasksView() {
 
       {/* Recurring today */}
       {activeRecurringToday.length > 0 && (
-        <Section label="Recurring · Today" dot="bg-violet-500" color="text-violet-600 dark:text-violet-400" count={activeRecurringToday.filter(t => t.completions.some(c=>c.date===todayStr)).length} total={activeRecurringToday.length}>
+        <Section label="Recurring · Today" dot="bg-violet-500" color="text-violet-400" count={activeRecurringToday.filter(t => t.completions.some(c=>c.date===todayStr)).length} total={activeRecurringToday.length}>
           <div className={card}>
-            <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+            <div className="divide-y divide-outline-variant/40">
               {activeRecurringToday.map(task => {
                 if (editingId === task.id) return <InlineTaskEditor key={task.id} task={task} onSave={saveTask} onCancel={() => setEditingId(null)} />
                 const done = task.completions.some(c => c.date === todayStr)
                 const skipped = task.skips?.some(s => s.date === todayStr)
                 const w = task.weight ?? 1
                 return (
-                  <div key={task.id} className={`flex items-start gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-50/60 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
+                  <div key={task.id} className={`flex items-start gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
                     <button onClick={() => !skipped && toggleRecurringToday(task)} disabled={skipped}
                       className={`ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                        skipped ? 'border-amber-200 dark:border-violet-700 bg-amber-50 dark:bg-amber-900/20 cursor-not-allowed'
+                        skipped ? 'border-amber-500/30 bg-amber-500/15 cursor-not-allowed'
                         : done ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'border-slate-200 dark:border-violet-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+                        : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
                       }`}>
                       {!skipped && done && <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <div className={`text-sm font-medium ${skipped ? 'text-slate-600 dark:text-slate-300' : done ? 'line-through text-slate-300 dark:text-slate-600' : 'text-slate-800 dark:text-slate-100'}`}>{task.title}</div>
-                      {task.description && <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 truncate">{task.description}</div>}
+                      <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : done ? 'line-through text-on-surface-variant/30' : 'text-on-surface'}`}>{task.title}</div>
+                      {task.description && <div className="text-xs text-on-surface-variant mt-0.5 truncate">{task.description}</div>}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {skipped
-                          ? <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
-                          : <span className="text-[10px] text-violet-500 font-medium bg-violet-50 dark:bg-violet-900/20 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
+                          ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
+                          : <span className="text-[10px] text-violet-500 font-medium bg-violet-500/15 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
                         }
-                        {task.time && <span className="text-[10px] text-slate-600 dark:text-slate-300">⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
+                        {task.time && <span className="text-[10px] text-on-surface-variant">⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
                         {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
                     </div>
@@ -290,7 +290,7 @@ export default function TasksView() {
         return (
           <Section key={key} label={label} dot={dot} color={color} count={group.filter(t=>t.completed).length} total={group.length}>
             <div className={card}>
-              <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+              <div className="divide-y divide-outline-variant/40">
                 {group.map(task =>
                   editingId === task.id
                     ? <InlineTaskEditor key={task.id} task={task} onSave={saveTask} onCancel={() => setEditingId(null)} />
@@ -309,13 +309,13 @@ export default function TasksView() {
       {groups.completed.length > 0 && (
         <div>
           <button onClick={() => setShowCompleted(!showCompleted)}
-            className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-600 dark:hover:text-slate-300 mb-2.5 transition-colors">
+            className="flex items-center gap-2 text-xs font-semibold text-on-surface-variant hover:text-on-surface-variant mb-2.5 transition-colors">
             <span>{showCompleted ? '▾' : '▸'}</span>
             Completed ({groups.completed.length})
           </button>
           {showCompleted && (
             <div className={card}>
-              <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+              <div className="divide-y divide-outline-variant/40">
                 {groups.completed.map(task =>
                   editingId === task.id
                     ? <InlineTaskEditor key={task.id} task={task} onSave={saveTask} onCancel={() => setEditingId(null)} />
@@ -329,19 +329,19 @@ export default function TasksView() {
 
       {/* Other recurring */}
       {recurringTasks.filter(t => !activeRecurringToday.includes(t)).length > 0 && (
-        <Section label="Other Recurring" dot="bg-slate-300 dark:bg-slate-600" color="text-slate-600 dark:text-slate-300">
+        <Section label="Other Recurring" dot="bg-on-surface-variant/30" color="text-on-surface-variant">
           <div className={card}>
-            <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+            <div className="divide-y divide-outline-variant/40">
               {recurringTasks.filter(t => !activeRecurringToday.includes(t)).map(task => {
                 if (editingId === task.id) return <InlineTaskEditor key={task.id} task={task} onSave={saveTask} onCancel={() => setEditingId(null)} />
                 const w = task.weight ?? 1
                 return (
-                  <div key={task.id} className={`flex items-start gap-3 pl-0 pr-4 py-3 group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors border-l-[3px] ${W_BORDER[w]}`}>
-                    <div className="ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 border-slate-100 dark:border-violet-700 flex items-center justify-center text-slate-300 dark:text-slate-600 text-[10px]">—</div>
+                  <div key={task.id} className={`flex items-start gap-3 pl-0 pr-4 py-3 group hover:bg-surface-container-low transition-colors border-l-[3px] ${W_BORDER[w]}`}>
+                    <div className="ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 border-outline-variant/40 flex items-center justify-center text-on-surface-variant/30 text-[10px]">—</div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-slate-600 dark:text-slate-300">{task.title}</div>
+                      <div className="text-sm font-medium text-on-surface-variant">{task.title}</div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-slate-600 dark:text-slate-300 font-medium bg-slate-50 dark:bg-white/[0.04] px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)} · not today</span>
+                        <span className="text-[10px] text-on-surface-variant font-medium bg-surface-container-lowest px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)} · not today</span>
                         {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
                     </div>
@@ -355,9 +355,9 @@ export default function TasksView() {
       )}
 
       {tasks.filter(t => !t.completed && !t.recurringType).length === 0 && recurringTasks.length === 0 && (
-        <div className="text-center py-16 text-slate-600 dark:text-slate-300">
-          <div className="w-14 h-14 bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">✓</div>
-          <p className="font-semibold text-slate-600 dark:text-slate-400">All clear!</p>
+        <div className="text-center py-16 text-on-surface-variant">
+          <div className="w-14 h-14 bg-surface-container rounded-2xl border border-outline-variant/40 flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">✓</div>
+          <p className="font-semibold text-on-surface-variant/60">All clear!</p>
           <p className="text-sm mt-1">Add a task to get started.</p>
         </div>
       )}
@@ -375,7 +375,7 @@ function Section({ label, dot, color, count, total, children }: {
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
         <span className={`text-[11px] font-bold uppercase tracking-wider ${color}`}>{label}</span>
         {total !== undefined && (
-          <span className="ml-auto text-[10px] text-slate-600 dark:text-slate-300 font-medium">
+          <span className="ml-auto text-[10px] text-on-surface-variant font-medium">
             {count}/{total}
           </span>
         )}
@@ -395,31 +395,31 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
   const w = task.weight ?? 1
   const [confirming, setConfirming] = useState(false)
   return (
-    <div className={`flex items-start gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-50/60 dark:bg-amber-900/10' : 'hover:bg-slate-50 dark:hover:bg-white/[0.02]'}`}>
+    <div className={`flex items-start gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
       <button onClick={() => !skipped && onToggle(task)} disabled={!!skipped}
         className={`ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-          skipped ? 'border-amber-200 dark:border-violet-700 bg-amber-50 dark:bg-amber-900/20 cursor-not-allowed'
+          skipped ? 'border-amber-500/30 bg-amber-500/15 cursor-not-allowed'
           : task.completed ? 'bg-emerald-500 border-emerald-500 text-white'
-          : 'border-slate-200 dark:border-violet-700 hover:border-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20'
+          : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
         }`}>
         {!skipped && task.completed && <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
       <div className="flex-1 min-w-0">
-        <div className={`text-sm font-medium leading-snug ${skipped ? 'text-slate-600 dark:text-slate-300' : task.completed ? 'line-through text-slate-300 dark:text-slate-600' : 'text-slate-800 dark:text-slate-100'}`}>{task.title}</div>
-        {task.description && <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-1">{task.description}</div>}
+        <div className={`text-sm font-medium leading-snug ${skipped ? 'text-on-surface-variant' : task.completed ? 'line-through text-on-surface-variant/30' : 'text-on-surface'}`}>{task.title}</div>
+        {task.description && <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">{task.description}</div>}
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {skipped
-            ? <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
+            ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
             : <>
                 {task.dueDate && (
                   <span className={`text-[11px] font-medium ${
-                    task.completed ? 'text-slate-300 dark:text-slate-600'
+                    task.completed ? 'text-on-surface-variant/30'
                     : isOverdue ? 'text-rose-500'
-                    : task.dueDate === t ? 'text-violet-500 dark:text-violet-400'
-                    : 'text-slate-600 dark:text-slate-300'
+                    : task.dueDate === t ? 'text-violet-400'
+                    : 'text-on-surface-variant'
                   }`}>{isOverdue ? '⚠ ' : ''}{formatDueDate(task.dueDate)}{isOverdue ? ' · overdue' : ''}</span>
                 )}
-                {task.time && <span className={`text-[11px] ${task.completed ? 'text-slate-300 dark:text-slate-600' : 'text-slate-600 dark:text-slate-300'}`}>⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
+                {task.time && <span className={`text-[11px] ${task.completed ? 'text-on-surface-variant/30' : 'text-on-surface-variant'}`}>⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
                 {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
               </>
           }
@@ -428,16 +428,16 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
       <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         {onSkip && (
           <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
-            className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20 opacity-100' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>⏸</button>
+            className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
         )}
-        <button onClick={onEdit} className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-xs">✏</button>
+        <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
         {confirming ? (
           <>
             <button onClick={() => onDelete(task.id)} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-            <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+            <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
           </>
         ) : (
-          <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
+          <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
         )}
       </div>
     </div>
@@ -450,15 +450,15 @@ function RecurringRowActions({ taskId, skipped, onSkip, onEdit, onDelete }: { ta
   return (
     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
       <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
-        className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20 opacity-100' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}>⏸</button>
-      <button onClick={onEdit} className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-xs">✏</button>
+        className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
+      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
       {confirming ? (
         <>
           <button onClick={onDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
         </>
       ) : (
-        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
+        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       )}
     </div>
   )
@@ -467,14 +467,14 @@ function SimpleRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: 
   const [confirming, setConfirming] = useState(false)
   return (
     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-      <button onClick={onEdit} className="p-1.5 rounded-lg text-slate-300 dark:text-slate-600 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-xs">✏</button>
+      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
       {confirming ? (
         <>
           <button onClick={onDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">Cancel</button>
+          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
         </>
       ) : (
-        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">✕</button>
+        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       )}
     </div>
   )
@@ -514,37 +514,37 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-violet-50/50 dark:bg-violet-900/10 border-l-[3px] border-l-violet-400">
+    <div className="px-4 py-3 space-y-3 bg-violet-500/10 border-l-[3px] border-l-violet-400">
       <input autoFocus type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Task title"
-        className="w-full text-sm font-medium bg-transparent border-0 outline-none text-slate-800 dark:text-slate-100 placeholder-white/70 p-0" />
+        className="w-full text-sm font-medium bg-transparent border-0 outline-none text-on-surface placeholder-white/70 p-0" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description"
-        className="w-full text-sm bg-transparent border-0 outline-none text-slate-600 dark:text-slate-300 placeholder-white/70 p-0" />
-      <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-violet-100 dark:border-violet-700">
-        <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
-          📅 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="text-[11px] text-slate-600 dark:text-slate-300 bg-transparent border-0 outline-none" />
+        className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
+      <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-violet-500/30">
+        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+          📅 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none" />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
           ⏰ <TimeInput value={time} onChange={setTime} />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
           → <TimeInput value={endTime} onChange={setEndTime} />
         </label>
         <WeightPicker value={weight} onChange={setWeight} />
       </div>
-      <div className="border-t border-violet-100 dark:border-violet-700 pt-2 space-y-2">
+      <div className="border-t border-violet-500/30 pt-2 space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
           <div onClick={() => setIsRecurring(!isRecurring)}
-            className={`w-8 h-4 rounded-full transition-colors relative ${isRecurring ? 'bg-violet-600' : 'bg-slate-200 dark:bg-slate-600'}`}>
-            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${isRecurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            className={`w-8 h-4 rounded-full transition-colors relative ${isRecurring ? 'bg-violet-600' : 'bg-on-surface-variant/20'}`}>
+            <div className={`absolute top-0.5 w-3 h-3 bg-surface-container rounded-full shadow transition-transform ${isRecurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
           </div>
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Repeat</span>
+          <span className="text-xs font-medium text-on-surface-variant">Repeat</span>
         </label>
         {isRecurring && (
           <div className="space-y-2 pl-2">
             <div className="flex flex-wrap gap-1">
               {RECURRING_TYPES.map(rt => (
                 <button key={rt.value} type="button" onClick={() => setRecurringType(rt.value)}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${recurringType===rt.value ? 'bg-violet-600 text-white' : 'bg-white dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10'}`}>
+                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${recurringType===rt.value ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                   {rt.label}
                 </button>
               ))}
@@ -553,21 +553,21 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
               <div className="flex gap-1">
                 {DAY_NAMES.map((d,i) => (
                   <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${recurringDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-white dark:bg-white/[0.05] text-slate-600 dark:text-slate-300'}`}>
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${recurringDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                     {d[0]}
                   </button>
                 ))}
               </div>
             )}
-            <label className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-              Ends: <input type="date" value={recurringEnd} onChange={e => setRecurringEnd(e.target.value)} className="bg-transparent border-0 outline-none text-slate-600 dark:text-slate-300 text-[11px]" />
-              {recurringEnd && <button type="button" onClick={() => setRecurringEnd('')} className="text-slate-300 hover:text-slate-500">✕</button>}
+            <label className="flex items-center gap-2 text-[11px] text-on-surface-variant">
+              Ends: <input type="date" value={recurringEnd} onChange={e => setRecurringEnd(e.target.value)} className="bg-transparent border-0 outline-none text-on-surface-variant text-[11px]" />
+              {recurringEnd && <button type="button" onClick={() => setRecurringEnd('')} className="text-on-surface-variant/40 hover:text-on-surface-variant/70">✕</button>}
             </label>
           </div>
         )}
       </div>
-      <div className="flex gap-2 justify-end border-t border-violet-100 dark:border-violet-700 pt-2">
-        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-white dark:hover:bg-white/[0.05] transition-all">Cancel</button>
+      <div className="flex gap-2 justify-end border-t border-violet-500/30 pt-2">
+        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
         <button onClick={handleSave} disabled={!title.trim()} className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>
       </div>
     </div>
@@ -586,35 +586,35 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
   return (
     <form onSubmit={onSubmit} className="glass rounded-2xl border p-4 space-y-3">
       <input autoFocus type="text" placeholder="Task title" value={form.title} onChange={e => setField('title',e.target.value)}
-        className="w-full text-sm font-medium bg-transparent border-0 outline-none text-slate-800 dark:text-slate-100 placeholder-white/70 p-0" />
+        className="w-full text-sm font-medium bg-transparent border-0 outline-none text-on-surface placeholder-white/70 p-0" />
       <input type="text" placeholder="Description (optional)" value={form.description} onChange={e => setField('description',e.target.value)}
-        className="w-full text-sm bg-transparent border-0 outline-none text-slate-600 dark:text-slate-300 placeholder-white/70 p-0" />
-      <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-slate-50 dark:border-violet-700">
-        <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
-          📅 <input type="date" value={form.dueDate} onChange={e => setField('dueDate',e.target.value)} className="text-[11px] text-slate-600 dark:text-slate-300 bg-transparent border-0 outline-none" />
+        className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
+      <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-outline-variant/40">
+        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+          📅 <input type="date" value={form.dueDate} onChange={e => setField('dueDate',e.target.value)} className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none" />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
           ⏰ <TimeInput value={form.time} onChange={v => setField('time', v)} />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
           → <TimeInput value={form.endTime} onChange={v => setField('endTime', v)} />
         </label>
         <WeightPicker value={form.weight} onChange={v => setField('weight',v)} />
       </div>
-      <div className="border-t border-slate-50 dark:border-violet-700 pt-2 space-y-2">
+      <div className="border-t border-outline-variant/40 pt-2 space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
           <div onClick={() => setField('isRecurring',!form.isRecurring)}
-            className={`w-8 h-4 rounded-full transition-colors relative ${form.isRecurring ? 'bg-violet-600' : 'bg-slate-200 dark:bg-slate-600'}`}>
-            <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${form.isRecurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            className={`w-8 h-4 rounded-full transition-colors relative ${form.isRecurring ? 'bg-violet-600' : 'bg-on-surface-variant/20'}`}>
+            <div className={`absolute top-0.5 w-3 h-3 bg-surface-container rounded-full shadow transition-transform ${form.isRecurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
           </div>
-          <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Repeat</span>
+          <span className="text-xs font-medium text-on-surface-variant">Repeat</span>
         </label>
         {form.isRecurring && (
           <div className="space-y-2 pl-2">
             <div className="flex flex-wrap gap-1">
               {RECURRING_TYPES.map(rt => (
                 <button key={rt.value} type="button" onClick={() => setField('recurringType',rt.value)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${form.recurringType===rt.value ? 'bg-violet-600 text-white' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10'}`}>
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${form.recurringType===rt.value ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                   {rt.label}
                 </button>
               ))}
@@ -623,21 +623,21 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
               <div className="flex gap-1">
                 {DAY_NAMES.map((d,i) => (
                   <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.recurringDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-slate-300'}`}>
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.recurringDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                     {d[0]}
                   </button>
                 ))}
               </div>
             )}
-            <label className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-              Ends: <input type="date" value={form.recurringEnd} onChange={e => setField('recurringEnd',e.target.value)} className="bg-transparent border-0 outline-none text-slate-600 dark:text-slate-300 text-[11px]" />
-              {form.recurringEnd && <button type="button" onClick={() => setField('recurringEnd','')} className="text-slate-300 hover:text-slate-500">✕</button>}
+            <label className="flex items-center gap-2 text-[11px] text-on-surface-variant">
+              Ends: <input type="date" value={form.recurringEnd} onChange={e => setField('recurringEnd',e.target.value)} className="bg-transparent border-0 outline-none text-on-surface-variant text-[11px]" />
+              {form.recurringEnd && <button type="button" onClick={() => setField('recurringEnd','')} className="text-on-surface-variant/40 hover:text-on-surface-variant/70">✕</button>}
             </label>
           </div>
         )}
       </div>
-      <div className="flex gap-2 justify-end border-t border-slate-50 dark:border-violet-700 pt-2">
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-all">Cancel</button>
+      <div className="flex gap-2 justify-end border-t border-outline-variant/40 pt-2">
+        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
         <button type="submit" disabled={!form.title.trim()||submitting||(form.isRecurring&&form.recurringType==='weekly'&&form.recurringDays.length===0)}
           className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Add Task</button>
       </div>

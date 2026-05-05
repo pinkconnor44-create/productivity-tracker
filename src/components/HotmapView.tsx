@@ -54,21 +54,21 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 
 function cellBg(score: DayScore | undefined, isFuture: boolean, isOutOfRange: boolean): string {
   if (isFuture || isOutOfRange) return 'bg-transparent'
-  if (!score || score.total === 0) return 'bg-slate-100 dark:bg-white/[0.05]'
+  if (!score || score.total === 0) return 'bg-surface-container-low'
   const p = score.pct
-  if (p === 100) return 'bg-emerald-500 dark:bg-emerald-400'
-  if (p >= 75)  return 'bg-emerald-300 dark:bg-emerald-600/80'
-  if (p >= 50)  return 'bg-violet-400 dark:bg-violet-500/80'
-  if (p >= 25)  return 'bg-amber-300 dark:bg-amber-500/70'
-  return 'bg-rose-400 dark:bg-rose-600/70'
+  if (p === 100) return 'bg-emerald-400'
+  if (p >= 75)  return 'bg-emerald-500/70'
+  if (p >= 50)  return 'bg-violet-500/70'
+  if (p >= 25)  return 'bg-amber-500/65'
+  return 'bg-rose-500/70'
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-4 shadow-sm">
-      <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-2xl font-bold font-mono ${value === '—' ? 'text-slate-300 dark:text-slate-600' : 'gradient-text'}`}>{value}</div>
-      {sub && <div className="text-[10px] text-slate-600 dark:text-slate-300 mt-0.5">{sub}</div>}
+    <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
+      <div className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">{label}</div>
+      <div className={`text-2xl font-bold font-mono ${value === '—' ? 'text-on-surface-variant/30' : 'gradient-text'}`}>{value}</div>
+      {sub && <div className="text-[10px] text-on-surface-variant mt-0.5">{sub}</div>}
     </div>
   )
 }
@@ -148,13 +148,13 @@ export default function HotmapView() {
       </div>
 
       {/* Heatmap */}
-      <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-5 shadow-sm">
-        <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">
+      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-5 shadow-sm">
+        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-4">
           365-day activity
         </div>
 
         {loading ? (
-          <div className="h-28 flex items-center justify-center text-slate-600 dark:text-slate-300 text-sm">Loading…</div>
+          <div className="h-28 flex items-center justify-center text-on-surface-variant text-sm">Loading…</div>
         ) : (
           <div className="overflow-x-auto pb-1">
             <div className="inline-block min-w-max">
@@ -166,7 +166,7 @@ export default function HotmapView() {
                   return (
                     <div key={col} className="w-[14px] mr-[2px] shrink-0">
                       {ml && (
-                        <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap leading-none">
+                        <span className="text-[10px] font-medium text-on-surface-variant whitespace-nowrap leading-none">
                           {ml.label}
                         </span>
                       )}
@@ -181,7 +181,7 @@ export default function HotmapView() {
                   {['S','M','T','W','T','F','S'].map((d, i) => (
                     <div key={i} className="h-[14px] flex items-center justify-end">
                       {i % 2 === 1 && (
-                        <span className="text-[9px] text-slate-600 dark:text-slate-300 leading-none">{d}</span>
+                        <span className="text-[9px] text-on-surface-variant leading-none">{d}</span>
                       )}
                     </div>
                   ))}
@@ -203,7 +203,7 @@ export default function HotmapView() {
                           key={date}
                           className={`w-[14px] h-[14px] rounded-sm transition-all duration-150 ${bg}
                             ${interactive ? 'cursor-default hover:brightness-110 hover:scale-125' : 'cursor-default'}
-                            ${isToday ? 'ring-2 ring-violet-500 ring-offset-1 ring-offset-white dark:ring-offset-[#16161e]' : ''}
+                            ${isToday ? 'ring-2 ring-violet-500 ring-offset-1 ring-offset-surface' : ''}
                             ${score?.pct === 100 ? 'shadow-sm shadow-emerald-400/40' : ''}
                           `}
                           onMouseMove={e => { if (interactive) handleMouseMove(date, e) }}
@@ -217,21 +217,21 @@ export default function HotmapView() {
 
               {/* Legend */}
               <div className="flex items-center gap-2 mt-4 ml-7">
-                <span className="text-[10px] text-slate-600 dark:text-slate-300">Less</span>
+                <span className="text-[10px] text-on-surface-variant">Less</span>
                 <div className="flex items-center gap-1">
                   {[
-                    'bg-slate-100 dark:bg-white/[0.05]',
-                    'bg-rose-400 dark:bg-rose-600/70',
-                    'bg-amber-300 dark:bg-amber-500/70',
-                    'bg-violet-400 dark:bg-violet-500/80',
-                    'bg-emerald-300 dark:bg-emerald-600/80',
-                    'bg-emerald-500 dark:bg-emerald-400',
+                    'bg-surface-container-low',
+                    'bg-rose-500/70',
+                    'bg-amber-500/65',
+                    'bg-violet-500/70',
+                    'bg-emerald-500/70',
+                    'bg-emerald-400',
                   ].map((c, i) => (
                     <div key={i} className={`w-[14px] h-[14px] rounded-sm ${c}`} />
                   ))}
                 </div>
-                <span className="text-[10px] text-slate-600 dark:text-slate-300">More</span>
-                <span className="ml-4 text-[10px] text-slate-300 dark:text-slate-600">
+                <span className="text-[10px] text-on-surface-variant">More</span>
+                <span className="ml-4 text-[10px] text-on-surface-variant/30">
                   No data · &lt;25% · 25–49% · 50–74% · 75–99% · 100%
                 </span>
               </div>
@@ -242,18 +242,18 @@ export default function HotmapView() {
 
       {/* Monthly breakdown */}
       {monthlyAvgs.length > 0 && (
-        <div className="neon-card bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 p-5 shadow-sm">
-          <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-4">Monthly average</div>
+        <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-5 shadow-sm">
+          <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-4">Monthly average</div>
           <div className="space-y-2">
             {monthlyAvgs.map(({ month, avg }) => {
               const d = new Date(month + '-01T12:00:00')
               const label = `${MONTHS[d.getMonth()]} ${d.getFullYear()}`
               const color = avg >= 75 ? 'bg-emerald-500' : avg >= 50 ? 'bg-violet-500' : avg >= 25 ? 'bg-amber-400' : 'bg-rose-400'
-              const textColor = avg >= 75 ? 'text-emerald-600 dark:text-emerald-400' : avg >= 50 ? 'text-violet-600 dark:text-violet-400' : avg >= 25 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-500'
+              const textColor = avg >= 75 ? 'text-emerald-400' : avg >= 50 ? 'text-violet-400' : avg >= 25 ? 'text-amber-400' : 'text-rose-500'
               return (
                 <div key={month} className="flex items-center gap-3">
-                  <span className="text-xs text-slate-600 dark:text-slate-300 w-16 shrink-0">{label}</span>
-                  <div className="flex-1 h-2 bg-slate-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                  <span className="text-xs text-on-surface-variant w-16 shrink-0">{label}</span>
+                  <div className="flex-1 h-2 bg-surface-container-low rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${color} transition-all duration-700`} style={{ width: `${avg}%` }} />
                   </div>
                   <span className={`text-xs font-semibold w-9 text-right tabular-nums ${textColor}`}>{avg}%</span>
@@ -270,11 +270,11 @@ export default function HotmapView() {
           className="fixed z-50 pointer-events-none"
           style={{ left: tooltip.x, top: tooltip.y - 8, transform: 'translate(-50%, -100%)' }}
         >
-          <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 shadow-2xl text-xs whitespace-nowrap">
+          <div className="bg-surface-container border border-outline-variant text-white rounded-xl px-3 py-2 shadow-2xl text-xs whitespace-nowrap">
             <div className="font-semibold mb-0.5">{formatDate(tooltip.date)}</div>
             {scores[tooltip.date]?.total > 0 ? (
               <>
-                <div className="text-slate-300">
+                <div className="text-on-surface-variant/40">
                   {scores[tooltip.date].pct}% · {scores[tooltip.date].completed}/{scores[tooltip.date].total} items
                 </div>
                 {scores[tooltip.date].pct === 100 && (
@@ -282,7 +282,7 @@ export default function HotmapView() {
                 )}
               </>
             ) : (
-              <div className="text-slate-500">No tracked items</div>
+              <div className="text-on-surface-variant/70">No tracked items</div>
             )}
             {tooltip.date === todayStr && (
               <div className="text-violet-400 font-semibold mt-0.5">Today</div>

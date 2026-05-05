@@ -183,10 +183,10 @@ export default function LiftTracker() {
         {/* Header */}
         <div className="flex items-center gap-2">
           <button onClick={() => { setActiveGroupId(null); setConfirmDeleteId(null) }}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all">
+            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
             ‹ Back
           </button>
-          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex-1">{currentGroup.name}</h2>
+          <h2 className="text-base font-bold text-on-surface flex-1">{currentGroup.name}</h2>
           {confirmDeleteId === currentGroup.id ? (
             <div className="flex items-center gap-1.5 shrink-0">
               <button onClick={() => deleteGroup(currentGroup.id)}
@@ -194,55 +194,55 @@ export default function LiftTracker() {
                 Confirm
               </button>
               <button onClick={() => setConfirmDeleteId(null)}
-                className="px-2.5 py-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg transition-colors">
+                className="px-2.5 py-1 text-xs text-on-surface-variant/60 hover:text-on-surface-variant rounded-lg transition-colors">
                 Cancel
               </button>
             </div>
           ) : (
             <button onClick={() => setConfirmDeleteId(currentGroup.id)}
-              className="shrink-0 text-xs text-slate-400 hover:text-rose-500 transition-colors px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20">
+              className="shrink-0 text-xs text-on-surface-variant/60 hover:text-rose-500 transition-colors px-2 py-1 rounded-lg hover:bg-rose-500/15">
               Delete day
             </button>
           )}
         </div>
 
         {/* Exercise list */}
-        <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
+        <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
           {currentGroup.exercises.length === 0 ? (
             <div className="py-10 text-center">
               <div className="text-2xl mb-2">💪</div>
-              <p className="text-sm text-slate-400 dark:text-slate-500">No exercises yet — add one below</p>
+              <p className="text-sm text-on-surface-variant/50">No exercises yet — add one below</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+            <div className="divide-y divide-outline-variant/40">
               {currentGroup.exercises.map(exName => {
                 const sessions = (byExercise[exName] ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))
                 const hasToday = sessions.some(s => s.date === t)
                 const maxWeight = sessions.length > 0 ? Math.max(...sessions.map(s => s.weight)) : null
                 return (
-                  <div key={exName} className="group flex items-center hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                  <div key={exName} className="group flex items-center hover:bg-surface-container-low transition-colors">
                     <button onClick={() => setSelectedExercise(exName)}
                       className="flex-1 flex items-center gap-3 px-4 py-3 text-left min-w-0">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{exName}</span>
+                          <span className="text-sm font-semibold text-on-surface">{exName}</span>
                           {hasToday && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full uppercase tracking-wide">today</span>
+                            <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-400 rounded-full uppercase tracking-wide">today</span>
                           )}
                         </div>
                         {sessions.length > 0 ? (
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                          <div className="text-[11px] text-on-surface-variant/50 mt-0.5">
                             {sessions.length} session{sessions.length !== 1 ? 's' : ''} · max {maxWeight} lbs · last {formatDate(sessions[0].date)}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-violet-400 dark:text-violet-500 mt-0.5">No sessions yet — tap to log</div>
+                          <div className="text-[11px] text-violet-400 mt-0.5">No sessions yet — tap to log</div>
                         )}
                       </div>
-                      <span className="text-slate-300 dark:text-slate-600 shrink-0">›</span>
+                      <span className="text-on-surface-variant/30 shrink-0">›</span>
                     </button>
                     <button onClick={() => assignExerciseToGroup(exName, null)}
                       title="Remove from day"
-                      className="mr-3 w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-slate-200 dark:text-slate-700 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 opacity-0 group-hover:opacity-100 transition-all text-xs">
+                      className="mr-3 w-7 h-7 shrink-0 flex items-center justify-center rounded-lg text-on-surface hover:text-rose-400 hover:bg-rose-500/15 opacity-0 group-hover:opacity-100 transition-all text-xs">
                       ✕
                     </button>
                   </div>
@@ -273,32 +273,32 @@ export default function LiftTracker() {
         <Stopwatch />
         <div className="flex items-center gap-2">
           <button onClick={() => setActiveGroupId(null)}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all">
+            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
             ‹ Back
           </button>
-          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Ungrouped</h2>
+          <h2 className="text-base font-bold text-on-surface">Ungrouped</h2>
         </div>
-        <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
-          <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+        <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+          <div className="divide-y divide-outline-variant/40">
             {ungroupedExerciseNames.map(exName => {
               const sessions = byExercise[exName].slice().sort((a, b) => b.date.localeCompare(a.date))
               const hasToday = sessions.some(s => s.date === t)
               const maxWeight = Math.max(...sessions.map(s => s.weight))
               return (
                 <button key={exName} onClick={() => setSelectedExercise(exName)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface-container-low transition-colors">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{exName}</span>
+                      <span className="text-sm font-semibold text-on-surface">{exName}</span>
                       {hasToday && (
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full uppercase tracking-wide">today</span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-400 rounded-full uppercase tracking-wide">today</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                    <div className="text-[11px] text-on-surface-variant/50 mt-0.5">
                       {sessions.length} session{sessions.length !== 1 ? 's' : ''} · max {maxWeight} lbs · last {formatDate(sessions[0].date)}
                     </div>
                   </div>
-                  <span className="text-slate-300 dark:text-slate-600 shrink-0">›</span>
+                  <span className="text-on-surface-variant/30 shrink-0">›</span>
                 </button>
               )
             })}
@@ -320,10 +320,10 @@ export default function LiftTracker() {
       <Stopwatch />
 
       {/* Quick log form */}
-      <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center gap-2">
+      <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
           <span className="text-base">🏋️</span>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Log Exercise</h3>
+          <h3 className="text-sm font-semibold text-on-surface">Log Exercise</h3>
         </div>
         <div className="p-4 space-y-3">
           <div className="flex gap-2">
@@ -334,12 +334,12 @@ export default function LiftTracker() {
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
                 placeholder="Exercise name"
-                className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-violet-700/60 bg-slate-50 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors" />
+                className="w-full px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors" />
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-slate-100 dark:border-violet-700/60 bg-white dark:bg-[#16161e] shadow-xl overflow-hidden">
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-outline-variant/60 bg-surface-container shadow-xl overflow-hidden">
                   {suggestions.slice(0, 5).map(s => (
                     <button key={s} onMouseDown={() => { setName(s); setShowSuggestions(false) }}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">{s}</button>
+                      className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-violet-500/10 transition-colors">{s}</button>
                   ))}
                 </div>
               )}
@@ -347,28 +347,28 @@ export default function LiftTracker() {
             <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
               placeholder="lbs" min={0}
-              className="w-24 px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-violet-700/60 bg-slate-50 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors" />
+              className="w-24 px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors" />
           </div>
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Sets — reps per set</span>
-              {totalRepsPreview > 0 && <span className="ml-auto text-[11px] font-bold text-violet-600 dark:text-violet-400">{totalRepsPreview} total reps</span>}
+              <span className="text-xs font-semibold text-on-surface-variant/70">Sets — reps per set</span>
+              {totalRepsPreview > 0 && <span className="ml-auto text-[11px] font-bold text-violet-400">{totalRepsPreview} total reps</span>}
             </div>
             <div className="flex flex-wrap gap-2">
               {reps.map((r, i) => (
                 <div key={i} className="flex items-center gap-1">
-                  <span className="text-[10px] text-slate-400 dark:text-slate-600 font-medium w-10 text-right">Set {i + 1}</span>
+                  <span className="text-[10px] text-on-surface-variant/40 font-medium w-10 text-right">Set {i + 1}</span>
                   <input type="number" value={r} onChange={e => updateRep(i, e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
                     min={0} placeholder="—"
-                    className="w-16 px-2 py-1.5 text-sm text-center rounded-lg border border-slate-200 dark:border-violet-700/60 bg-slate-50 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors" />
+                    className="w-16 px-2 py-1.5 text-sm text-center rounded-lg border border-outline-variant/60 bg-surface-container-lowest text-on-surface outline-none focus:border-violet-500 transition-colors" />
                   {reps.length > 1 && (
-                    <button onClick={() => removeSet(i)} className="text-slate-300 dark:text-slate-600 hover:text-rose-400 transition-colors text-xs px-1">✕</button>
+                    <button onClick={() => removeSet(i)} className="text-on-surface-variant/30 hover:text-rose-400 transition-colors text-xs px-1">✕</button>
                   )}
                 </div>
               ))}
               <button onClick={addSet}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-dashed border-slate-200 dark:border-violet-700/60 text-slate-400 dark:text-slate-500 hover:border-violet-400 hover:text-violet-500 transition-colors">
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
                 + Set
               </button>
             </div>
@@ -382,7 +382,7 @@ export default function LiftTracker() {
 
       {/* Workout Days header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Workout Days</h3>
+        <h3 className="text-sm font-bold text-on-surface">Workout Days</h3>
         {showNewGroupInput ? (
           <input autoFocus type="text" value={newGroupName}
             onChange={e => setNewGroupName(e.target.value)}
@@ -392,10 +392,10 @@ export default function LiftTracker() {
             }}
             onBlur={() => { if (!newGroupName.trim()) { setShowNewGroupInput(false); setNewGroupName('') } }}
             placeholder="Day name (e.g. Push)"
-            className="w-44 px-3 py-1.5 text-sm rounded-xl border border-violet-400 dark:border-violet-500 outline-none bg-white dark:bg-[#16161e] text-slate-700 dark:text-slate-200 placeholder-slate-400" />
+            className="w-44 px-3 py-1.5 text-sm rounded-xl border border-violet-500 outline-none bg-surface-container text-on-surface placeholder-on-surface-variant/40" />
         ) : (
           <button onClick={() => setShowNewGroupInput(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-dashed border-slate-200 dark:border-violet-700/60 text-slate-400 dark:text-slate-500 hover:border-violet-400 hover:text-violet-500 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
             + New Day
           </button>
         )}
@@ -405,8 +405,8 @@ export default function LiftTracker() {
       {groups.length === 0 && ungroupedExerciseNames.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
           <span className="text-4xl">🏋️</span>
-          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">No workout days yet</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 max-w-[220px]">Create a day like Push, Pull, or Legs to organize your exercises.</p>
+          <p className="text-sm font-semibold text-on-surface-variant/70">No workout days yet</p>
+          <p className="text-xs text-on-surface-variant/50 max-w-[220px]">Create a day like Push, Pull, or Legs to organize your exercises.</p>
         </div>
       )}
 
@@ -416,21 +416,21 @@ export default function LiftTracker() {
         const hasToday = loggedInGroup.some(n => byExercise[n]?.some(e => e.date === t))
         return (
           <button key={g.id} onClick={() => setActiveGroupId(g.id)}
-            className="w-full text-left bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm p-4 hover:border-violet-300 dark:hover:border-violet-500 hover:shadow-md transition-all group">
+            className="w-full text-left bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm p-4 hover:border-violet-300 hover:shadow-md transition-all group">
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-base font-bold text-slate-800 dark:text-slate-100">{g.name}</span>
+                  <span className="text-base font-bold text-on-surface">{g.name}</span>
                   {hasToday && (
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full uppercase tracking-wide">today</span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-400 rounded-full uppercase tracking-wide">today</span>
                   )}
                 </div>
-                <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                <div className="text-[11px] text-on-surface-variant/50">
                   {g.exercises.length} exercise{g.exercises.length !== 1 ? 's' : ''}
                   {lastDate && ` · last ${formatDate(lastDate)}`}
                 </div>
               </div>
-              <span className="text-slate-300 dark:text-slate-600 group-hover:text-violet-400 transition-colors text-lg leading-none">›</span>
+              <span className="text-on-surface-variant/30 group-hover:text-violet-400 transition-colors text-lg leading-none">›</span>
             </div>
           </button>
         )
@@ -439,15 +439,15 @@ export default function LiftTracker() {
       {/* Ungrouped card */}
       {ungroupedExerciseNames.length > 0 && (
         <button onClick={() => setActiveGroupId('ungrouped')}
-          className="w-full text-left bg-white dark:bg-[#16161e] rounded-2xl border border-dashed border-slate-200 dark:border-slate-700/60 p-4 hover:border-violet-300 dark:hover:border-violet-500 transition-all group">
+          className="w-full text-left bg-surface-container rounded-2xl border border-dashed border-outline-variant/60 p-4 hover:border-violet-300 transition-all group">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Ungrouped</div>
-              <div className="text-[11px] text-slate-400 dark:text-slate-500">
+              <div className="text-sm font-semibold text-on-surface-variant/70 mb-0.5">Ungrouped</div>
+              <div className="text-[11px] text-on-surface-variant/50">
                 {ungroupedExerciseNames.length} exercise{ungroupedExerciseNames.length !== 1 ? 's' : ''} not assigned to a day
               </div>
             </div>
-            <span className="text-slate-300 dark:text-slate-600 group-hover:text-violet-400 transition-colors text-lg leading-none">›</span>
+            <span className="text-on-surface-variant/30 group-hover:text-violet-400 transition-colors text-lg leading-none">›</span>
           </div>
         </button>
       )}
@@ -484,7 +484,7 @@ function AddExerciseToGroup({ suggestions, onAdd }: {
   }
 
   return (
-    <div className="px-4 py-3 border-t border-slate-50 dark:border-white/[0.04]">
+    <div className="px-4 py-3 border-t border-outline-variant/40">
       <div className="flex gap-2">
         <div className="relative flex-1">
           <input type="text" value={value}
@@ -493,12 +493,12 @@ function AddExerciseToGroup({ suggestions, onAdd }: {
             onBlur={() => setTimeout(() => setShowSugg(false), 150)}
             onKeyDown={e => { if (e.key === 'Enter') submit() }}
             placeholder="Add exercise (e.g. Bench Press)"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-violet-700/60 bg-slate-50 dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors" />
+            className="w-full px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors" />
           {showSugg && filtered.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-slate-100 dark:border-violet-700/60 bg-white dark:bg-[#16161e] shadow-xl overflow-hidden">
+            <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-outline-variant/60 bg-surface-container shadow-xl overflow-hidden">
               {filtered.slice(0, 5).map(s => (
                 <button key={s} onMouseDown={() => { setValue(s); setShowSugg(false) }}
-                  className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors">{s}</button>
+                  className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-violet-500/10 transition-colors">{s}</button>
               ))}
             </div>
           )}
@@ -530,24 +530,24 @@ function ExerciseModal({
     <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#16161e] rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] border border-slate-100 dark:border-violet-700">
+      <div className="relative w-full sm:max-w-lg bg-surface-container rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[88vh] sm:max-h-[85vh] border border-outline-variant/40">
 
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-violet-700 shrink-0">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-outline-variant/40 shrink-0">
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 truncate">{exName}</h2>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+            <h2 className="text-base font-bold text-on-surface truncate">{exName}</h2>
+            <p className="text-[11px] text-on-surface-variant/50 mt-0.5">
               {sessions.length} session{sessions.length !== 1 ? 's' : ''}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-sm font-bold">
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant/50 hover:text-on-surface-variant transition-colors text-sm font-bold">
             ✕
           </button>
         </div>
 
         <div className="overflow-y-auto flex-1 min-h-0">
-          <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+          <div className="divide-y divide-outline-variant/40">
             {sessions.map(session => (
               <SessionRow key={session.id} entry={session} onDelete={onDelete} />
             ))}
@@ -556,8 +556,8 @@ function ExerciseModal({
           <InlineLogForm exName={exName} onAdd={onAdd} />
 
           {sessions.length >= 2 && (
-            <div className="px-4 pb-6 pt-2 border-t border-slate-50 dark:border-white/[0.04]">
-              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wide">
+            <div className="px-4 pb-6 pt-2 border-t border-outline-variant/40">
+              <p className="text-[11px] font-semibold text-on-surface-variant/50 mb-3 uppercase tracking-wide">
                 Volume over time (lbs × reps)
               </p>
               <VolumeChart sessions={sessions} />
@@ -610,10 +610,10 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
       {yTicks.map((v, i) => (
         <line key={i} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
           stroke="currentColor" strokeWidth="0.5"
-          className="text-slate-100 dark:text-white/[0.06]" strokeDasharray="3 3" />
+          className="text-on-surface-variant/[0.08]" strokeDasharray="3 3" />
       ))}
       {yTicks.map((v, i) => (
-        <text key={i} x={PAD.left - 6} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+        <text key={i} x={PAD.left - 6} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-on-surface-variant/40">
           {v >= 1000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v)}
         </text>
       ))}
@@ -640,7 +640,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
         )
       })}
       {labelIndices.map(i => (
-        <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="9" className="fill-slate-400 dark:fill-slate-600">
+        <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="9" className="fill-on-surface-variant/40">
           {shortDate(points[i].date)}
         </text>
       ))}
@@ -648,7 +648,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
     {tooltip && (
       <div className="fixed z-50 pointer-events-none"
         style={{ left: tooltip.x, top: tooltip.y - 10, transform: 'translate(-50%, -100%)' }}>
-        <div className="bg-slate-900 dark:bg-slate-800 border border-slate-700 text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+        <div className="bg-surface-container border border-outline-variant text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
           {tooltip.text}
         </div>
       </div>
@@ -689,13 +689,13 @@ function Stopwatch() {
   const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${tenth}`
 
   return (
-    <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
+    <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
       <div className="px-6 pt-5 pb-5 flex flex-col items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="text-lg">⏱</span>
-          <span className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rest Timer</span>
+          <span className="text-sm font-semibold text-on-surface-variant/70 uppercase tracking-wider">Rest Timer</span>
         </div>
-        <span className={`text-6xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-600 dark:text-violet-400' : ms > 0 ? 'text-slate-500 dark:text-slate-400' : 'text-slate-300 dark:text-slate-600'}`}>
+        <span className={`text-6xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-400' : ms > 0 ? 'text-on-surface-variant/70' : 'text-on-surface-variant/30'}`}>
           {display}
         </span>
         <div className="flex gap-3 w-full">
@@ -712,7 +712,7 @@ function Stopwatch() {
           )}
           {ms > 0 && (
             <button onClick={reset}
-              className="px-6 py-3 text-base font-bold rounded-xl border border-slate-200 dark:border-violet-700/60 text-slate-400 dark:text-slate-500 hover:text-rose-400 hover:border-rose-300 dark:hover:border-rose-700/60 transition-colors">
+              className="px-6 py-3 text-base font-bold rounded-xl border border-outline-variant/60 text-on-surface-variant/50 hover:text-rose-400 hover:border-rose-500/40 transition-colors">
               Reset
             </button>
           )}
@@ -746,19 +746,19 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
   }
 
   if (!open) return (
-    <div className="px-4 py-2 border-t border-slate-50 dark:border-white/[0.04]">
+    <div className="px-4 py-2 border-t border-outline-variant/40">
       <button onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border border-dashed border-slate-200 dark:border-violet-700/60 text-slate-400 dark:text-slate-500 hover:border-violet-400 hover:text-violet-500 transition-colors">
+        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
         + Log new session
       </button>
     </div>
   )
 
   return (
-    <div className="px-4 py-3 border-t border-slate-50 dark:border-white/[0.04] bg-slate-50/50 dark:bg-white/[0.02] space-y-2.5">
+    <div className="px-4 py-3 border-t border-outline-variant/40 bg-surface-container-lowest/50 space-y-2.5">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xs font-semibold text-violet-600 dark:text-violet-400">New session — {exName}</span>
-        <button onClick={() => setOpen(false)} className="ml-auto text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">cancel</button>
+        <span className="text-xs font-semibold text-violet-400">New session — {exName}</span>
+        <button onClick={() => setOpen(false)} className="ml-auto text-[10px] text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">cancel</button>
       </div>
       <div className="flex gap-2 items-center">
         <input
@@ -768,12 +768,12 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
           onKeyDown={e => { if (e.key === 'Enter') submit() }}
           placeholder="lbs"
           min={0}
-          className="w-24 px-3 py-1.5 text-sm rounded-xl border border-slate-200 dark:border-violet-700/60 bg-white dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors"
+          className="w-24 px-3 py-1.5 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors"
         />
         <div className="flex flex-wrap gap-1.5 flex-1">
           {reps.map((r, i) => (
             <div key={i} className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-400 font-medium">S{i + 1}</span>
+              <span className="text-[10px] text-on-surface-variant/60 font-medium">S{i + 1}</span>
               <input
                 type="number"
                 value={r}
@@ -781,21 +781,21 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
                 onKeyDown={e => { if (e.key === 'Enter') submit() }}
                 min={0}
                 placeholder="—"
-                className="w-14 px-2 py-1.5 text-sm text-center rounded-lg border border-slate-200 dark:border-violet-700/60 bg-white dark:bg-white/[0.04] text-slate-700 dark:text-slate-200 outline-none focus:border-violet-400 dark:focus:border-violet-500 transition-colors"
+                className="w-14 px-2 py-1.5 text-sm text-center rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface outline-none focus:border-violet-500 transition-colors"
               />
               {reps.length > 1 && (
-                <button onClick={() => removeSet(i)} className="text-slate-300 hover:text-rose-400 transition-colors text-xs">✕</button>
+                <button onClick={() => removeSet(i)} className="text-on-surface-variant/40 hover:text-rose-400 transition-colors text-xs">✕</button>
               )}
             </div>
           ))}
           <button onClick={addSet}
-            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-dashed border-slate-200 dark:border-violet-700/60 text-slate-400 hover:border-violet-400 hover:text-violet-500 transition-colors">
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-dashed border-outline-variant/60 text-on-surface-variant/60 hover:border-violet-400 hover:text-violet-500 transition-colors">
             + Set
           </button>
         </div>
       </div>
       {totalRepsPreview > 0 && (
-        <div className="text-[11px] text-violet-600 dark:text-violet-400 font-bold">{totalRepsPreview} total reps</div>
+        <div className="text-[11px] text-violet-400 font-bold">{totalRepsPreview} total reps</div>
       )}
       <button
         onClick={submit}
@@ -812,21 +812,21 @@ function SessionRow({ entry, onDelete }: { entry: LiftEntry; onDelete: (id: numb
   const t = today()
   const volume = entry.weight * entry.totalReps
   return (
-    <div className="group flex items-start gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors pl-6">
+    <div className="group flex items-start gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors pl-6">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] font-semibold text-on-surface-variant/70">
             {entry.date === t ? 'Today' : new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           </span>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500">{entry.weight} lbs</span>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">·</span>
-          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{entry.totalReps} reps</span>
-          <span className="text-[10px] text-slate-400 dark:text-slate-500">·</span>
-          <span className="text-[10px] font-semibold text-violet-500 dark:text-violet-400">{volume.toLocaleString()} vol</span>
+          <span className="text-[11px] text-on-surface-variant/50">{entry.weight} lbs</span>
+          <span className="text-[10px] text-on-surface-variant/50">·</span>
+          <span className="text-[10px] font-bold text-on-surface-variant/70">{entry.totalReps} reps</span>
+          <span className="text-[10px] text-on-surface-variant/50">·</span>
+          <span className="text-[10px] font-semibold text-violet-400">{volume.toLocaleString()} vol</span>
         </div>
         <div className="flex items-center gap-1 flex-wrap">
           {sets.map((r, i) => (
-            <span key={i} className="px-1.5 py-0.5 text-[10px] font-semibold bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 rounded-md">
+            <span key={i} className="px-1.5 py-0.5 text-[10px] font-semibold bg-violet-500/15 text-violet-400 rounded-md">
               {r}
             </span>
           ))}
@@ -834,7 +834,7 @@ function SessionRow({ entry, onDelete }: { entry: LiftEntry; onDelete: (id: numb
       </div>
       <button
         onClick={() => onDelete(entry.id)}
-        className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-200 dark:text-slate-700 hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 opacity-0 group-hover:opacity-100 transition-all text-xs">
+        className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-on-surface hover:text-rose-400 hover:bg-rose-500/15 opacity-0 group-hover:opacity-100 transition-all text-xs">
         ✕
       </button>
     </div>

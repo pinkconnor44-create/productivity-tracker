@@ -91,11 +91,11 @@ export default function BrainDump() {
     <div className="space-y-4">
 
       {/* Capture bar */}
-      <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center gap-2">
+      <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
           <span className="text-base">⚡</span>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Brain Dump</h3>
-          <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 font-medium">capture anything · triage later</span>
+          <h3 className="text-sm font-semibold text-on-surface">Brain Dump</h3>
+          <span className="ml-auto text-[10px] text-on-surface-variant/30 font-medium">capture anything · triage later</span>
         </div>
         <div className="flex items-center gap-2 px-4 py-3">
           <input
@@ -106,7 +106,7 @@ export default function BrainDump() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="What's on your mind? Press Enter to capture…"
-            className="flex-1 text-sm bg-transparent border-0 outline-none text-slate-700 dark:text-slate-200 placeholder-white/70"
+            className="flex-1 text-sm bg-transparent border-0 outline-none text-on-surface placeholder-white/70"
           />
           {input.trim() && (
             <button onClick={capture}
@@ -118,12 +118,12 @@ export default function BrainDump() {
       </div>
 
       {/* Inbox */}
-      <div className="bg-white dark:bg-[#16161e] rounded-2xl border border-slate-100 dark:border-violet-700 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-50 dark:border-violet-700 flex items-center gap-2">
+      <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
           <span className="text-base">📥</span>
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Inbox</h3>
+          <h3 className="text-sm font-semibold text-on-surface">Inbox</h3>
           {count > 0 && (
-            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-full">
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] font-bold bg-violet-500/15 text-violet-400 rounded-full">
               {count}
             </span>
           )}
@@ -136,47 +136,47 @@ export default function BrainDump() {
         ) : count === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <span className="text-3xl">🧠</span>
-            <p className="text-sm text-slate-400 dark:text-slate-500">Inbox zero. Capture something above.</p>
+            <p className="text-sm text-on-surface-variant/50">Inbox zero. Capture something above.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-50 dark:divide-white/[0.04]">
+          <div className="divide-y divide-outline-variant/40">
             {items.map(item => (
               <div key={item.id}
-                className="group px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                className="group px-4 py-3 hover:bg-surface-container-low transition-colors">
                 <div className="flex items-start gap-3">
-                  <p className="flex-1 text-sm text-slate-700 dark:text-slate-200 leading-snug pt-0.5">
+                  <p className="flex-1 text-sm text-on-surface leading-snug pt-0.5">
                     {item.text}
                   </p>
-                  <span className="shrink-0 text-[10px] text-slate-300 dark:text-slate-600 pt-1 tabular-nums">
+                  <span className="shrink-0 text-[10px] text-on-surface-variant/30 pt-1 tabular-nums">
                     {relativeTime(item.createdAt)}
                   </span>
                 </div>
 
                 {/* Triage actions */}
                 <div className="flex items-center gap-1.5 mt-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-[10px] text-slate-300 dark:text-slate-600 mr-0.5">Send to →</span>
+                  <span className="text-[10px] text-on-surface-variant/30 mr-0.5">Send to →</span>
                   <button
                     onClick={() => promote(item, 'task')}
                     disabled={triaging === item.id}
-                    className="px-2 py-1 text-[10px] font-semibold rounded-md bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors disabled:opacity-40">
+                    className="px-2 py-1 text-[10px] font-semibold rounded-md bg-violet-500/15 text-violet-400 hover:bg-violet-500/15 transition-colors disabled:opacity-40">
                     ✓ Task
                   </button>
                   <button
                     onClick={() => promote(item, 'checklist')}
                     disabled={triaging === item.id}
-                    className="px-2 py-1 text-[10px] font-semibold rounded-md bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-40">
+                    className="px-2 py-1 text-[10px] font-semibold rounded-md bg-emerald-500/15 text-emerald-400 hover:bg-emerald-100 transition-colors disabled:opacity-40">
                     ☑ Checklist
                   </button>
                   <button
                     onClick={() => promote(item, 'note')}
                     disabled={triaging === item.id}
-                    className="px-2 py-1 text-[10px] font-semibold rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors disabled:opacity-40">
+                    className="px-2 py-1 text-[10px] font-semibold rounded-md bg-amber-500/15 text-amber-400 hover:bg-amber-100 transition-colors disabled:opacity-40">
                     📝 Note
                   </button>
                   <button
                     onClick={() => dismiss(item.id)}
                     disabled={triaging === item.id}
-                    className="ml-auto px-2 py-1 text-[10px] font-semibold rounded-md text-slate-300 dark:text-slate-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-400 transition-colors disabled:opacity-40">
+                    className="ml-auto px-2 py-1 text-[10px] font-semibold rounded-md text-on-surface-variant/30 hover:bg-rose-500/15 hover:text-rose-400 transition-colors disabled:opacity-40">
                     ✕ Discard
                   </button>
                 </div>

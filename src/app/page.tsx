@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import CalendarView from '@/components/CalendarView'
 import TasksView from '@/components/TasksView'
 import HabitsView from '@/components/HabitsView'
@@ -38,7 +38,6 @@ function calcCurrentStreak(scores: ScoreData): number {
   for (let i = 0; i < 400; i++) {
     const s = scores[check]
     if (!s) {
-      // Nothing scheduled this day — skip it, but cap skips so inactive periods break streak
       emptyRun++
       if (emptyRun > 7) break
       check = addDays(check, -1)
@@ -66,8 +65,6 @@ const MORE_TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'settings',      label: 'Settings',      icon: '⚙️' },
 ]
 
-const TABS = [...PRIMARY_TABS, ...MORE_TABS]
-
 function PowerButton() {
   const [confirm, setConfirm] = useState(false)
   async function shutdown() {
@@ -82,7 +79,7 @@ function PowerButton() {
   return (
     <button onClick={() => { setConfirm(true); setTimeout(() => setConfirm(false), 3000) }}
       title="Stop server"
-      className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all text-sm">
+      className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant/60 hover:text-rose-400 hover:bg-rose-500/15 transition-all text-sm">
       ⏻
     </button>
   )
@@ -91,7 +88,6 @@ function PowerButton() {
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
   const [scores, setScores] = useState<ScoreData>({})
-  const [dark, setDark] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
   const navRef = useRef<HTMLDivElement>(null)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
@@ -99,22 +95,9 @@ export default function Home() {
   const [pill, setPill] = useState<{ left: number; width: number } | null>(null)
 
   useEffect(() => {
-    const stored = localStorage.getItem('theme')
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const isDark = stored ? stored === 'dark' : prefersDark
-    setDark(isDark)
-    if (isDark) document.documentElement.classList.add('dark')
-    // Restore accent theme
     const accent = localStorage.getItem('accent-theme')
     if (accent && accent !== 'purple') applyTheme(accent as Parameters<typeof applyTheme>[0])
   }, [])
-
-  function toggleTheme() {
-    const next = !dark
-    setDark(next)
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-    document.documentElement.classList.toggle('dark', next)
-  }
 
   useEffect(() => {
     const t = today()
@@ -138,7 +121,6 @@ export default function Home() {
     setPill({ left: btnRect.left - navRect.left, width: btnRect.width })
   }, [activeTab])
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
@@ -149,21 +131,16 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const t = today()
   const streak = calcCurrentStreak(scores)
 
   return (
     <div className="min-h-screen flex flex-col">
 
-      {/* ── Aurora orbs ── */}
       <div className="aurora-orb aurora-orb-1" />
       <div className="aurora-orb aurora-orb-2" />
       <div className="aurora-orb aurora-orb-3" />
-
-      {/* ── Dot-grid ── */}
       <div className="dot-grid" />
 
-      {/* ── Global SVG gradient defs for wheels ── */}
       <svg width="0" height="0" className="absolute">
         <defs>
           <linearGradient id="wGreen" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -181,42 +158,34 @@ export default function Home() {
         </defs>
       </svg>
 
-      {/* ── Sticky header ── */}
-      <header className="sticky top-0 z-40 bg-white/70 dark:bg-black/30 backdrop-blur-2xl border-b border-white/60 dark:border-violet-700/40">
-        <div className="max-w-2xl mx-auto px-4 pt-3 pb-2 space-y-2.5">
+      <header className="sticky top-0 z-40 bg-surface/60 backdrop-blur-2xl border-b border-outline-variant/40">
+        <div className="max-w-3xl mx-auto px-6 pt-3 pb-2 space-y-2.5">
 
-          {/* Row 1: branding + wheels + toggle */}
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-base font-bold tracking-tight leading-none gradient-text">
+              <h1 className="text-base font-display font-bold tracking-tight leading-none gradient-text">
                 {greeting()}
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 leading-none">
+                <span className="text-[11px] text-on-surface-variant/60 leading-none">
                   {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
                 {streak > 0 && (
-                  <span className="streak-glow text-[11px] font-bold text-orange-500 leading-none">🔥 {streak}d</span>
+                  <span className="streak-glow text-[11px] font-bold text-orange-400 leading-none">🔥 {streak}d</span>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
-              <button onClick={toggleTheme}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/[0.05] text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-all text-sm">
-                {dark ? '☀️' : '🌙'}
-              </button>
               <PowerButton />
             </div>
           </div>
 
-          {/* Row 2: pill tab navigation */}
           <div className="flex items-center gap-1.5">
-            {/* Primary tabs */}
-            <div ref={navRef} className="relative flex flex-1 bg-slate-100/90 dark:bg-white/[0.05] rounded-xl p-0.5 gap-0.5">
+            <div ref={navRef} className="relative flex flex-1 bg-surface-container-low rounded-xl p-0.5 gap-0.5">
               {pill && (
                 <div
-                  className="neon-pill absolute top-0.5 bottom-0.5 rounded-[10px] bg-white dark:bg-white/[0.12] pointer-events-none"
+                  className="neon-pill absolute top-0.5 bottom-0.5 rounded-[10px] bg-surface-container-high pointer-events-none"
                   style={{ left: pill.left, width: pill.width }}
                 />
               )}
@@ -226,8 +195,8 @@ export default function Home() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`relative flex-1 flex items-center justify-center gap-1 px-1.5 py-1.5 rounded-[10px] text-[11px] font-semibold transition-colors duration-150 ${
                     activeTab === tab.id
-                      ? 'text-violet-600 dark:text-violet-400'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                      ? 'text-violet-400'
+                      : 'text-on-surface-variant/70 hover:text-on-surface'
                   }`}>
                   <span className="leading-none text-sm">{tab.icon}</span>
                   <span>{tab.label}</span>
@@ -235,14 +204,13 @@ export default function Home() {
               ))}
             </div>
 
-            {/* More dropdown */}
             <div ref={moreRef} className="relative">
               <button
                 onClick={() => setMoreOpen(o => !o)}
                 className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-colors duration-150 ${
                   MORE_TABS.some(t => t.id === activeTab) || moreOpen
-                    ? 'bg-white dark:bg-white/[0.12] text-violet-600 dark:text-violet-400 shadow-sm'
-                    : 'bg-slate-100/90 dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                    ? 'bg-surface-container-high text-violet-400 shadow-sm'
+                    : 'bg-surface-container-low text-on-surface-variant/70 hover:text-on-surface'
                 }`}
               >
                 {MORE_TABS.some(t => t.id === activeTab)
@@ -253,14 +221,14 @@ export default function Home() {
               </button>
 
               {moreOpen && (
-                <div className="absolute right-0 top-full mt-1.5 z-50 w-44 rounded-2xl border border-slate-100 dark:border-violet-700/60 bg-white dark:bg-[#16161e] shadow-2xl overflow-hidden">
+                <div className="glass absolute right-0 top-full mt-1.5 z-50 w-44 rounded-2xl overflow-hidden">
                   {MORE_TABS.map(tab => (
                     <button key={tab.id}
                       onClick={() => { setActiveTab(tab.id); setMoreOpen(false) }}
                       className={`w-full flex items-center gap-3 px-4 py-2.5 text-[12px] font-semibold transition-colors ${
                         activeTab === tab.id
-                          ? 'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20'
-                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.05]'
+                          ? 'text-violet-400 bg-violet-500/15'
+                          : 'text-on-surface-variant hover:bg-surface-container-low'
                       }`}>
                       <span className="text-base leading-none">{tab.icon}</span>
                       {tab.label}
@@ -274,8 +242,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Main content ── */}
-      <main className={`relative z-10 flex-1 mx-auto w-full px-4 py-5 ${activeTab === 'calendar' ? 'max-w-6xl' : activeTab === 'hotmap' ? 'max-w-5xl' : 'max-w-2xl'}`}>
+      <main className={`relative z-10 flex-1 mx-auto w-full px-6 py-5 ${activeTab === 'calendar' || activeTab === 'hotmap' ? 'max-w-container' : 'max-w-3xl'}`}>
         <div key={activeTab} className="tab-fade">
           {activeTab === 'calendar'      && <CalendarView />}
           {activeTab === 'tasks'         && <TasksView />}
@@ -293,4 +260,3 @@ export default function Home() {
     </div>
   )
 }
-

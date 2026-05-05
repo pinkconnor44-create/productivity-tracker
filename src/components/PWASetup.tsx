@@ -50,17 +50,17 @@ export default function PWASetup() {
   if (!banner) return null
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 z-50 flex items-center gap-3 bg-white dark:bg-[#16161e] border border-violet-200 dark:border-violet-700 rounded-2xl shadow-xl px-4 py-3">
+    <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 z-50 flex items-center gap-3 bg-surface-container border border-violet-200 rounded-2xl shadow-xl px-4 py-3">
       <div className="text-2xl">📲</div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight">Install App</div>
+        <div className="text-sm font-semibold text-on-surface leading-tight">Install App</div>
         {showIos && (
-          <div className="text-xs text-slate-600 dark:text-slate-300 leading-tight mt-0.5">
+          <div className="text-xs text-on-surface-variant leading-tight mt-0.5">
             Tap <strong>Share</strong> → <strong>Add to Home Screen</strong>
           </div>
         )}
         {showAndroid && (
-          <div className="text-xs text-slate-600 dark:text-slate-300 leading-tight mt-0.5">
+          <div className="text-xs text-on-surface-variant leading-tight mt-0.5">
             Add to home screen for the full experience
           </div>
         )}
@@ -76,7 +76,7 @@ export default function PWASetup() {
       )}
       <button
         onClick={dismiss}
-        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-base font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 bg-slate-100 dark:bg-white/[0.08] transition-all"
+        className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-base font-bold text-on-surface-variant/60 hover:text-rose-400 hover:bg-rose-500/15 bg-surface-container-low transition-all"
       >
         ✕
       </button>
