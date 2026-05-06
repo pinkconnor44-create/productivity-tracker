@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calendar UI — Improvements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #050608; font-family: Manrope, sans-serif; color: #d4d6dc; }
+  *, *::before, *::after { box-sizing: border-box; }
+  /* Tighten DC chrome a bit */
+  .dc-section-title { font-family: 'Space Grotesk', sans-serif !important; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="data.jsx"></script>
+<script type="text/babel" src="variation-a.jsx"></script>
+<script type="text/babel" src="variation-b.jsx"></script>
+<script type="text/babel" src="variation-c.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+function Notes({ children }) {
+  return (
+    <div style={{
+      maxWidth: 720,
+      padding: '16px 20px',
+      background: 'rgba(255,255,255,0.025)',
+      border: '1px solid rgba(255,255,255,0.06)',
+      borderRadius: 12,
+      fontSize: 13, lineHeight: 1.65, color: '#9098a8',
+      marginBottom: 16,
+    }}>{children}</div>
+  );
+}
+
+function Diagnosis() {
+  return (
+    <Notes>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', color: '#a78bfa', textTransform: 'uppercase', marginBottom: 8 }}>Why the current calendar feels noisy</div>
+      <div style={{ color: '#c8ccd6' }}>
+        Each month cell currently competes for attention with <em>five</em> overlapping signals: a colored score-tint background,
+        a mini score wheel, a habits ratio (3/5), up to two violet task chips, and a yellow note dot.
+        The eye doesn't know what to read first. Every variation below picks a different way to fix this — by reducing layers,
+        introducing hierarchy, or leaning into density on purpose.
+      </div>
+    </Notes>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas
+      title="Calendar UI improvements"
+      subtitle="3 directions for the month view — pick parts you like, I'll combine."
+    >
+      <DCSection id="diagnosis" title="Diagnosis">
+        <Diagnosis />
+      </DCSection>
+
+      <DCSection id="a" title="A — Refined Lumina" subtitle="Same DNA. Cleaner hierarchy, kind-colored events, one strong signal per cell.">
+        <Notes>
+          <strong style={{ color: '#dae2fd' }}>What changed:</strong> Score-tint backgrounds replaced by a thin colored bar at the cell bottom (one signal, not full-cell color). Mini wheels removed from cells — they cluttered. Task chips now use kind colors (meeting/focus/personal/admin/planning) instead of all-violet, so the calendar gets information density from <em>color meaning</em> rather than just visual weight. Summary wheels become a horizontal stat strip — easier to scan, frees vertical space. Right rail becomes a calmer agenda view of the selected day.
+        </Notes>
+        <DCArtboard id="a-month" label="Month view" width={1180} height={920}>
+          <div id="cal-a"></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="b" title="B — Editorial Calm" subtitle="Lighter, magazine-like. Cells breathe. Score data is in the spine.">
+        <Notes>
+          <strong style={{ color: '#dae2fd' }}>What changed:</strong> Drops aurora orbs and per-cell tints entirely. Cells are mostly empty — just a date number and a small ribbon of dots showing today's events colored by completion. Score line is a hairline at the bottom of each cell. The big move: a vertical "year spine" on the left shows every day of 2026 so far as a tiny heatmap mark — gives you year-context without a separate stats panel. Typography goes editorial: huge weights on the month name, italic event titles. Quieter, more confident.
+        </Notes>
+        <DCArtboard id="b-month" label="Month view" width={1180} height={870}>
+          <div id="cal-b"></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="c" title="C — Bold Data-dense" subtitle="Linear / Notion Calendar inspired. Hairlines, full-bleed event bars, week sparklines.">
+        <Notes>
+          <strong style={{ color: '#dae2fd' }}>What changed:</strong> No glass, no aurora — flat near-black with hairline dividers. Tasks render as full-width bars with a left color stripe (kind), like Linear issues. Score becomes a top-of-cell sparkbar (subtle, 2px) with a small percent in the corner. Adds a week-number gutter on the left with vertical sparkbars per row, so you can see weekly trends at a glance. App-bar style top chrome with breadcrumb + primary action button. Densest of the three; built for users who live in the calendar.
+        </Notes>
+        <DCArtboard id="c-month" label="Month view" width={1180} height={870}>
+          <div id="cal-c"></div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="next" title="Next steps">
+        <Notes>
+          Tell me which direction resonates — or which pieces from each. Likely combos: A's stat strip + B's quieter cells; B's year spine + C's event bars; C's top chrome + A's right rail. I'll then port the chosen design back into your actual <code style={{ color: '#a78bfa', fontSize: 12 }}>CalendarView.tsx</code> with all the existing data wiring intact.
+        </Notes>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+// Mount each calendar into its artboard
+const tryMount = () => {
+  const mountIfReady = (id, Comp) => {
+    const el = document.getElementById(id);
+    if (el && Comp && !el.dataset.mounted) {
+      el.dataset.mounted = '1';
+      ReactDOM.createRoot(el).render(<Comp />);
+    }
+  };
+  mountIfReady('cal-a', window.CalendarA);
+  mountIfReady('cal-b', window.CalendarB);
+  mountIfReady('cal-c', window.CalendarC);
+};
+const interval = setInterval(() => {
+  tryMount();
+  if (document.querySelector('#cal-a[data-mounted]') &&
+      document.querySelector('#cal-b[data-mounted]') &&
+      document.querySelector('#cal-c[data-mounted]')) {
+    clearInterval(interval);
+  }
+}, 100);
+</script>
+</body>
+</html>

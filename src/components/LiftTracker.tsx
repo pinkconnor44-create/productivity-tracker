@@ -50,12 +50,9 @@ export default function LiftTracker() {
   const [newGroupName, setNewGroupName] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
-  const [name, setName] = useState('')
-  const [weight, setWeight] = useState('')
-  const [reps, setReps] = useState<string[]>([''])
-  const [saving, setSaving] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const nameRef = useRef<HTMLInputElement>(null)
+  // Stopwatch state lives here so the floating timer survives layer changes
+  // and exercise modal open/close without resetting.
+  const stopwatch = useStopwatchState()
 
   const t = today()
   const startDate = addDays(t, -89)
@@ -70,15 +67,6 @@ export default function LiftTracker() {
       setLoaded(true)
     })
   }, [])
-
-  async function addEntry() {
-    const parsedReps = reps.map(r => parseInt(r) || 0).filter(r => r > 0)
-    if (!name.trim() || !weight || parsedReps.length === 0) return
-    setSaving(true)
-    await logSession(name.trim(), parseFloat(weight), parsedReps)
-    setName(''); setWeight(''); setReps([''])
-    setSaving(false)
-  }
 
   async function logSession(exName: string, weightVal: number, parsedReps: number[]) {
     const res = await fetch('/api/lifts', {
@@ -139,12 +127,6 @@ export default function LiftTracker() {
     }
   }
 
-  function addSet() { setReps(prev => [...prev, '']) }
-  function removeSet(i: number) { setReps(prev => prev.filter((_, idx) => idx !== i)) }
-  function updateRep(i: number, val: string) { setReps(prev => prev.map((r, idx) => idx === i ? val : r)) }
-
-  const totalRepsPreview = reps.map(r => parseInt(r) || 0).reduce((a, b) => a + b, 0)
-
   const byExercise = entries.reduce<Record<string, LiftEntry[]>>((acc, e) => {
     acc[e.name] = acc[e.name] ? [...acc[e.name], e] : [e]
     return acc
@@ -158,10 +140,6 @@ export default function LiftTracker() {
 
   const allGroupedExercises = new Set(groups.flatMap(g => g.exercises))
   const ungroupedExerciseNames = exerciseNames.filter(n => !allGroupedExercises.has(n))
-
-  const suggestions = name.trim()
-    ? exerciseNames.filter(n => n.toLowerCase().includes(name.toLowerCase()) && n.toLowerCase() !== name.toLowerCase())
-    : []
 
   const selectedSessions = selectedExercise
     ? (byExercise[selectedExercise] ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))
@@ -179,7 +157,7 @@ export default function LiftTracker() {
   if (typeof activeGroupId === 'number' && currentGroup) {
     return (
       <div className="space-y-4">
-        <Stopwatch />
+        <FloatingStopwatch {...stopwatch} />
 
         {/* Header */}
         <div className="flex items-center gap-2">
@@ -271,7 +249,7 @@ export default function LiftTracker() {
   if (activeGroupId === 'ungrouped') {
     return (
       <div className="space-y-4">
-        <Stopwatch />
+        <FloatingStopwatch {...stopwatch} />
         <div className="flex items-center gap-2">
           <button onClick={() => setActiveGroupId(null)}
             className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
@@ -342,68 +320,9 @@ export default function LiftTracker() {
         <StatCard label="Last session" value={lastDate ? new Date(lastDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'} sub="most recent" barPct={lastDate ? 100 : 0} />
       </div>
 
-      <Stopwatch />
+      <FloatingStopwatch {...stopwatch} />
 
-      {/* Quick log form */}
-      <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
-          <span className="text-base">🏋️</span>
-          <h3 className="text-sm font-semibold text-on-surface">Log Exercise</h3>
-        </div>
-        <div className="p-4 space-y-3">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input ref={nameRef} type="text" value={name}
-                onChange={e => { setName(e.target.value); setShowSuggestions(true) }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
-                placeholder="Exercise name"
-                className="w-full px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors" />
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-outline-variant/60 bg-surface-container shadow-xl overflow-hidden">
-                  {suggestions.slice(0, 5).map(s => (
-                    <button key={s} onMouseDown={() => { setName(s); setShowSuggestions(false) }}
-                      className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-violet-500/10 transition-colors">{s}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
-              placeholder="lbs" min={0}
-              className="w-24 px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-semibold text-on-surface-variant/70">Sets — reps per set</span>
-              {totalRepsPreview > 0 && <span className="ml-auto text-[11px] font-bold text-violet-400">{totalRepsPreview} total reps</span>}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {reps.map((r, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <span className="text-[10px] text-on-surface-variant/40 font-medium w-10 text-right">Set {i + 1}</span>
-                  <input type="number" value={r} onChange={e => updateRep(i, e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') addEntry() }}
-                    min={0} placeholder="—"
-                    className="w-16 px-2 py-1.5 text-sm text-center rounded-lg border border-outline-variant/60 bg-surface-container-lowest text-on-surface outline-none focus:border-violet-500 transition-colors" />
-                  {reps.length > 1 && (
-                    <button onClick={() => removeSet(i)} className="text-on-surface-variant/30 hover:text-rose-400 transition-colors text-xs px-1">✕</button>
-                  )}
-                </div>
-              ))}
-              <button onClick={addSet}
-                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
-                + Set
-              </button>
-            </div>
-          </div>
-          <button onClick={addEntry} disabled={saving || !name.trim() || !weight || totalRepsPreview === 0}
-            className="w-full py-2 text-sm font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
-            {saving ? 'Logging…' : 'Log Exercise'}
-          </button>
-        </div>
-      </div>
+      {/* Quick log form removed in redesign — logging now happens inside the per-exercise modal with stacked sets + drafts. */}
 
       {/* Workout Days header */}
       <div className="flex items-center justify-between">
@@ -582,14 +501,78 @@ function ExerciseModal({
 
           {sessions.length >= 2 && (
             <div className="px-4 pb-6 pt-2 border-t border-outline-variant/40">
-              <p className="text-[11px] font-semibold text-on-surface-variant/50 mb-3 uppercase tracking-wide">
-                Volume over time (lbs × reps)
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wide">
+                  Volume over time (lbs × reps)
+                </p>
+                <VolumeDelta sessions={sessions} />
+              </div>
               <VolumeChart sessions={sessions} />
             </div>
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Tonnage deltas — all-time (first session vs latest) and 3-session running (T0 = latest, T1 = 3 sessions before).
+// Two pill chips side by side with a divider.
+function VolumeDelta({ sessions }: { sessions: LiftEntry[] }) {
+  // Sort oldest → newest for both calculations.
+  const sorted = sessions.slice().sort((a, b) => a.date.localeCompare(b.date))
+  const n = sorted.length
+
+  // All-time: first session's volume → latest session's volume.
+  const first = sorted[0]
+  const latest = sorted[n - 1]
+  const firstVol = first ? first.weight * first.totalReps : 0
+  const latestVol = latest ? latest.weight * latest.totalReps : 0
+  const allTimePct = (first && latest && first !== latest && firstVol > 0)
+    ? Math.round(((latestVol - firstVol) / firstVol) * 100)
+    : null
+
+  // 3-session running: T0 = latest, T1 = session at index n-4 (3 entries before T0).
+  // Needs at least 4 sessions for a valid T1.
+  const t1 = n >= 4 ? sorted[n - 4] : null
+  const t0 = latest
+  const t1Vol = t1 ? t1.weight * t1.totalReps : 0
+  const t0Vol = t0 ? t0.weight * t0.totalReps : 0
+  const threeSessionPct = (t1 && t0 && t1Vol > 0)
+    ? Math.round(((t0Vol - t1Vol) / t1Vol) * 100)
+    : null
+
+  function Pill({ label, pct, tooltip }: { label: string; pct: number | null; tooltip: string }) {
+    if (pct === null) {
+      return <span className="text-[10px] text-on-surface-variant/40 italic">{label} —</span>
+    }
+    const positive = pct >= 0
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+          positive ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'
+        }`}
+        title={tooltip}
+      >
+        <span className="text-on-surface-variant/60 font-semibold">{label}</span>
+        {positive ? '↑' : '↓'} {Math.abs(pct)}%
+      </span>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <Pill
+        label="All-time"
+        pct={allTimePct}
+        tooltip={first && latest ? `T1 ${firstVol.toLocaleString()} lb·reps (${first.date}) → T0 ${latestVol.toLocaleString()} lb·reps (${latest.date})` : ''}
+      />
+      <span className="text-on-surface-variant/30 text-[10px]">|</span>
+      <Pill
+        label="3-sess"
+        pct={threeSessionPct}
+        tooltip={t1 && t0 ? `T1 ${t1Vol.toLocaleString()} lb·reps (${t1.date}) → T0 ${t0Vol.toLocaleString()} lb·reps (${t0.date})` : 'needs ≥4 sessions'}
+      />
     </div>
   )
 }
@@ -682,7 +665,9 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
   )
 }
 
-function Stopwatch() {
+// Stopwatch state hook — owned by LiftTracker so the timer survives layer changes
+// (Layer 1 ↔ Layer 2 ↔ exercise modal) without remounting/resetting.
+function useStopwatchState() {
   const [ms, setMs] = useState(0)
   const [running, setRunning] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -693,52 +678,87 @@ function Stopwatch() {
     intervalRef.current = setInterval(() => setMs(Date.now() - startRef.current), 100)
     setRunning(true)
   }, [ms])
-
   const stop = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
     setRunning(false)
   }, [])
-
   const reset = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    setMs(0)
-    setRunning(false)
+    setMs(0); setRunning(false)
   }, [])
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, [])
 
+  return { ms, running, start, stop, reset }
+}
+
+// Floating, draggable timer overlay. Sits on top of the exercise modal so you
+// can use it while inputting sets. Z-index 55 = above modal (50), below toasts (60).
+function FloatingStopwatch({ ms, running, start, stop, reset }: {
+  ms: number
+  running: boolean
+  start: () => void
+  stop: () => void
+  reset: () => void
+}) {
+  const [collapsed, setCollapsed] = useState(false)
   const totalSec = Math.floor(ms / 1000)
   const m = Math.floor(totalSec / 60)
   const s = totalSec % 60
   const tenth = Math.floor((ms % 1000) / 100)
   const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${tenth}`
+  const display2 = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+
+  if (collapsed) {
+    return (
+      <button
+        onClick={() => setCollapsed(false)}
+        className="fixed bottom-4 right-4 z-[55] flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-surface-container-high border border-violet-400/40 shadow-2xl backdrop-blur-md hover:bg-surface-container-highest transition-colors"
+        aria-label="Expand timer"
+      >
+        <span className="text-base">⏱</span>
+        <span className={`font-mono font-bold tabular-nums text-sm ${running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/60'}`}>
+          {display2}
+        </span>
+        {running && <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />}
+      </button>
+    )
+  }
 
   return (
-    <div className="bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-      <div className="px-6 pt-5 pb-5 flex flex-col items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">⏱</span>
-          <span className="text-sm font-semibold text-on-surface-variant/70 uppercase tracking-wider">Rest Timer</span>
-        </div>
-        <span className={`text-6xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-400' : ms > 0 ? 'text-on-surface-variant/70' : 'text-on-surface-variant/30'}`}>
+    <div className="fixed bottom-4 right-4 z-[55] w-[260px] rounded-2xl bg-surface-container-high/95 border border-violet-400/40 shadow-2xl backdrop-blur-md overflow-hidden">
+      <div className="flex items-center gap-2 px-4 pt-3">
+        <span className="text-sm">⏱</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70">Rest Timer</span>
+        <button
+          onClick={() => setCollapsed(true)}
+          className="ml-auto w-6 h-6 flex items-center justify-center rounded-md text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container transition-colors text-xs"
+          aria-label="Collapse timer"
+          title="Collapse"
+        >
+          –
+        </button>
+      </div>
+      <div className="px-4 pt-1 pb-3 flex flex-col items-center gap-3">
+        <span className={`text-3xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/40'}`}>
           {display}
         </span>
-        <div className="flex gap-3 w-full">
+        <div className="flex gap-2 w-full">
           {!running ? (
             <button onClick={start}
-              className="flex-1 py-3 text-base font-bold rounded-xl bg-violet-600 text-white hover:bg-violet-700 active:bg-violet-800 transition-colors shadow-sm">
+              className="flex-1 py-2 text-sm font-bold rounded-xl bg-violet-600 text-white hover:bg-violet-700 active:bg-violet-800 transition-colors">
               {ms > 0 ? 'Resume' : 'Start'}
             </button>
           ) : (
             <button onClick={stop}
-              className="flex-1 py-3 text-base font-bold rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 transition-colors shadow-sm">
+              className="flex-1 py-2 text-sm font-bold rounded-xl bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 transition-colors">
               Stop
             </button>
           )}
           {ms > 0 && (
             <button onClick={reset}
-              className="px-6 py-3 text-base font-bold rounded-xl border border-outline-variant/60 text-on-surface-variant/50 hover:text-rose-400 hover:border-rose-500/40 transition-colors">
-              Reset
+              className="px-3 py-2 text-sm font-bold rounded-xl border border-outline-variant/60 text-on-surface-variant/60 hover:text-rose-400 hover:border-rose-500/40 transition-colors">
+              ⟲
             </button>
           )}
         </div>
@@ -747,25 +767,77 @@ function Stopwatch() {
   )
 }
 
+// Vertical stacked-set log form. Drafts auto-persist to localStorage so closing
+// the modal and coming back keeps the rows filled in. "Finish session" submits
+// all sets to the server and clears the draft.
+type DraftRow = { weight: string; reps: string }
+function draftKey(exName: string) {
+  const t = today()
+  return `lift-draft-${t}-${exName}`
+}
+function loadDraft(exName: string): DraftRow[] {
+  if (typeof window === 'undefined') return [{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }]
+  try {
+    const raw = localStorage.getItem(draftKey(exName))
+    if (!raw) return [{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }]
+    const parsed = JSON.parse(raw) as DraftRow[]
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }]
+  } catch {
+    return [{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }]
+  }
+}
+function saveDraft(exName: string, rows: DraftRow[]) {
+  try { localStorage.setItem(draftKey(exName), JSON.stringify(rows)) } catch {}
+}
+function clearDraft(exName: string) {
+  try { localStorage.removeItem(draftKey(exName)) } catch {}
+}
+
 function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: number, sets: number[]) => Promise<void> }) {
-  const [weight, setWeight] = useState('')
-  const [reps, setReps] = useState<string[]>([''])
+  const [rows, setRows] = useState<DraftRow[]>(() => loadDraft(exName))
   const [saving, setSaving] = useState(false)
   const [open, setOpen] = useState(false)
 
-  const totalRepsPreview = reps.map(r => parseInt(r) || 0).reduce((a, b) => a + b, 0)
+  // Persist drafts on every change. Cheap — JSON of <10 short strings.
+  useEffect(() => { saveDraft(exName, rows) }, [exName, rows])
 
-  function addSet() { setReps(prev => [...prev, '']) }
-  function removeSet(i: number) { setReps(prev => prev.filter((_, idx) => idx !== i)) }
-  function updateRep(i: number, val: string) { setReps(prev => prev.map((r, idx) => idx === i ? val : r)) }
+  // Reload draft if the exercise name changes (modal could be reused, defensive)
+  useEffect(() => { setRows(loadDraft(exName)) }, [exName])
+
+  const filledRows = rows.filter(r => parseInt(r.reps) > 0 && parseFloat(r.weight) > 0)
+  const totalReps = filledRows.reduce((s, r) => s + (parseInt(r.reps) || 0), 0)
+  const totalVolume = filledRows.reduce((s, r) => s + (parseFloat(r.weight) || 0) * (parseInt(r.reps) || 0), 0)
+  const hasDraft = rows.some(r => r.weight !== '' || r.reps !== '')
+
+  function addRow() { setRows(prev => [...prev, { weight: '', reps: '' }]) }
+  function removeRow(i: number) { setRows(prev => prev.filter((_, idx) => idx !== i)) }
+  function update(i: number, key: keyof DraftRow, val: string) {
+    setRows(prev => prev.map((r, idx) => idx === i ? { ...r, [key]: val } : r))
+  }
+  function clearAll() {
+    setRows([{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }])
+    clearDraft(exName)
+  }
 
   async function submit() {
-    const parsedReps = reps.map(r => parseInt(r) || 0).filter(r => r > 0)
-    if (!weight || parsedReps.length === 0) return
+    if (filledRows.length === 0) return
     setSaving(true)
-    await onAdd(parseFloat(weight), parsedReps)
-    setWeight('')
-    setReps([''])
+
+    // Group consecutive same-weight rows into single LiftEntry submissions
+    // (schema is one weight per entry with reps[] for sets).
+    const groups: { weight: number; reps: number[] }[] = []
+    for (const row of filledRows) {
+      const w = parseFloat(row.weight)
+      const r = parseInt(row.reps)
+      const last = groups[groups.length - 1]
+      if (last && last.weight === w) last.reps.push(r)
+      else groups.push({ weight: w, reps: [r] })
+    }
+    for (const g of groups) {
+      await onAdd(g.weight, g.reps)
+    }
+    clearDraft(exName)
+    setRows([{ weight: '', reps: '' }, { weight: '', reps: '' }, { weight: '', reps: '' }])
     setSaving(false)
     setOpen(false)
   }
@@ -774,7 +846,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
     <div className="px-4 py-2 border-t border-outline-variant/40">
       <button onClick={() => setOpen(true)}
         className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
-        + Log new session
+        + Log new session{hasDraft && <span className="ml-1 text-amber-400">· draft saved</span>}
       </button>
     </div>
   )
@@ -783,50 +855,80 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
     <div className="px-4 py-3 border-t border-outline-variant/40 bg-surface-container-lowest/50 space-y-2.5">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-xs font-semibold text-violet-400">New session — {exName}</span>
-        <button onClick={() => setOpen(false)} className="ml-auto text-[10px] text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">cancel</button>
+        {hasDraft && (
+          <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">draft</span>
+        )}
+        <button onClick={() => setOpen(false)} className="ml-auto text-[10px] text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">close</button>
       </div>
-      <div className="flex gap-2 items-center">
-        <input
-          type="number"
-          value={weight}
-          onChange={e => setWeight(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') submit() }}
-          placeholder="lbs"
-          min={0}
-          className="w-24 px-3 py-1.5 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors"
-        />
-        <div className="flex flex-wrap gap-1.5 flex-1">
-          {reps.map((r, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <span className="text-[10px] text-on-surface-variant/60 font-medium">S{i + 1}</span>
-              <input
-                type="number"
-                value={r}
-                onChange={e => updateRep(i, e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') submit() }}
-                min={0}
-                placeholder="—"
-                className="w-14 px-2 py-1.5 text-sm text-center rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface outline-none focus:border-violet-500 transition-colors"
-              />
-              {reps.length > 1 && (
-                <button onClick={() => removeSet(i)} className="text-on-surface-variant/40 hover:text-rose-400 transition-colors text-xs">✕</button>
-              )}
-            </div>
-          ))}
-          <button onClick={addSet}
-            className="px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-dashed border-outline-variant/60 text-on-surface-variant/60 hover:border-violet-400 hover:text-violet-500 transition-colors">
-            + Set
-          </button>
+
+      <div className="flex flex-col gap-1.5">
+        <div className="grid grid-cols-[28px_1fr_1fr_24px] gap-2 px-1 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/45">
+          <span>Set</span>
+          <span>Weight</span>
+          <span>Reps</span>
+          <span />
         </div>
+        {rows.map((r, i) => (
+          <div key={i} className="grid grid-cols-[28px_1fr_1fr_24px] gap-2 items-center">
+            <span className="text-[11px] font-semibold text-on-surface-variant/70 tabular-nums text-center">{i + 1}</span>
+            <input
+              type="number"
+              value={r.weight}
+              onChange={e => update(i, 'weight', e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') submit() }}
+              placeholder="lbs"
+              min={0}
+              inputMode="decimal"
+              className="w-full px-2.5 py-2 text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
+            />
+            <input
+              type="number"
+              value={r.reps}
+              onChange={e => update(i, 'reps', e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') submit() }}
+              placeholder="reps"
+              min={0}
+              inputMode="numeric"
+              className="w-full px-2.5 py-2 text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
+            />
+            <button
+              onClick={() => removeRow(i)}
+              disabled={rows.length === 1}
+              className="text-on-surface-variant/40 hover:text-rose-400 transition-colors text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label={`Remove set ${i + 1}`}
+            >✕</button>
+          </div>
+        ))}
       </div>
-      {totalRepsPreview > 0 && (
-        <div className="text-[11px] text-violet-400 font-bold">{totalRepsPreview} total reps</div>
+
+      <div className="flex gap-2">
+        <button onClick={addRow}
+          className="flex-1 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/70 hover:border-violet-400 hover:text-violet-300 transition-colors">
+          + Add set
+        </button>
+        {hasDraft && (
+          <button onClick={clearAll}
+            className="px-3 py-2 text-xs font-semibold rounded-xl border border-outline-variant/60 text-on-surface-variant/60 hover:text-rose-400 hover:border-rose-500/40 transition-colors">
+            Clear
+          </button>
+        )}
+      </div>
+
+      {filledRows.length > 0 && (
+        <div className="flex items-center gap-3 px-1 text-[11px]">
+          <span className="text-on-surface-variant/60">{filledRows.length} set{filledRows.length === 1 ? '' : 's'}</span>
+          <span className="text-on-surface-variant/30">·</span>
+          <span className="text-violet-300 font-bold">{totalReps} reps</span>
+          <span className="text-on-surface-variant/30">·</span>
+          <span className="text-violet-300 font-bold tabular-nums">{totalVolume.toLocaleString()} vol</span>
+        </div>
       )}
+
       <button
         onClick={submit}
-        disabled={saving || !weight || totalRepsPreview === 0}
-        className="w-full py-1.5 text-xs font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
-        {saving ? 'Logging…' : 'Log Session'}
+        disabled={saving || filledRows.length === 0}
+        className="w-full py-2.5 text-sm font-bold rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
+        {saving ? 'Saving…' : `Finish session${filledRows.length > 0 ? ` · ${filledRows.length} set${filledRows.length === 1 ? '' : 's'}` : ''}`}
       </button>
     </div>
   )

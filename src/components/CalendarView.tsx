@@ -472,10 +472,6 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
             if (a.time && b.time) return a.time < b.time ? -1 : 1
             if (a.time) return -1; if (b.time) return 1; return 0
           })
-          const firstTitled = sortedTasks[0]
-          const ribbonMax = 6
-          const ribbon = sortedTasks.slice(0, ribbonMax)
-          const overflow = sortedTasks.length - ribbon.length
           const sc = score && !isFuture ? scoreColor(score.pct) : null
 
           return (
@@ -505,33 +501,38 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                   </div>
                 </div>
 
-                {/* Event ribbon — kind-colored dots */}
-                {ribbon.length > 0 && (
-                  <div className={`flex flex-wrap items-center gap-1 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
-                    {ribbon.map(t => {
+                {/* Task pills — kind-colored bordered chips, max 2 visible */}
+                {isCurrentMonth && sortedTasks.length > 0 && (
+                  <div className={`flex flex-col gap-1 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                    {sortedTasks.slice(0, 2).map(t => {
                       const k = kindStyle(t.kind)
                       const done = isTaskDone(t, date)
+                      const dot = k?.dot ?? '#cbc3d780'
                       return (
                         <span
                           key={t.id}
-                          className={`block w-1.5 h-1.5 rounded-full ${done ? 'opacity-30' : ''}`}
-                          style={{ background: k?.dot ?? '#cbc3d780' }}
-                        />
+                          title={t.title}
+                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] leading-tight truncate ${
+                            done ? 'opacity-40 line-through' : ''
+                          }`}
+                          style={{
+                            borderColor: `${dot}55`,
+                            background: `${dot}1a`,
+                            color: done ? undefined : dot,
+                          }}
+                        >
+                          {t.time && (
+                            <span className="tabular-nums font-bold shrink-0">{formatTime(t.time).replace(' ', '').replace(':00', '')}</span>
+                          )}
+                          <span className="truncate font-medium">{t.title}</span>
+                        </span>
                       )
                     })}
-                    {overflow > 0 && (
-                      <span className="text-[9px] font-semibold text-on-surface-variant/55 leading-none">+{overflow}</span>
+                    {sortedTasks.length > 2 && (
+                      <span className="text-[9px] font-semibold text-on-surface-variant/55 leading-none px-1">
+                        +{sortedTasks.length - 2} more
+                      </span>
                     )}
-                  </div>
-                )}
-
-                {/* First event title — italic, single line */}
-                {firstTitled && isCurrentMonth && (
-                  <div className={`text-[10px] italic leading-tight truncate transition-opacity duration-200 ${
-                    isTaskDone(firstTitled, date) ? 'text-on-surface-variant/35 line-through' : 'text-on-surface-variant/75'
-                  } ${isModalOpen ? 'opacity-20' : ''}`}>
-                    {firstTitled.time ? <span className="tabular-nums not-italic font-semibold mr-1 text-on-surface-variant/90">{formatTime(firstTitled.time).replace(' ', '')}</span> : null}
-                    {firstTitled.title}
                   </div>
                 )}
 

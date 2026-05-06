@@ -2,6 +2,7 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   darkMode: 'class',
+  future: { hoverOnlyWhenSupported: true },
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -20,8 +21,8 @@ const config: Config = {
         'surface-container-highest': 'var(--surface-container-highest)',
         'on-surface': 'var(--on-surface)',
         'on-surface-variant': 'var(--on-surface-variant)',
-        outline: 'var(--outline)',
-        'outline-variant': 'var(--outline-variant)',
+        outline: 'rgb(var(--outline-rgb) / <alpha-value>)',
+        'outline-variant': 'rgb(var(--outline-variant-rgb) / <alpha-value>)',
         primary: 'rgb(var(--c-p) / <alpha-value>)',
         secondary: 'var(--secondary)',
         'secondary-container': 'var(--secondary-container)',

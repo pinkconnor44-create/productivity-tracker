@@ -3,23 +3,25 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const items = await prisma.matrixItem.findMany({ orderBy: { createdAt: 'asc' } })
+    const items = await prisma.project.findMany({ orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] })
     return NextResponse.json(items)
   } catch (e) {
-    console.error('[/api/matrix GET]', e)
+    console.error('[/api/projects GET]', e)
     return NextResponse.json([], { status: 500 })
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, quadrant } = await req.json()
+    const { title } = await req.json()
     if (!title?.trim()) return NextResponse.json({ error: 'title required' }, { status: 400 })
-    if (![1, 2, 3, 4].includes(quadrant)) return NextResponse.json({ error: 'invalid quadrant' }, { status: 400 })
-    const item = await prisma.matrixItem.create({ data: { title: title.trim(), quadrant } })
+    const max = await prisma.project.aggregate({ _max: { order: true } })
+    const item = await prisma.project.create({
+      data: { title: title.trim(), order: (max._max.order ?? 0) + 1 },
+    })
     return NextResponse.json(item, { status: 201 })
   } catch (e) {
-    console.error('[/api/matrix POST]', e)
+    console.error('[/api/projects POST]', e)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

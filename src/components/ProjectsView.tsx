@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from '@/lib/toast'
-import { PageHeader, StatCard, scoreColor } from '@/components/ui'
+import { PageHeader } from '@/components/ui'
 
 type ChecklistItem = { id: string; text: string; done: boolean }
 type Project = {
@@ -263,14 +263,6 @@ export default function ProjectsView() {
   const items = active ? checklistItems(active) : []
   const doneCount = items.filter(i => i.done).length
 
-  const totalDoneAll = projects.reduce((s, p) => {
-    try { const list = JSON.parse(p.checklist) as { done: boolean }[]; return s + list.filter(i => i.done).length } catch { return s }
-  }, 0)
-  const totalItemsAll = projects.reduce((s, p) => {
-    try { return s + (JSON.parse(p.checklist) as unknown[]).length } catch { return s }
-  }, 0)
-  const overallPct = totalItemsAll > 0 ? Math.round((totalDoneAll / totalItemsAll) * 100) : 0
-
   return (
     <div className="space-y-4">
       <PageHeader
@@ -278,12 +270,6 @@ export default function ProjectsView() {
         title={<>{projects.length}<span className="text-on-surface-variant/50"> active</span></>}
         sub="Per-project notes + checklist. Click any card to expand the detail view."
       />
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-        <StatCard label="Active" value={projects.length} sub="projects" />
-        <StatCard label="Items" value={totalItemsAll} sub={`${totalDoneAll} done`} />
-        <StatCard label="Progress" value={overallPct} suffix="%" sub="across all projects" color={scoreColor(overallPct)} barPct={overallPct} />
-      </div>
 
       {/* Add project */}
       <form onSubmit={createProject}

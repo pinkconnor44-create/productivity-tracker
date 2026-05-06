@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { isTaskActiveOnDate, recurringLabel } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, StatCard, KindChip, KindPicker, scoreColor } from '@/components/ui'
+import { PageHeader, KindChip, KindPicker } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
@@ -231,14 +231,6 @@ export default function TasksView() {
     </div>
   )
 
-  // Stat strip metrics
-  const recurringDoneToday = activeRecurringToday.filter(t => t.completions.some(c => c.date === todayStr)).length
-  const overdueCount = groups.overdue.length
-  const openWeight = tasks.filter(t => !t.recurringType && !t.completed).reduce((s, t) => s + (t.weight ?? 1), 0)
-  const todayDoneWeight = activeRecurringToday.filter(t => t.completions.some(c => c.date === todayStr)).reduce((s, t) => s + (t.weight ?? 1), 0)
-  const todayTotalWeight = activeRecurringToday.filter(t => !t.skips?.some(s => s.date === todayStr)).reduce((s, t) => s + (t.weight ?? 1), 0)
-  const todayPct = todayTotalWeight > 0 ? Math.round((todayDoneWeight / todayTotalWeight) * 100) : 0
-
   return (
     <div className="space-y-4">
       <PageHeader
@@ -249,14 +241,6 @@ export default function TasksView() {
         })()}
         sub="Recurring rituals plus what's on the docket. Excused items don't count against your score."
       />
-
-      {/* Stat strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-        <StatCard label="Today" value={todayPct} suffix="%" sub={`${recurringDoneToday}/${activeRecurringToday.length} rituals`} color={scoreColor(todayPct)} barPct={todayPct} />
-        <StatCard label="Recurring" value={`${recurringDoneToday}/${activeRecurringToday.length}`} sub="rituals today" barPct={activeRecurringToday.length ? (recurringDoneToday / activeRecurringToday.length) * 100 : 0} />
-        <StatCard label="Overdue" value={overdueCount} sub={overdueCount === 0 ? 'nothing late' : 'needs triage'} color={overdueCount > 0 ? '#f43f5e' : '#10b981'} barPct={overdueCount > 0 ? 100 : 0} />
-        <StatCard label="Open work" value={openWeight} sub="weighted points" barPct={Math.min(100, openWeight * 4)} />
-      </div>
 
       {/* Add task */}
       {!showForm ? (

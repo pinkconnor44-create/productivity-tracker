@@ -31,31 +31,38 @@ type Props = {
   views: Partial<Record<Tab, ReactNode>>
 }
 
-const NAV: { section: string; items: { id: Tab; label: string; icon: ReactNode }[] }[] = [
-  {
-    section: 'Daily',
-    items: [
-      { id: 'tasks',  label: 'Tasks',  icon: <IconTasks  /> },
-      { id: 'habits', label: 'Habits', icon: <IconHabits /> },
-      { id: 'lifts',  label: 'Lifts',  icon: <IconLifts  /> },
-    ],
-  },
-  {
-    section: 'Insights',
-    items: [
-      { id: 'stats',    label: 'Stats',    icon: <IconStats    /> },
-      { id: 'calendar', label: 'Calendar', icon: <IconCalendar /> },
-    ],
-  },
-  {
-    section: 'Workspace',
-    items: [
-      { id: 'projects',      label: 'Projects',      icon: <IconProjects /> },
-      { id: 'weekly-review', label: 'Weekly Review', icon: <IconReview   /> },
-      { id: 'scratchpad',    label: 'Scratchpad',    icon: <IconNote     /> },
-    ],
-  },
+type NavItem = { id: Tab; label: string; icon: ReactNode }
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'tasks',         label: 'Tasks',         icon: <IconTasks    /> },
+  { id: 'habits',        label: 'Habits',        icon: <IconHabits   /> },
+  { id: 'lifts',         label: 'Lifts',         icon: <IconLifts    /> },
+  { id: 'stats',         label: 'Stats',         icon: <IconStats    /> },
+  { id: 'calendar',      label: 'Calendar',      icon: <IconCalendar /> },
+  { id: 'projects',      label: 'Projects',      icon: <IconProjects /> },
+  { id: 'weekly-review', label: 'Weekly Review', icon: <IconReview   /> },
+  { id: 'scratchpad',    label: 'Scratchpad',    icon: <IconNote     /> },
 ]
+
+const NAV_ORDER_KEY = 'nav-order-v1'
+
+function loadOrder(): Tab[] {
+  if (typeof window === 'undefined') return NAV_ITEMS.map(i => i.id)
+  try {
+    const raw = localStorage.getItem(NAV_ORDER_KEY)
+    if (!raw) return NAV_ITEMS.map(i => i.id)
+    const parsed = JSON.parse(raw) as Tab[]
+    const valid = parsed.filter(id => NAV_ITEMS.some(i => i.id === id))
+    // Append any new items not in saved order (forward-compat for future tabs)
+    const missing = NAV_ITEMS.map(i => i.id).filter(id => !valid.includes(id))
+    return [...valid, ...missing]
+  } catch {
+    return NAV_ITEMS.map(i => i.id)
+  }
+}
+function saveOrder(order: Tab[]) {
+  try { localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(order)) } catch {}
+}
 
 function todayStr(): string {
   const d = new Date()
@@ -97,6 +104,30 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
   const [mounted, setMounted] = useState<Set<Tab>>(() => new Set([activeTab]))
   const [scores, setScores] = useState<ScoreData>({})
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [navOrder, setNavOrder] = useState<Tab[]>(() => NAV_ITEMS.map(i => i.id))
+  const [dragOver, setDragOver] = useState<Tab | null>(null)
+  const dragIdRef = useRef<Tab | null>(null)
+
+  // Hydrate saved order on mount (avoids SSR/client mismatch)
+  useEffect(() => { setNavOrder(loadOrder()) }, [])
+
+  function reorder(fromId: Tab, toId: Tab) {
+    if (fromId === toId) return
+    setNavOrder(prev => {
+      const fromIdx = prev.indexOf(fromId)
+      const toIdx = prev.indexOf(toId)
+      if (fromIdx === -1 || toIdx === -1) return prev
+      const next = [...prev]
+      const [moved] = next.splice(fromIdx, 1)
+      next.splice(toIdx, 0, moved)
+      saveOrder(next)
+      return next
+    })
+  }
+
+  const orderedItems = navOrder
+    .map(id => NAV_ITEMS.find(i => i.id === id))
+    .filter((x): x is NavItem => !!x)
 
   // Lazy-mount: each view enters the DOM the first time it becomes active and stays.
   useEffect(() => {
@@ -147,22 +178,27 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
     <>
       <Logo />
       <TodayWidget pct={todayPct} streak={streak} />
-      <nav className="flex flex-col gap-0.5 flex-1 overflow-y-auto -mx-1 px-1">
-        {NAV.map(group => (
-          <div key={group.section} className="mb-2">
-            <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50 px-3.5 pb-1.5 pt-2">
-              {group.section}
-            </div>
-            {group.items.map(item => (
-              <NavItem
-                key={item.id}
-                icon={item.icon}
-                label={item.label}
-                active={activeTab === item.id}
-                onClick={() => onNavClick(item.id)}
-              />
-            ))}
-          </div>
+      <nav className="flex flex-col gap-0.5 flex-1 overflow-y-auto -mx-1 px-1 py-1">
+        {orderedItems.map(item => (
+          <NavItem
+            key={item.id}
+            icon={item.icon}
+            label={item.label}
+            active={activeTab === item.id}
+            isDragOver={dragOver === item.id}
+            onClick={() => onNavClick(item.id)}
+            onDragStart={() => { dragIdRef.current = item.id }}
+            onDragOver={(e) => { e.preventDefault(); if (dragIdRef.current && dragIdRef.current !== item.id) setDragOver(item.id) }}
+            onDragLeave={() => setDragOver(prev => prev === item.id ? null : prev)}
+            onDrop={(e) => {
+              e.preventDefault()
+              const from = dragIdRef.current
+              if (from) reorder(from, item.id)
+              dragIdRef.current = null
+              setDragOver(null)
+            }}
+            onDragEnd={() => { dragIdRef.current = null; setDragOver(null) }}
+          />
         ))}
       </nav>
       <FooterRow
@@ -299,14 +335,38 @@ function TodayWidget({ pct, streak }: { pct: number; streak: number }) {
   )
 }
 
-function NavItem({ icon, label, active, onClick }: {
-  icon: ReactNode; label: string; active: boolean; onClick: () => void
+function NavItem({ icon, label, active, isDragOver, onClick, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd }: {
+  icon: ReactNode
+  label: string
+  active: boolean
+  isDragOver?: boolean
+  onClick: () => void
+  onDragStart?: () => void
+  onDragOver?: (e: React.DragEvent) => void
+  onDragLeave?: () => void
+  onDrop?: (e: React.DragEvent) => void
+  onDragEnd?: () => void
 }) {
+  const [dragging, setDragging] = useState(false)
   return (
     <button
       onClick={onClick}
+      draggable
+      onDragStart={(e) => {
+        // Required so drop targets fire in some browsers
+        try { e.dataTransfer.setData('text/plain', label) } catch {}
+        e.dataTransfer.effectAllowed = 'move'
+        setDragging(true)
+        onDragStart?.()
+      }}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={() => { setDragging(false); onDragEnd?.() }}
       className={[
-        'flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-colors',
+        'group relative flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-colors cursor-grab active:cursor-grabbing',
+        dragging ? 'opacity-40' : '',
+        isDragOver ? 'ring-1 ring-violet-400/60' : '',
         active
           ? 'bg-violet-500/16 border border-violet-400/30 text-on-surface font-semibold'
           : 'border border-transparent text-on-surface-variant/70 active:bg-surface-container-low md:hover:text-on-surface md:hover:bg-surface-container-low/50',
@@ -315,7 +375,8 @@ function NavItem({ icon, label, active, onClick }: {
       <span className={`w-4 h-4 inline-flex items-center justify-center shrink-0 ${active ? 'text-violet-300' : ''}`}>
         {icon}
       </span>
-      <span className="text-[13px] tracking-[-0.005em]">{label}</span>
+      <span className="text-[13px] tracking-[-0.005em] flex-1">{label}</span>
+      <span className="opacity-0 group-hover:opacity-30 text-[10px] leading-none select-none" aria-hidden>⋮⋮</span>
     </button>
   )
 }
