@@ -523,7 +523,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         <div
                           key={t.id}
                           title={`${t.time ? formatTime(t.time) + ' · ' : ''}${t.title}`}
-                          className={`flex items-center gap-1 max-w-full sm:w-full px-1 py-px rounded-full border text-[9px] leading-tight overflow-hidden ${
+                          className={`flex items-center gap-0.5 max-w-full sm:w-full px-0.5 sm:px-1 py-px rounded-full border text-[7px] sm:text-[10px] leading-tight overflow-hidden ${
                             done ? 'opacity-40 line-through' : ''
                           }`}
                           style={{
@@ -670,7 +670,7 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
           items.push(
             <button key={task.id} onClick={() => onToggleTask(task, date)}
               title={`${task.time ? formatTime(task.time) + ' · ' : ''}${task.title}`}
-              className={`w-full text-left text-[9px] px-1 py-1 rounded-md flex flex-col gap-0.5 border overflow-hidden transition-colors ${
+              className={`w-full text-left text-[7px] sm:text-[10px] px-0.5 sm:px-1 py-1 rounded-md flex flex-col gap-0.5 border overflow-hidden transition-colors ${
                 done ? 'opacity-40 line-through' : ''
               }`}
               style={{
