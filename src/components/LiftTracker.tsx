@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { PageHeader, StatCard } from '@/components/ui'
 
 type LiftEntry = {
   id: number
@@ -315,8 +316,32 @@ export default function LiftTracker() {
   }
 
   // ── Layer 1: Workout Days list ────────────────────────────────────────────
+
+  // Stat strip metrics
+  const todayStr = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}` })()
+  const subDays = (s: string, n: number) => { const d = new Date(s+'T12:00:00'); d.setDate(d.getDate()-n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+  const datesSet = new Set(entries.map(e => e.date))
+  const last7 = Array.from(datesSet).filter(d => d >= subDays(todayStr, 7)).length
+  const last30 = Array.from(datesSet).filter(d => d >= subDays(todayStr, 30)).length
+  const volume30 = entries.filter(e => e.date >= subDays(todayStr, 30)).reduce((s, e) => s + e.weight * e.totalReps, 0)
+  const sortedDates = [...datesSet].sort((a, b) => a < b ? 1 : -1)
+  const lastDate = sortedDates[0]
+
   return (
     <div className="space-y-4">
+      <PageHeader
+        eyebrow="Lifts"
+        title={<>{last7}<span className="text-on-surface-variant/50"> sessions</span> this week</>}
+        sub="Push / pull / legs split. Click a workout day to log exercises and see trends."
+      />
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <StatCard label="Sessions / 7d" value={last7} sub="target: 3" color={last7 >= 3 ? '#10b981' : undefined} barPct={Math.min(100, (last7/3)*100)} />
+        <StatCard label="Sessions / 30d" value={last30} sub="3-day split" barPct={Math.min(100, last30 * 8)} />
+        <StatCard label="Volume / 30d" value={Math.round(volume30/1000)} suffix="k lb" sub="weight × reps" color="#22d3ee" barPct={Math.min(100, volume30 / 2000)} />
+        <StatCard label="Last session" value={lastDate ? new Date(lastDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'} sub="most recent" barPct={lastDate ? 100 : 0} />
+      </div>
+
       <Stopwatch />
 
       {/* Quick log form */}

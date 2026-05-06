@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { isTaskActiveOnDate, isHabitActiveOnDate, recurringLabel } from '@/lib/recurring'
-import Scratchpad from '@/components/Scratchpad'
 import { toast } from '@/lib/toast'
+import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor } from '@/components/ui'
+import type { Kind } from '@/components/ui'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
@@ -11,6 +12,8 @@ type Task = {
   completed: boolean; completedAt?: string; recurringType?: string
   recurringDays?: string; recurringEnd?: string; completions: TaskCompletion[]
   skips: { date: string }[]
+  kind?: string | null
+  weight?: number
 }
 type Habit = {
   id: number; name: string; description?: string; recurringDays?: string
@@ -314,74 +317,119 @@ export default function CalendarView() {
 
   if (loading) return <div className="flex items-center justify-center py-20 text-on-surface-variant/60">Loading...</div>
 
+  const todayStrVal = today()
+  const periodSub =
+    view === 'month' ? 'Quiet cells, kind-colored dots, score hairlines.' :
+    view === 'week'  ? 'A scannable week with timeline cues.' :
+                       `Detailed view for ${new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[96px_3fr_2fr] gap-4 items-start">
-
-      {/* Score wheels column — desktop sidebar */}
-      <div className="hidden lg:flex sticky top-[120px] flex-col items-center gap-5 py-2 glass card-lift rounded-2xl border">
-        <SummaryWheel label="Day"   pct={dayPct}   />
-        <div className="w-8 h-px bg-surface-container-low" />
-        <SummaryWheel label="Week"  pct={weekPct}  />
-        <div className="w-8 h-px bg-surface-container-low" />
-        <SummaryWheel label="Month" pct={monthPct} />
-        <div className="w-8 h-px bg-surface-container-low" />
-        <SummaryWheel label="Year"  pct={yearPct}  />
-      </div>
-
-      {/* Calendar column */}
-      <div>
-
-        {/* Score wheels row — mobile only */}
-        <div className="flex lg:hidden justify-around items-center glass card-lift rounded-2xl border px-3 py-3 mb-4">
-          <SummaryWheel label="Day"   pct={dayPct}   compact />
-          <div className="h-10 w-px bg-surface-container-low" />
-          <SummaryWheel label="Week"  pct={weekPct}  compact />
-          <div className="h-10 w-px bg-surface-container-low" />
-          <SummaryWheel label="Month" pct={monthPct} compact />
-          <div className="h-10 w-px bg-surface-container-low" />
-          <SummaryWheel label="Year"  pct={yearPct}  compact />
-        </div>
-
-        {/* Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <div className="flex bg-surface-container border border-outline-variant rounded-lg p-1 gap-1">
-            {(['month','week','day'] as View[]).map(v => (
-              <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
-                view === v ? 'bg-violet-600 text-white shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
-              }`}>{v}</button>
-            ))}
-          </div>
+    <div>
+      <PageHeader
+        eyebrow="Calendar"
+        title={periodLabel()}
+        sub={periodSub}
+        right={
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:shadow-sm border border-transparent hover:border-outline-variant transition-all">←</button>
-            <span className="text-sm font-semibold text-on-surface min-w-[180px] text-center">{periodLabel()}</span>
-            <button onClick={() => navigate(1)} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:shadow-sm border border-transparent hover:border-outline-variant transition-all">→</button>
-            <button onClick={() => setCurrentDate(today())} className="ml-1 px-3 py-1.5 text-xs font-medium bg-surface-container border border-outline-variant rounded-lg text-on-surface-variant hover:text-violet-400 hover:border-violet-300 transition-colors">Today</button>
+            <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
+              {(['month','week','day'] as View[]).map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1.5 rounded-md text-[12px] font-semibold capitalize transition-colors ${
+                    view === v ? 'bg-violet-500/16 text-violet-300 border border-violet-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => navigate(-1)} aria-label="Previous" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">←</button>
+            <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-[12px] font-semibold bg-surface-container-low border border-outline-variant/40 rounded-lg text-on-surface-variant hover:text-violet-300 transition-colors">Today</button>
+            <button onClick={() => navigate(1)} aria-label="Next" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">→</button>
           </div>
-        </div>
+        }
+      />
 
-        <div key={navKey} className={navDir === 'right' ? 'cal-slide-right' : 'cal-slide-left'}>
-          {view === 'month' && <MonthView currentDate={currentDate} scores={scores} tasksForDate={tasksForDate} habitsForDate={habitsForDate} isTaskDone={isTaskDone} onSelectDay={setSelectedDate} notes={notes} isModalOpen={!!selectedDate} />}
-          {view === 'week'  && <WeekView  currentDate={currentDate} scores={scores} tasksForDate={tasksForDate} isTaskDone={isTaskDone} onSelectDay={setSelectedDate} onToggleTask={toggleTask} />}
-          {view === 'day'   && <DayDetail date={currentDate} score={scores[currentDate]} tasks={tasksForDate(currentDate)} habits={habitsForDate(currentDate)} isTaskDone={isTaskDone} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[currentDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />}
-        </div>
-
-        {selectedDate && (
-          <DayModal date={selectedDate} score={scores[selectedDate]} tasks={tasksForDate(selectedDate)} habits={habitsForDate(selectedDate)} isTaskDone={isTaskDone} onClose={() => setSelectedDate(null)} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[selectedDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />
-        )}
+      {/* Stat strip (Variation A) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">
+        <StatCard label="Day"   value={dayPct ?? '—'}   suffix={dayPct != null ? '%' : undefined}   sub="today's score"   color={dayPct != null ? scoreColor(dayPct) : undefined}     barPct={dayPct ?? undefined}   />
+        <StatCard label="Week"  value={weekPct ?? '—'}  suffix={weekPct != null ? '%' : undefined}  sub="rolling 7d avg"  color={weekPct != null ? scoreColor(weekPct) : undefined}   barPct={weekPct ?? undefined}  />
+        <StatCard label="Month" value={monthPct ?? '—'} suffix={monthPct != null ? '%' : undefined} sub="month-to-date"   color={monthPct != null ? scoreColor(monthPct) : undefined} barPct={monthPct ?? undefined} />
+        <StatCard label="Year"  value={yearPct ?? '—'}  suffix={yearPct != null ? '%' : undefined}  sub="year-to-date"    color={yearPct != null ? scoreColor(yearPct) : undefined}   barPct={yearPct ?? undefined}  />
       </div>
 
-      {/* Scratchpad sidebar */}
-      <div className="sticky top-[120px]">
-        <Scratchpad />
+      {/* Year spine (xl:+) + calendar */}
+      <div className="flex gap-4 items-start">
+        <div className="hidden xl:block shrink-0">
+          <YearSpine scores={scores} today={todayStrVal} onSelectDay={setSelectedDate} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div key={navKey} className={navDir === 'right' ? 'cal-slide-right' : 'cal-slide-left'}>
+            {view === 'month' && <MonthView currentDate={currentDate} scores={scores} tasksForDate={tasksForDate} habitsForDate={habitsForDate} isTaskDone={isTaskDone} onSelectDay={setSelectedDate} notes={notes} isModalOpen={!!selectedDate} />}
+            {view === 'week'  && <WeekView  currentDate={currentDate} scores={scores} tasksForDate={tasksForDate} isTaskDone={isTaskDone} onSelectDay={setSelectedDate} onToggleTask={toggleTask} />}
+            {view === 'day'   && <DayDetail date={currentDate} score={scores[currentDate]} tasks={tasksForDate(currentDate)} habits={habitsForDate(currentDate)} isTaskDone={isTaskDone} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[currentDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />}
+          </div>
+
+          {selectedDate && (
+            <DayModal date={selectedDate} score={scores[selectedDate]} tasks={tasksForDate(selectedDate)} habits={habitsForDate(selectedDate)} isTaskDone={isTaskDone} onClose={() => setSelectedDate(null)} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[selectedDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-function scoreTint(pct: number) {
-  if (pct >= 75) return 'bg-emerald-500/10'
-  if (pct >= 50) return 'bg-amber-500/10'
-  return 'bg-rose-500/10'
+// Year spine — Variation B's "year so far" heatmap rail.
+// Vertical column of small squares, one per day from Jan 1 → today.
+// Opacity = score / 100; missing days render very faint.
+function YearSpine({ scores, today: todayStrVal, onSelectDay }: {
+  scores: Scores
+  today: string
+  onSelectDay: (d: string) => void
+}) {
+  const year = todayStrVal.slice(0, 4)
+  const start = `${year}-01-01`
+  const days: string[] = []
+  let cursor = start
+  while (cursor <= todayStrVal) {
+    days.push(cursor)
+    cursor = addDays(cursor, 1)
+  }
+  const cell = 8
+  const gap = 2
+  const cols = Math.ceil(days.length / 30)
+  return (
+    <div className="flex flex-col gap-2 px-2 py-3 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+      <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50 px-1">{year}</div>
+      <div
+        className="grid"
+        style={{
+          gridAutoFlow: 'column',
+          gridTemplateRows: `repeat(30, ${cell}px)`,
+          gridAutoColumns: `${cell}px`,
+          gap,
+        }}
+      >
+        {days.map(d => {
+          const s = scores[d]
+          const isToday = d === todayStrVal
+          const c = s ? scoreColor(s.pct) : '#cbc3d720'
+          const opacity = s ? 0.25 + (s.pct / 100) * 0.75 : 0.15
+          return (
+            <button
+              key={d}
+              onClick={() => onSelectDay(d)}
+              title={`${d}${s ? ` · ${s.pct}%` : ''}`}
+              className={`rounded-[2px] transition-transform ${isToday ? 'ring-1 ring-white/60' : ''}`}
+              style={{ width: cell, height: cell, background: c, opacity }}
+            />
+          )
+        })}
+      </div>
+      <div className="text-[9px] font-medium text-on-surface-variant/40 px-1">{days.length}d</div>
+    </div>
+  )
 }
 
 function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDone, onSelectDay, notes, isModalOpen }: {
@@ -400,10 +448,10 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
   useEffect(() => { setMounted(true) }, [])
 
   return (
-    <div className="glass rounded-2xl border overflow-hidden">
+    <div className="bg-surface-container rounded-2xl border border-outline-variant/40 overflow-hidden">
       <div className="grid grid-cols-7 border-b border-outline-variant/40">
         {WEEKDAYS.map(wd => (
-          <div key={wd} className="py-2 text-center text-xs font-semibold text-on-surface-variant uppercase tracking-wider">{wd}</div>
+          <div key={wd} className="py-2.5 text-center text-[10px] font-bold text-on-surface-variant/55 uppercase tracking-[0.12em]">{wd}</div>
         ))}
       </div>
       <div className="grid grid-cols-7">
@@ -417,7 +465,18 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
           const dayNum = new Date(date + 'T12:00:00').getDate()
           const col = i % 7
           const row = Math.floor(i / 7)
-          const totalRows = Math.ceil(days.length / 7)
+
+          // Quieter cell: dot ribbon (kind-colored), first event title (italic),
+          // hairline score at bottom, amber dot for notes.
+          const sortedTasks = [...dayTasks].sort((a, b) => {
+            if (a.time && b.time) return a.time < b.time ? -1 : 1
+            if (a.time) return -1; if (b.time) return 1; return 0
+          })
+          const firstTitled = sortedTasks[0]
+          const ribbonMax = 6
+          const ribbon = sortedTasks.slice(0, ribbonMax)
+          const overflow = sortedTasks.length - ribbon.length
+          const sc = score && !isFuture ? scoreColor(score.pct) : null
 
           return (
             <div key={i} className="relative"
@@ -425,48 +484,64 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
               onMouseLeave={() => setHover(null)}
             >
               <button onClick={() => onSelectDay(date)}
-                className={`w-full h-[115px] sm:h-[90px] overflow-hidden p-1.5 border-b border-r border-outline-variant/40 text-left transition-colors flex flex-col gap-0.5
+                className={`group w-full h-[110px] sm:h-[100px] overflow-hidden px-2 pt-2 pb-3 border-b border-r border-outline-variant/30 text-left transition-colors flex flex-col gap-1.5
                   ${!isCurrentMonth ? 'opacity-30' : ''}
-                  ${score && !isFuture && isCurrentMonth ? scoreTint(score.pct) : ''}
-                  hover:brightness-110`}
+                  hover:bg-violet-500/5`}
               >
-                <div className="flex items-center justify-between w-full mb-0.5">
-                  <span className={`text-xs font-semibold w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full shrink-0 transition-opacity duration-200 ${
-                    isToday ? 'bg-violet-600 text-white' : 'text-on-surface-variant'
-                  } ${isModalOpen ? 'opacity-20' : ''}`}>{dayNum}</span>
-                  {dayHabits.length > 0 && isCurrentMonth && (
-                    <span className={`hidden sm:inline text-[9px] font-semibold tabular-nums leading-none transition-opacity duration-200 ${
-                      dayHabitsDone === dayHabits.length ? 'text-emerald-500' : 'text-on-surface-variant'
-                    } ${isModalOpen ? 'opacity-20' : ''}`}>{dayHabitsDone}/{dayHabits.length}</span>
-                  )}
-                  {score && !isFuture && <MiniWheel pct={score.pct} size={24} />}
+                {/* Date row */}
+                <div className={`flex items-center justify-between w-full transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                  <span className={`tabular-nums leading-none ${
+                    isToday
+                      ? 'font-display text-[22px] font-bold text-violet-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
+                      : 'text-[18px] font-medium text-on-surface'
+                  }`}>{dayNum}</span>
+                  <div className="flex items-center gap-1.5">
+                    {notes[date] && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Has note" />}
+                    {dayHabits.length > 0 && isCurrentMonth && (
+                      <span className={`hidden sm:inline text-[9px] font-semibold tabular-nums leading-none ${
+                        dayHabitsDone === dayHabits.length ? 'text-emerald-400' : 'text-on-surface-variant/50'
+                      }`}>{dayHabitsDone}/{dayHabits.length}</span>
+                    )}
+                  </div>
                 </div>
-                <div className={`transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
-                  {(() => {
-                    const timed = dayTasks.filter(t => t.time).sort((a, b) => a.time! < b.time! ? -1 : 1)
-                    const visible = timed.slice(0, 2)
-                    const overflow = timed.length - visible.length
-                    return (
-                      <>
-                        {visible.map(task => {
-                          const done = isTaskDone(task, date)
-                          return (
-                            <div key={task.id}
-                              className={`w-full text-[10px] font-semibold leading-tight px-1 py-0.5 rounded ${done ? 'text-on-surface-variant/30 line-through' : ''}`}
-                              style={!done ? { backgroundColor: 'rgba(var(--c-p), 0.12)', color: 'var(--c-p-hex)' } : undefined}
-                            >
-                              {formatTime(task.time!)}
-                            </div>
-                          )
-                        })}
-                        {overflow > 0 && (
-                          <div className="text-[9px] font-semibold px-1" style={{ color: 'var(--c-p-hex)' }}>+{overflow} more</div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-                {notes[date] && <span className={`w-1.5 h-1.5 rounded-full bg-amber-400 mt-auto shrink-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`} title="Has note" />}
+
+                {/* Event ribbon — kind-colored dots */}
+                {ribbon.length > 0 && (
+                  <div className={`flex flex-wrap items-center gap-1 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                    {ribbon.map(t => {
+                      const k = kindStyle(t.kind)
+                      const done = isTaskDone(t, date)
+                      return (
+                        <span
+                          key={t.id}
+                          className={`block w-1.5 h-1.5 rounded-full ${done ? 'opacity-30' : ''}`}
+                          style={{ background: k?.dot ?? '#cbc3d780' }}
+                        />
+                      )
+                    })}
+                    {overflow > 0 && (
+                      <span className="text-[9px] font-semibold text-on-surface-variant/55 leading-none">+{overflow}</span>
+                    )}
+                  </div>
+                )}
+
+                {/* First event title — italic, single line */}
+                {firstTitled && isCurrentMonth && (
+                  <div className={`text-[10px] italic leading-tight truncate transition-opacity duration-200 ${
+                    isTaskDone(firstTitled, date) ? 'text-on-surface-variant/35 line-through' : 'text-on-surface-variant/75'
+                  } ${isModalOpen ? 'opacity-20' : ''}`}>
+                    {firstTitled.time ? <span className="tabular-nums not-italic font-semibold mr-1 text-on-surface-variant/90">{formatTime(firstTitled.time).replace(' ', '')}</span> : null}
+                    {firstTitled.title}
+                  </div>
+                )}
+
+                {/* Score hairline at bottom */}
+                {sc && (
+                  <div className={`flex items-end gap-1.5 mt-auto transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                    <div className="flex-1 h-[1.5px] rounded-full" style={{ background: sc, opacity: 0.55 }} />
+                    <span className="text-[9px] font-bold tabular-nums leading-none" style={{ color: sc }}>{score!.pct}%</span>
+                  </div>
+                )}
               </button>
 
             </div>
@@ -700,9 +775,10 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
   const [description, setDescription] = useState(task.description ?? '')
   const [startTime, setStartTime] = useState(task.time ?? '')
   const [endTime, setEndTime] = useState(task.endTime ?? '')
+  const [kind, setKind] = useState<Kind | null>((task.kind as Kind | null) ?? null)
 
   return (
-    <div className="px-4 py-3 bg-violet-50/60 space-y-2.5">
+    <div className="px-4 py-3 bg-violet-500/10 space-y-2.5">
       <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Task name"
         className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)"
@@ -712,8 +788,12 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
         <span className="text-on-surface-variant/30 text-xs pb-2.5">→</span>
         <TimePickerInput value={endTime} onChange={setEndTime} label="End" />
       </div>
+      <div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
+        <KindPicker value={kind} onChange={setKind} size="sm" />
+      </div>
       <div className="flex gap-2">
-        <button onClick={() => onSave({ title: title.trim(), description: description.trim() || null, time: startTime || null, endTime: endTime || null })}
+        <button onClick={() => onSave({ title: title.trim(), description: description.trim() || null, time: startTime || null, endTime: endTime || null, kind })}
           disabled={!title.trim()}
           className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors">
           Save
@@ -846,8 +926,9 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                   <div className="min-w-0 flex-1">
                     <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : done ? 'line-through text-on-surface-variant/40' : 'text-on-surface'}`}>{task.title}</div>
                     {task.description && <div className="text-xs text-on-surface-variant mt-0.5 truncate">{task.description}</div>}
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       {skipped && <span className="text-[10px] font-semibold text-amber-400">Skipped today</span>}
+                      {!skipped && <KindChip kind={task.kind} size="sm" />}
                       {!skipped && task.time && (
                         <span className="text-[10px] text-on-surface-variant">
                           ⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}

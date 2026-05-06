@@ -15,9 +15,11 @@ export async function GET() {
   }
 }
 
+const VALID_KINDS = ['meeting', 'focus', 'personal', 'admin', 'planning'] as const
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { title, description, dueDate, time, endTime, recurringType, recurringDays, recurringEnd, weight } = body
+  const { title, description, dueDate, time, endTime, recurringType, recurringDays, recurringEnd, weight, kind } = body
 
   if (!title?.trim()) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
       recurringDays: recurringDays || null,
       recurringEnd: recurringEnd || null,
       weight: weight && [1,2,3].includes(weight) ? weight : 1,
+      kind: kind && VALID_KINDS.includes(kind) ? kind : null,
     },
     include: { completions: true, skips: true },
   })

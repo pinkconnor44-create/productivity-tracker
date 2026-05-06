@@ -1,22 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-
-function useCountUp(target: number, duration = 900): number {
-  const [val, setVal] = useState(0)
-  useEffect(() => {
-    if (target === 0) { setVal(0); return }
-    let start: number | null = null
-    const tick = (ts: number) => {
-      if (!start) start = ts
-      const p = Math.min((ts - start) / duration, 1)
-      setVal(Math.round((1 - Math.pow(1 - p, 3)) * target))
-      if (p < 1) requestAnimationFrame(tick)
-    }
-    const id = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(id)
-  }, [target, duration])
-  return val
-}
+import { PageHeader, StatCard, Card, Section, scoreColor } from '@/components/ui'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -33,7 +17,9 @@ function formatLabel(dateStr: string): string {
   const d = new Date(dateStr+'T12:00:00')
   return d.toLocaleDateString('en-US',{ month:'short', day:'numeric' })
 }
-
+function formatDateLong(s: string): string {
+  return new Date(s+'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
+}
 function calcCurrentStreak(scores: ScoreData): number {
   const t = today()
   let check = scores[t]?.completed > 0 ? t : addDays(t,-1)
@@ -46,21 +32,22 @@ function calcCurrentStreak(scores: ScoreData): number {
   }
   return streak
 }
-
 function calcLongestStreak(scores: ScoreData): number {
   const dates = Object.keys(scores).filter(d => scores[d].completed > 0).sort()
   let longest = 0, cur = 0, prev: string|null = null
   for (const d of dates) {
-    if (prev && d === addDays(prev,1)) { cur++ } else { cur = 1 }
+    if (prev && d === addDays(prev,1)) cur++; else cur = 1
     if (cur > longest) longest = cur
     prev = d
   }
   return longest
 }
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
 type Range = '30' | '90' | '365'
 
-// SVG line chart — pure SVG, no library
+// 90-day score line chart with 7-day moving avg overlay (Variation A's main chart pattern).
 function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; onHover: (tip: { x: number; y: number; text: string } | null) => void }) {
   if (data.length === 0) return (
     <div className="flex flex-col items-center justify-center h-40 gap-2">
@@ -70,217 +57,376 @@ function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; 
     </div>
   )
 
-  const W = 560, H = 130
-  const PL = 32, PR = 8, PT = 8, PB = 24  // padding
+  const W = 1000, H = 200
+  const PL = 36, PR = 16, PT = 16, PB = 28
   const cw = W - PL - PR, ch = H - PT - PB
-
   const n = data.length
   const xOf = (i: number) => PL + (n === 1 ? cw/2 : (i / (n-1)) * cw)
   const yOf = (pct: number) => PT + ch - (pct / 100) * ch
 
-  // Build path strings
   const points = data.map((d,i) => ({ x: xOf(i), y: yOf(d.pct), pct: d.pct, date: d.date }))
   const linePath = points.map((p,i) => `${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
   const areaPath = [
     `M${points[0].x.toFixed(1)},${(PT+ch).toFixed(1)}`,
     ...points.map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`),
-    `L${points[points.length-1].x.toFixed(1)},${(PT+ch).toFixed(1)}Z`
+    `L${points[points.length-1].x.toFixed(1)},${(PT+ch).toFixed(1)}Z`,
   ].join(' ')
 
-  // X-axis label step
-  const step = n <= 30 ? 7 : n <= 90 ? 14 : 60
+  // 7-day moving average
+  const avg = data.map((_, i) => {
+    const slice = data.slice(Math.max(0, i - 6), i + 1)
+    return slice.reduce((s, d) => s + d.pct, 0) / slice.length
+  })
+  const avgPath = avg.map((v, i) => `${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ')
+
+  // X-axis: month tick marks
+  const monthTicks: { i: number; label: string }[] = []
+  let lastMonth: string | null = null
+  for (let i = 0; i < n; i++) {
+    const m = data[i].date.slice(5, 7)
+    if (m !== lastMonth) { monthTicks.push({ i, label: MONTHS[Number(m)-1] }); lastMonth = m }
+  }
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       <defs>
-        <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" style={{ stopColor: 'var(--c-p-hex)', stopOpacity: 0.18 }} />
-          <stop offset="100%" style={{ stopColor: 'var(--c-p-hex)', stopOpacity: 0 }} />
+        <linearGradient id="statsScoreFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--c-p-hex)" stopOpacity="0.30" />
+          <stop offset="100%" stopColor="var(--c-p-hex)" stopOpacity="0" />
         </linearGradient>
       </defs>
-
-      {/* Grid lines */}
       {[0,25,50,75,100].map(pct => {
         const y = yOf(pct)
         return (
           <g key={pct}>
-            <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" className="text-on-surface-variant/40" />
-            <text x={PL-4} y={y+4} textAnchor="end" fontSize="8" fill="currentColor" className="text-on-surface-variant" fillOpacity="0.7">{pct}%</text>
+            <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="rgba(var(--c-p),0.10)" strokeWidth="1" strokeDasharray={pct === 0 || pct === 100 ? '' : '2,4'} />
+            <text x={PL-6} y={y+4} textAnchor="end" fontSize="10" fill="#6b7088" fontWeight="600">{pct}</text>
           </g>
         )
       })}
-
-      {/* 50% threshold line */}
-      <line x1={PL} y1={yOf(50)} x2={W-PR} y2={yOf(50)} style={{ stroke: 'var(--c-p-hex)' }} strokeOpacity="0.25" strokeWidth="1" strokeDasharray="3,3" />
-
-      {/* Area fill */}
-      <path d={areaPath} fill="url(#chartFill)" />
-
-      {/* Line */}
-      <path d={linePath} fill="none" style={{ stroke: 'var(--c-p-hex)' }} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
-
-      {/* Dots */}
+      {monthTicks.map(t => (
+        <text key={t.i} x={xOf(t.i)} y={H-8} textAnchor="start" fontSize="10" fill="#8b8da3" fontWeight="700" letterSpacing="0.08em">{t.label.toUpperCase()}</text>
+      ))}
+      <path d={areaPath} fill="url(#statsScoreFill)" />
+      <path d={linePath} fill="none" stroke="var(--c-p-hex)" strokeOpacity="0.55" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d={avgPath} fill="none" stroke="var(--c-p-hex)" strokeWidth="2.5" strokeLinejoin="round" />
       {points.map((p,i) => {
         const isToday = p.date === today()
-        const dotStyle = p.pct >= 80
-          ? { fill: '#10b981' }
-          : p.pct >= 50
-          ? { fill: 'var(--c-p-hex)' }
-          : { fill: '#f43f5e' }
-        const r = isToday ? 3.5 : n > 60 ? 1.5 : 2.5
         return (
           <g key={i}
             onMouseEnter={e => onHover({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
             onMouseMove={e => onHover({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
-            onMouseLeave={() => onHover(null)}
-            style={{ cursor: 'default' }}>
-            <circle cx={p.x} cy={p.y} r={Math.max(r, 6)} fill="transparent" />
-            <circle cx={p.x} cy={p.y} r={r}
-              style={dotStyle} stroke="white" strokeWidth={isToday ? 1.5 : 0} opacity={n > 60 ? 0.7 : 1} />
+            onMouseLeave={() => onHover(null)}>
+            <circle cx={p.x} cy={p.y} r="6" fill="transparent" />
+            {isToday && <circle cx={p.x} cy={p.y} r="4" fill="var(--c-p-hex)" stroke="#0b1326" strokeWidth="2" />}
           </g>
-        )
-      })}
-
-      {/* X-axis labels */}
-      {points.filter((_,i) => i % step === 0 || i === n-1).map((p,_,arr) => {
-        // avoid overlap near end
-        const isLast = p === points[n-1]
-        const prevLabel = arr.find(a => a !== p && Math.abs(a.x - p.x) < 40)
-        if (isLast && prevLabel) return null
-        return (
-          <text key={p.date} x={p.x} y={H-4} textAnchor="middle" fontSize="7.5" fill="currentColor" fillOpacity="0.55" className="text-on-surface-variant/60">
-            {formatLabel(p.date)}
-          </text>
         )
       })}
     </svg>
   )
 }
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+// Day-of-week breakdown bars (90d avg score by weekday)
+function WeekdayBars({ data }: { data: { date: string; pct: number }[] }) {
+  const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  const buckets = [0,1,2,3,4,5,6].map(dow => {
+    const items = data.filter(d => new Date(d.date+'T12:00:00').getDay() === dow)
+    const avg = items.length ? Math.round(items.reduce((s,d) => s + d.pct, 0) / items.length) : 0
+    return { dow, avg, count: items.length }
+  })
   return (
-    <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
-      <div className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-2xl font-bold font-mono ${value === '—' ? 'text-on-surface-variant/30' : 'gradient-text'}`}>{value}</div>
-      {sub && <div className="text-xs text-on-surface-variant mt-0.5">{sub}</div>}
+    <div className="grid grid-cols-7 gap-2">
+      {buckets.map(b => (
+        <div key={b.dow} className="flex flex-col items-center gap-1.5">
+          <div className="h-[90px] w-full flex items-end justify-center">
+            <div
+              className="w-full rounded-t-md min-h-[2px]"
+              style={{ height: `${b.avg}%`, background: scoreColor(b.avg) }}
+            />
+          </div>
+          <div className="font-display text-[14px] font-semibold leading-none text-on-surface tabular-nums">
+            {b.avg}<span className="text-[9px] text-on-surface-variant/50 font-semibold">%</span>
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50">{WEEKDAYS[b.dow]}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// 365-day heatmap (folded in from former HotmapView)
+function YearHeatmap({ scores, todayStr, onHover }: {
+  scores: ScoreData
+  todayStr: string
+  onHover: (tip: { date: string; x: number; y: number } | null) => void
+}) {
+  const startDate = addDays(todayStr, -364)
+  const gridStartD = new Date(startDate + 'T12:00:00')
+  const gridStart = addDays(startDate, -gridStartD.getDay())
+  const weeks: string[][] = []
+  let cur = gridStart
+  while (cur <= todayStr) {
+    const week: string[] = []
+    for (let d = 0; d < 7; d++) { week.push(cur); cur = addDays(cur, 1) }
+    weeks.push(week)
+  }
+  const monthLabels: { label: string; col: number }[] = []
+  weeks.forEach((week, col) => {
+    const m = new Date(week[0] + 'T12:00:00').getMonth()
+    const prevM = col > 0 ? new Date(weeks[col-1][0] + 'T12:00:00').getMonth() : -1
+    if (m !== prevM) monthLabels.push({ label: MONTHS[m], col })
+  })
+
+  function cellBg(score: DayScore | undefined, isFuture: boolean, isOutOfRange: boolean): string {
+    if (isFuture || isOutOfRange) return 'bg-transparent'
+    if (!score || score.total === 0) return 'bg-surface-container-low'
+    const p = score.pct
+    if (p === 100) return 'bg-emerald-400'
+    if (p >= 75)  return 'bg-emerald-500/70'
+    if (p >= 50)  return 'bg-violet-500/70'
+    if (p >= 25)  return 'bg-amber-500/65'
+    return 'bg-rose-500/70'
+  }
+
+  return (
+    <div className="overflow-x-auto pb-1">
+      <div className="inline-block min-w-max">
+        <div className="flex mb-1.5 ml-7">
+          {weeks.map((_, col) => {
+            const ml = monthLabels.find(m => m.col === col)
+            return (
+              <div key={col} className="w-[14px] mr-[2px] shrink-0">
+                {ml && <span className="text-[10px] font-medium text-on-surface-variant whitespace-nowrap leading-none">{ml.label}</span>}
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex gap-[2px]">
+          <div className="flex flex-col gap-[2px] mr-1.5 shrink-0 w-5">
+            {['S','M','T','W','T','F','S'].map((d, i) => (
+              <div key={i} className="h-[14px] flex items-center justify-end">
+                {i % 2 === 1 && <span className="text-[9px] text-on-surface-variant leading-none">{d}</span>}
+              </div>
+            ))}
+          </div>
+          {weeks.map((week, col) => (
+            <div key={col} className="flex flex-col gap-[2px]">
+              {week.map(date => {
+                const isFuture = date > todayStr
+                const isOutOfRange = date < startDate
+                const score = scores[date]
+                const isToday = date === todayStr
+                const bg = cellBg(score, isFuture, isOutOfRange)
+                const interactive = !isFuture && !isOutOfRange
+                return (
+                  <div
+                    key={date}
+                    className={`w-[14px] h-[14px] rounded-sm transition-all duration-150 ${bg}
+                      ${interactive ? 'hover:brightness-110 hover:scale-125' : ''}
+                      ${isToday ? 'ring-2 ring-violet-500 ring-offset-1 ring-offset-surface' : ''}
+                      ${score?.pct === 100 ? 'shadow-sm shadow-emerald-400/40' : ''}
+                    `}
+                    onMouseMove={e => { if (interactive) onHover({ date, x: e.clientX, y: e.clientY }) }}
+                    onMouseLeave={() => onHover(null)}
+                  />
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
 
 export default function StatsView() {
-  const [range, setRange] = useState<Range>('30')
-  const [scores, setScores] = useState<ScoreData>({})
+  const [range, setRange] = useState<Range>('90')
+  const [scores365, setScores365] = useState<ScoreData>({})
   const [loading, setLoading] = useState(true)
   const [chartTip, setChartTip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const [heatTip, setHeatTip] = useState<{ date: string; x: number; y: number } | null>(null)
 
+  // Always fetch 365d so heatmap has full data; chart slices from this.
   useEffect(() => {
     setLoading(true)
     const t = today()
-    const start = addDays(t, -(parseInt(range)-1))
+    const start = addDays(t, -364)
     fetch(`/api/scores?startDate=${start}&endDate=${t}`)
       .then(r => r.ok ? r.json() : {})
-      .then(data => { setScores(data); setLoading(false) })
-  }, [range])
+      .then(data => { setScores365(data); setLoading(false) })
+  }, [])
 
   const t = today()
-  const start = addDays(t, -(parseInt(range)-1))
+  const rangeDays = parseInt(range)
+  const start = addDays(t, -(rangeDays - 1))
 
-  // Build chart data for every day in range (fill missing with 0 if has data, skip if nothing scheduled)
+  // Chart data: every day in range that has a score
   const chartData: { date: string; pct: number }[] = []
   let cur = start
   while (cur <= t) {
-    if (scores[cur]) chartData.push({ date: cur, pct: scores[cur].pct })
+    if (scores365[cur]) chartData.push({ date: cur, pct: scores365[cur].pct })
     cur = addDays(cur, 1)
   }
 
-  // Stats
-  const activeDays = Object.keys(scores).filter(d => d >= start && d <= t && scores[d].total > 0)
+  const activeDays = Object.keys(scores365).filter(d => d >= start && d <= t && scores365[d].total > 0)
   const avgPct = activeDays.length === 0 ? null
-    : Math.round(activeDays.reduce((s,d) => s + scores[d].pct, 0) / activeDays.length)
-  const bestDay = activeDays.length === 0 ? null
-    : activeDays.reduce((best,d) => scores[d].pct > scores[best].pct ? d : best, activeDays[0])
-  const currentStreak = calcCurrentStreak(scores)
-  const longestStreak = calcLongestStreak(scores)
+    : Math.round(activeDays.reduce((s,d) => s + scores365[d].pct, 0) / activeDays.length)
+  const last7 = chartData.slice(-7)
+  const prev7 = chartData.slice(-14, -7)
+  const avg7 = last7.length ? Math.round(last7.reduce((s,d) => s + d.pct, 0) / last7.length) : 0
+  const prevAvg7 = prev7.length ? Math.round(prev7.reduce((s,d) => s + d.pct, 0) / prev7.length) : 0
+  const delta = avg7 - prevAvg7
 
-  const animAvg    = useCountUp(avgPct ?? 0)
-  const animStreak = useCountUp(currentStreak)
-  const animLong   = useCountUp(longestStreak)
-  const animBest   = useCountUp(bestDay ? scores[bestDay].pct : 0)
+  const todayScore = scores365[t]
+  const currentStreak = calcCurrentStreak(scores365)
+  const longestStreak = calcLongestStreak(scores365)
+  const perfectDays = activeDays.filter(d => scores365[d].pct === 100).length
+
+  // Best/worst in range
+  const sorted = [...activeDays].sort((a, b) => scores365[b].pct - scores365[a].pct)
+  const best = sorted[0]
+  const worst = sorted[sorted.length - 1]
+
+  // Best streak ≥75% across full 365d
+  let bestPctStreak = 0, runStreak = 0
+  for (const d of Object.keys(scores365).sort()) {
+    if (scores365[d].pct >= 75) { runStreak++; bestPctStreak = Math.max(bestPctStreak, runStreak) }
+    else runStreak = 0
+  }
 
   return (
     <div className="space-y-5">
-      {/* Range selector */}
-      <div className="flex items-center justify-between">
-        <h2 className="font-bold gradient-text">Trends</h2>
-        <div className="flex bg-surface-container-low/80 rounded-xl p-0.5 gap-0.5">
-          {(['30','90','365'] as Range[]).map(r => (
-            <button key={r} onClick={() => setRange(r)}
-              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
-                range===r ? 'bg-surface-container text-violet-400 shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
-              }`}>{r}d</button>
-          ))}
-        </div>
+      <PageHeader
+        eyebrow="Stats"
+        title={<>You&apos;re at <span className="text-violet-400">{avg7}%</span> this week</>}
+        sub="Rolling view of your weighted completion score. The bold line is the 7-day moving average — smoothed to show direction, not noise."
+        right={
+          <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
+            {(['30','90','365'] as Range[]).map(r => (
+              <button key={r} onClick={() => setRange(r)}
+                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${
+                  range===r ? 'bg-violet-500/16 text-violet-300 border border-violet-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
+                }`}>{r}d</button>
+            ))}
+          </div>
+        }
+      />
+
+      {/* Stat strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <StatCard label="Today" value={todayScore?.pct ?? 0} suffix="%" sub={`${todayScore?.completed ?? 0}/${todayScore?.total ?? 0} weighted`} color={scoreColor(todayScore?.pct)} barPct={todayScore?.pct ?? 0} />
+        <StatCard label="Last 7 days" value={avg7} suffix="%" sub={`${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta)} pts vs prior week`} color={delta >= 0 ? '#10b981' : '#f43f5e'} barPct={avg7} />
+        <StatCard label={`Last ${range} days`} value={avgPct ?? '—'} suffix={avgPct != null ? '%' : undefined} sub="weighted average" color={avgPct != null ? scoreColor(avgPct) : undefined} barPct={avgPct ?? 0} />
+        <StatCard label="Current streak" value={currentStreak} suffix="d" sub={`longest ${longestStreak}d`} color="#fb923c" barPct={Math.min(100, currentStreak * 6)} />
       </div>
 
-      {/* Chart */}
-      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
-        <div className="text-xs font-medium text-on-surface-variant mb-3 uppercase tracking-wide">
-          Daily completion % — last {range} days
-        </div>
-        {loading ? (
-          <div className="flex items-center justify-center h-40 text-on-surface-variant text-sm">Loading...</div>
-        ) : (
-          <TrendChart data={chartData} onHover={setChartTip} />
-        )}
-        <div className="flex items-center gap-4 mt-2 text-[10px] text-on-surface-variant">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"/>≥80%</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-violet-600 inline-block"/>50–79%</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500 inline-block"/>&lt;50%</span>
-        </div>
-      </div>
+      {/* 90-day trend chart */}
+      <Section
+        label={`Daily Score · ${range} days`}
+        right={
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 font-semibold">
+              <span className="w-3.5 h-0.5" style={{ background: 'var(--c-p-hex)' }} /> 7d avg
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/55 font-semibold">
+              <span className="w-3.5 h-0.5" style={{ background: 'var(--c-p-hex)', opacity: 0.55 }} /> daily
+            </span>
+          </div>
+        }
+      >
+        <Card padding={20}>
+          {loading
+            ? <div className="flex items-center justify-center h-40 text-on-surface-variant text-sm">Loading…</div>
+            : <TrendChart data={chartData} onHover={setChartTip} />}
+        </Card>
+      </Section>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Average" value={avgPct !== null ? `${animAvg}%` : '—'} sub={`daily completion · ${activeDays.length} day${activeDays.length !== 1 ? 's' : ''}`} />
-        <StatCard label="Best day" value={bestDay ? `${animBest}%` : '—'} sub={bestDay ? formatLabel(bestDay) : undefined} />
-        <StatCard label="Current streak" value={currentStreak > 0 ? `${animStreak}d` : '—'} sub={currentStreak > 0 ? 'days in a row' : 'start today!'} />
-        <StatCard label="Longest streak" value={longestStreak > 0 ? `${animLong}d` : '—'} sub="all time" />
-      </div>
+      {/* By weekday + Best/Worst */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Section label={`By Weekday · ${range}d avg`} color="#f59e0b" dotColor="#f59e0b">
+          <Card padding={20}>
+            <WeekdayBars data={chartData} />
+            <div className="flex justify-between mt-5 pt-4 border-t border-outline-variant/30">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Best day</div>
+                <div className="font-display text-[16px] font-semibold text-emerald-400">{best ? `${scores365[best].pct}%` : '—'}</div>
+                <div className="text-[10px] text-on-surface-variant/50 mt-0.5">{best ? formatLabel(best) : ''}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Worst day</div>
+                <div className="font-display text-[16px] font-semibold text-rose-400">{worst ? `${scores365[worst].pct}%` : '—'}</div>
+                <div className="text-[10px] text-on-surface-variant/50 mt-0.5">{worst ? formatLabel(worst) : ''}</div>
+              </div>
+            </div>
+          </Card>
+        </Section>
 
-      {/* Completion breakdown */}
-      {activeDays.length > 0 && (
-        <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-4 shadow-sm">
-          <div className="text-xs font-medium text-on-surface-variant uppercase tracking-wider mb-3">Breakdown</div>
-          <div className="space-y-2">
-            {(['80','50','0'] as const).map((threshold,i) => {
-              const labels = ['Great days (≥80%)', 'Good days (50–79%)', 'Tough days (<50%)']
-              const colors = ['bg-emerald-500','bg-violet-500','bg-rose-400']
-              const count = activeDays.filter(d => {
-                const p = scores[d].pct
-                if (threshold==='80') return p >= 80
-                if (threshold==='50') return p >= 50 && p < 80
-                return p < 50
-              }).length
-              const pct = Math.round((count/activeDays.length)*100)
-              return (
-                <div key={threshold} className="flex items-center gap-3">
-                  <div className="text-xs text-on-surface-variant w-36 shrink-0">{labels[i]}</div>
-                  <div className="flex-1 bg-surface-container-low rounded-full h-2 overflow-hidden">
-                    <div className={`h-full rounded-full ${colors[i]}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="text-xs font-semibold text-on-surface-variant w-8 text-right">{count}d</div>
+        <Section label="Quality streak" color="#22d3ee" dotColor="#22d3ee">
+          <Card padding={20}>
+            <div className="flex flex-col gap-3 h-full">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Longest run ≥ 75%</div>
+                <div className="font-display text-[36px] font-semibold text-on-surface tabular-nums leading-none">{bestPctStreak}<span className="text-[14px] text-on-surface-variant/50 ml-1">days</span></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Active days</div>
+                  <div className="font-display text-[20px] font-semibold text-on-surface tabular-nums">{activeDays.length}</div>
                 </div>
-              )
-            })}
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Perfect days</div>
+                  <div className="font-display text-[20px] font-semibold text-emerald-400 tabular-nums">{perfectDays}</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Section>
+      </div>
+
+      {/* 365-day heatmap (folded in from HotmapView) */}
+      <Section label="365-day Activity" color="#a78bfa" dotColor="#a78bfa">
+        <Card padding={20}>
+          {loading
+            ? <div className="h-28 flex items-center justify-center text-on-surface-variant text-sm">Loading…</div>
+            : <YearHeatmap scores={scores365} todayStr={t} onHover={setHeatTip} />}
+          <div className="flex items-center gap-2 mt-4">
+            <span className="text-[10px] text-on-surface-variant/60">Less</span>
+            {['bg-surface-container-low', 'bg-rose-500/70', 'bg-amber-500/65', 'bg-violet-500/70', 'bg-emerald-500/70', 'bg-emerald-400']
+              .map((c, i) => <div key={i} className={`w-[14px] h-[14px] rounded-sm ${c}`} />)}
+            <span className="text-[10px] text-on-surface-variant/60">More</span>
+          </div>
+        </Card>
+      </Section>
+
+      {/* Tooltips */}
+      {chartTip && (
+        <div className="fixed z-[60] pointer-events-none"
+          style={{ left: chartTip.x, top: chartTip.y - 10, transform: 'translate(-50%, -100%)' }}>
+          <div className="bg-surface-container-high border border-outline-variant text-on-surface rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
+            {chartTip.text}
           </div>
         </div>
       )}
-
-      {chartTip && (
-        <div className="fixed z-50 pointer-events-none"
-          style={{ left: chartTip.x, top: chartTip.y - 10, transform: 'translate(-50%, -100%)' }}>
-          <div className="bg-surface-container border border-outline-variant text-white rounded-lg px-2.5 py-1.5 shadow-xl text-xs whitespace-nowrap">
-            {chartTip.text}
+      {heatTip && (
+        <div className="fixed z-[60] pointer-events-none"
+          style={{ left: heatTip.x, top: heatTip.y - 8, transform: 'translate(-50%, -100%)' }}>
+          <div className="bg-surface-container-high border border-outline-variant text-on-surface rounded-xl px-3 py-2 shadow-2xl text-xs whitespace-nowrap">
+            <div className="font-semibold mb-0.5">{formatDateLong(heatTip.date)}</div>
+            {scores365[heatTip.date]?.total > 0 ? (
+              <>
+                <div className="text-on-surface-variant/55">
+                  {scores365[heatTip.date].pct}% · {scores365[heatTip.date].completed}/{scores365[heatTip.date].total} items
+                </div>
+                {scores365[heatTip.date].pct === 100 && (
+                  <div className="text-emerald-400 font-semibold mt-0.5">Perfect day ✓</div>
+                )}
+              </>
+            ) : (
+              <div className="text-on-surface-variant/70">No tracked items</div>
+            )}
+            {heatTip.date === t && (
+              <div className="text-violet-400 font-semibold mt-0.5">Today</div>
+            )}
           </div>
         </div>
       )}

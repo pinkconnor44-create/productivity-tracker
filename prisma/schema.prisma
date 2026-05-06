@@ -21,6 +21,7 @@ model Task {
   recurringDays  String?          // comma-separated day indices 0-6 (for weekly type)
   recurringEnd   String?          // YYYY-MM-DD end date (null = forever)
   weight         Int              @default(1) // 1=normal, 2=important, 3=critical
+  kind           String?          // meeting | focus | personal | admin | planning — UI tag for color stripes
   active         Boolean          @default(true)
   deletedAt      String?          // YYYY-MM-DD — set on soft-delete to preserve history
   createdAt      DateTime         @default(now())
@@ -91,20 +92,6 @@ model HabitSkip {
   @@unique([habitId, date])
 }
 
-model MatrixItem {
-  id        Int      @id @default(autoincrement())
-  title     String
-  quadrant  Int      // 1=Do, 2=Schedule, 3=Delegate, 4=Eliminate
-  done      Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
-model InboxItem {
-  id        Int      @id @default(autoincrement())
-  text      String
-  createdAt DateTime @default(now())
-}
-
 model LiftEntry {
   id        Int      @id @default(autoincrement())
   date      String   // YYYY-MM-DD
@@ -121,6 +108,16 @@ model LiftGroup {
   exercises String   @default("[]") // JSON: ["Bench Press", "Squat"]
   order     Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+model Project {
+  id        Int      @id @default(autoincrement())
+  title     String
+  notes     String   @default("")
+  checklist String   @default("[]") // JSON: [{id,text,done}]
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model WeeklyReview {

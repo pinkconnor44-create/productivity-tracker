@@ -2,12 +2,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { isTaskActiveOnDate, recurringLabel } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
+import { PageHeader, StatCard, KindChip, KindPicker, scoreColor } from '@/components/ui'
+import type { Kind } from '@/components/ui'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
   id: number; title: string; description?: string; dueDate?: string; time?: string; endTime?: string
   completed: boolean; completedAt?: string; recurringType?: string
   recurringDays?: string; recurringEnd?: string; weight: number
+  kind?: string | null
   completions: TaskCompletion[]; skips: { date: string }[]; createdAt: string
 }
 
@@ -98,7 +101,7 @@ function groupTasks(tasks: Task[]) {
   return g
 }
 function blankForm() {
-  return { title:'', description:'', dueDate:'', time:'', endTime:'', weight:1, isRecurring:false, recurringType:'daily', recurringDays:[] as number[], recurringEnd:'' }
+  return { title:'', description:'', dueDate:'', time:'', endTime:'', weight:1, kind: null as Kind | null, isRecurring:false, recurringType:'daily', recurringDays:[] as number[], recurringEnd:'' }
 }
 
 // Shared card style
@@ -153,7 +156,7 @@ export default function TasksView() {
     if (!form.title.trim()) return
     setSubmitting(true)
     try {
-      const body: Record<string,unknown> = { title:form.title, description:form.description, dueDate:form.dueDate, time:form.time, endTime:form.endTime, weight:form.weight }
+      const body: Record<string,unknown> = { title:form.title, description:form.description, dueDate:form.dueDate, time:form.time, endTime:form.endTime, weight:form.weight, kind: form.kind }
       if (form.isRecurring) {
         body.recurringType = form.recurringType
         body.recurringDays = form.recurringType === 'weekly' ? form.recurringDays.join(',') : null
@@ -228,8 +231,32 @@ export default function TasksView() {
     </div>
   )
 
+  // Stat strip metrics
+  const recurringDoneToday = activeRecurringToday.filter(t => t.completions.some(c => c.date === todayStr)).length
+  const overdueCount = groups.overdue.length
+  const openWeight = tasks.filter(t => !t.recurringType && !t.completed).reduce((s, t) => s + (t.weight ?? 1), 0)
+  const todayDoneWeight = activeRecurringToday.filter(t => t.completions.some(c => c.date === todayStr)).reduce((s, t) => s + (t.weight ?? 1), 0)
+  const todayTotalWeight = activeRecurringToday.filter(t => !t.skips?.some(s => s.date === todayStr)).reduce((s, t) => s + (t.weight ?? 1), 0)
+  const todayPct = todayTotalWeight > 0 ? Math.round((todayDoneWeight / todayTotalWeight) * 100) : 0
+
   return (
     <div className="space-y-4">
+      <PageHeader
+        eyebrow="Tasks"
+        title={(() => {
+          const now = new Date()
+          return <>{now.toLocaleDateString('en-US', { weekday: 'long' })} <span className="text-on-surface-variant/50 font-medium">· {now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span></>
+        })()}
+        sub="Recurring rituals plus what's on the docket. Excused items don't count against your score."
+      />
+
+      {/* Stat strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <StatCard label="Today" value={todayPct} suffix="%" sub={`${recurringDoneToday}/${activeRecurringToday.length} rituals`} color={scoreColor(todayPct)} barPct={todayPct} />
+        <StatCard label="Recurring" value={`${recurringDoneToday}/${activeRecurringToday.length}`} sub="rituals today" barPct={activeRecurringToday.length ? (recurringDoneToday / activeRecurringToday.length) * 100 : 0} />
+        <StatCard label="Overdue" value={overdueCount} sub={overdueCount === 0 ? 'nothing late' : 'needs triage'} color={overdueCount > 0 ? '#f43f5e' : '#10b981'} barPct={overdueCount > 0 ? 100 : 0} />
+        <StatCard label="Open work" value={openWeight} sub="weighted points" barPct={Math.min(100, openWeight * 4)} />
+      </div>
 
       {/* Add task */}
       {!showForm ? (
@@ -270,6 +297,7 @@ export default function TasksView() {
                           ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
                           : <span className="text-[10px] text-violet-500 font-medium bg-violet-500/15 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
                         }
+                        {!skipped && <KindChip kind={task.kind} size="sm" />}
                         {task.time && <span className="text-[10px] text-on-surface-variant">⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
                         {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
@@ -411,6 +439,7 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
           {skipped
             ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
             : <>
+                <KindChip kind={task.kind} size="sm" />
                 {task.dueDate && (
                   <span className={`text-[11px] font-medium ${
                     task.completed ? 'text-on-surface-variant/30'
@@ -492,6 +521,7 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
   const [time, setTime] = useState(task.time || '')
   const [endTime, setEndTime] = useState(task.endTime || '')
   const [weight, setWeight] = useState(task.weight ?? 1)
+  const [kind, setKind] = useState<Kind | null>((task.kind as Kind | null) ?? null)
   const [isRecurring, setIsRecurring] = useState(!!task.recurringType)
   const [recurringType, setRecurringType] = useState(task.recurringType || 'daily')
   const [recurringDays, setRecurringDays] = useState<number[]>(task.recurringDays ? task.recurringDays.split(',').map(Number) : [])
@@ -502,7 +532,7 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
   }
   function handleSave() {
     if (!title.trim()) return
-    const data: Record<string, unknown> = { title: title.trim(), description: description.trim() || null, dueDate: dueDate || null, time: time || null, endTime: endTime || null, weight }
+    const data: Record<string, unknown> = { title: title.trim(), description: description.trim() || null, dueDate: dueDate || null, time: time || null, endTime: endTime || null, weight, kind }
     if (isRecurring) {
       data.recurringType = recurringType
       data.recurringDays = recurringType === 'weekly' ? recurringDays.join(',') : null
@@ -530,6 +560,10 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
           → <TimeInput value={endTime} onChange={setEndTime} />
         </label>
         <WeightPicker value={weight} onChange={setWeight} />
+      </div>
+      <div className="border-t border-violet-500/30 pt-2">
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
+        <KindPicker value={kind} onChange={setKind} size="sm" />
       </div>
       <div className="border-t border-violet-500/30 pt-2 space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
@@ -600,6 +634,10 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
           → <TimeInput value={form.endTime} onChange={v => setField('endTime', v)} />
         </label>
         <WeightPicker value={form.weight} onChange={v => setField('weight',v)} />
+      </div>
+      <div className="border-t border-outline-variant/40 pt-2">
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
+        <KindPicker value={form.kind} onChange={(k) => setField('kind', k)} size="sm" />
       </div>
       <div className="border-t border-outline-variant/40 pt-2 space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">

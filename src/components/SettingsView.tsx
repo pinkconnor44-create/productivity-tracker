@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { PageHeader, Card, Section } from '@/components/ui'
 
 type AccentTheme = 'purple' | 'green' | 'red' | 'pink' | 'cyan'
 
@@ -49,14 +50,18 @@ export default function SettingsView() {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto">
-      <h2 className="font-bold text-lg gradient-text">Settings</h2>
+      <PageHeader
+        eyebrow="Settings"
+        title="Preferences"
+        sub="Personalize the look and tear down or restart the local server."
+      />
 
       {/* Accent Color */}
-      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-6 shadow-sm">
-        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+      <Card padding={24} className="neon-card">
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70 mb-1">
           Accent Color
         </div>
-        <p className="text-xs text-on-surface-variant mb-5">
+        <p className="text-xs text-on-surface-variant/70 mb-5">
           Changes the neon glow, gradients, aurora, and all UI accents throughout the app.
         </p>
 
@@ -121,12 +126,12 @@ export default function SettingsView() {
             />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Shutdown */}
-      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-6 shadow-sm">
-        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">Server</div>
-        <p className="text-xs text-on-surface-variant mb-4">Stop the local server. The app will stop working until you restart it.</p>
+      <Card padding={24} className="neon-card">
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70 mb-1">Server</div>
+        <p className="text-xs text-on-surface-variant/70 mb-4">Stop the local server. The app will stop working until you restart it.</p>
         {shutdownState === 'idle' && (
           <button onClick={() => setShutdownState('confirm')}
             className="px-4 py-2 rounded-xl text-xs font-semibold border border-rose-800/60 text-rose-400 hover:bg-rose-500/15 transition-all">
@@ -149,11 +154,11 @@ export default function SettingsView() {
         {shutdownState === 'stopping' && (
           <p className="text-xs text-rose-500 font-semibold">Stopping… you can close this tab.</p>
         )}
-      </div>
+      </Card>
 
       {/* About */}
-      <div className="neon-card bg-surface-container rounded-2xl border border-outline-variant/40 p-6 shadow-sm">
-        <div className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">About</div>
+      <Card padding={24} className="neon-card">
+        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70 mb-3">About</div>
         <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <span className="text-xs text-on-surface-variant">App</span>
@@ -168,7 +173,7 @@ export default function SettingsView() {
             <span className="text-xs font-semibold text-on-surface">Dark only (Lumina)</span>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

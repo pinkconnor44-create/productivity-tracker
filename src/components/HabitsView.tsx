@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isHabitActiveOnDate } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
+import { PageHeader, StatCard, scoreColor } from '@/components/ui'
 
 type HabitCompletion = { id: number; habitId: number; date: string }
 type Habit = {
@@ -220,8 +221,30 @@ export default function HabitsView() {
     </div>
   )
 
+  // Aggregate stat strip metrics (todayStr/activeToday already in scope)
+  const doneToday = activeToday.filter(h => h.completions.some(c => c.date === todayStr)).length
+  const longestStreak = habits.reduce((m, h) => Math.max(m, calcStreak(h.completions, h.skips ?? [], h.recurringDays)), 0)
+  const w30 = habits.reduce((acc, h) => {
+    const w = countInWindow(h.completions, h.recurringDays, 30, (h as { startDate?: string }).startDate)
+    return { done: acc.done + w.done, scheduled: acc.scheduled + w.scheduled }
+  }, { done: 0, scheduled: 0 })
+  const w30pct = w30.scheduled ? Math.round((w30.done / w30.scheduled) * 100) : 0
+  const totalThisMonth = w30.done
+
   return (
     <div className="space-y-4">
+      <PageHeader
+        eyebrow="Habits"
+        title={<>{doneToday}<span className="text-on-surface-variant/50">/{activeToday.length}</span> done today</>}
+        sub="Daily rituals you're working to make automatic. Heatmaps show the last 30 days — filled is done, empty is missed."
+      />
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <StatCard label="Today" value={`${doneToday}/${activeToday.length}`} sub="scheduled habits" color={activeToday.length > 0 && doneToday === activeToday.length ? '#10b981' : undefined} barPct={activeToday.length ? (doneToday / activeToday.length) * 100 : 0} />
+        <StatCard label="30-day rate" value={w30pct} suffix="%" sub={`${w30.done} of ${w30.scheduled}`} color={scoreColor(w30pct)} barPct={w30pct} />
+        <StatCard label="Longest streak" value={longestStreak} suffix="d" sub="across all habits" color="#fb923c" barPct={Math.min(100, longestStreak * 1.5)} />
+        <StatCard label="Completions" value={totalThisMonth} sub="last 30 days" barPct={Math.min(100, totalThisMonth)} />
+      </div>
 
       {/* Add habit */}
       {!showForm ? (

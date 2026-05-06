@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { PageHeader, Card } from '@/components/ui'
 
 type Item = { id: string; text: string; done: boolean }
 
@@ -143,6 +144,24 @@ export default function Scratchpad() {
 
   const doneCount = checklist.filter(i => i.done).length
 
+  // Flush any pending debounced save when the component is about to unmount
+  // (tab switch w/ keep-mounted shouldn't unmount, but a full page nav will).
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current && notes !== '') {
+        try {
+          fetch('/api/scratchpad', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes }),
+            keepalive: true,
+          })
+        } catch {}
+        clearTimeout(saveTimer.current)
+      }
+    }
+  }, [notes])
+
   if (!loaded) return (
     <div className="flex items-center justify-center py-8">
       <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
@@ -151,7 +170,12 @@ export default function Scratchpad() {
 
   return (
     <div>
-      <div className="glass card-lift rounded-2xl border overflow-hidden">
+      <PageHeader
+        eyebrow="Scratchpad"
+        title="Quick notes"
+        sub="Anything ephemeral — drafts, todos, half-thoughts. Notes auto-save on pause; checklist saves on every change."
+      />
+      <Card className="overflow-hidden">
 
         {/* Notes */}
         <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
@@ -283,7 +307,7 @@ export default function Scratchpad() {
         </div>
         </div>{/* end checklist wrapper */}
 
-      </div>
+      </Card>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { isHabitActiveOnDate } from '@/lib/recurring'
+import { PageHeader } from '@/components/ui'
 
 type DayScore = { completed: number; total: number; pct: number }
 type Scores   = Record<string, DayScore>
@@ -214,28 +215,28 @@ export default function WeeklyReview() {
 
   return (
     <div className="space-y-4">
-
-      {/* Header */}
-      <div className="glass rounded-2xl border px-4 py-3 flex items-center gap-3">
-        <span className="text-base">📋</span>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-on-surface">Weekly Review</h3>
-          <p className="text-xs text-on-surface-variant">{weekLabel(weekStart)}</p>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button onClick={() => setWeekStart(w => addDays(w, -7))}
-            className="p-1.5 rounded-lg text-on-surface-variant/60 hover:bg-surface-container-low transition-colors">←</button>
-          {!isCurrentWeek && (
-            <button onClick={() => setWeekStart(getMondayOfWeek(today()))}
-              className="px-2 py-1 text-[11px] font-semibold text-violet-400 bg-violet-500/15 rounded-lg hover:bg-violet-500/15 transition-colors">
-              This week
-            </button>
-          )}
-          <button onClick={() => setWeekStart(w => addDays(w, 7))}
-            disabled={isCurrentWeek}
-            className="p-1.5 rounded-lg text-on-surface-variant/60 hover:bg-surface-container-low transition-colors disabled:opacity-30">→</button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Weekly Review"
+        title={weekLabel(weekStart)}
+        sub="Reflect on the week — wins, lessons, and what's worth carrying forward."
+        right={
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setWeekStart(w => addDays(w, -7))}
+              aria-label="Previous week"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low border border-outline-variant/40 transition-colors">←</button>
+            {!isCurrentWeek && (
+              <button onClick={() => setWeekStart(getMondayOfWeek(today()))}
+                className="px-3 h-8 text-[12px] font-semibold text-violet-300 bg-violet-500/15 border border-violet-400/30 rounded-lg hover:bg-violet-500/20 transition-colors">
+                This week
+              </button>
+            )}
+            <button onClick={() => setWeekStart(w => addDays(w, 7))}
+              aria-label="Next week"
+              disabled={isCurrentWeek}
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low border border-outline-variant/40 transition-colors disabled:opacity-30">→</button>
+          </div>
+        }
+      />
 
       {loading ? (
         <div className="flex items-center justify-center py-20">

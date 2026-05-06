@@ -32,6 +32,10 @@ export async function PATCH(
   if ('recurringDays' in body) updateData.recurringDays = body.recurringDays || null
   if ('recurringEnd' in body) updateData.recurringEnd = body.recurringEnd || null
   if ('weight' in body) updateData.weight = [1,2,3].includes(body.weight) ? body.weight : 1
+  if ('kind' in body) {
+    const k = body.kind
+    updateData.kind = k && ['meeting','focus','personal','admin','planning'].includes(k) ? k : null
+  }
 
   const task = await prisma.task.update({
     where: { id },
