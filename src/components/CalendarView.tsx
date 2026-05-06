@@ -38,6 +38,13 @@ function formatTime(t: string) {
   const [h, m] = t.split(':').map(Number)
   return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`
 }
+// Tight time for narrow cells: "9a", "9:30a", "12p", "2:30p" — 2-6 chars max.
+function shortTime(t: string) {
+  const [h, m] = t.split(':').map(Number)
+  const hh = h % 12 || 12
+  const ap = h >= 12 ? 'p' : 'a'
+  return m === 0 ? `${hh}${ap}` : `${hh}:${String(m).padStart(2,'0')}${ap}`
+}
 
 function getMonthDays(year: number, month: number) {
   const firstDay = new Date(year, month, 1).getDay()
@@ -504,11 +511,11 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                 </div>
 
                 {/* Task pills — kind-colored bordered chips.
-                    Mobile (<sm): pill = start time only (content-width). Untimed tasks show a tiny kind dot.
-                    Tablet+ (sm:): pill = time prefix + truncated title (full column width). */}
+                    Mobile (<sm): up to 3 pills, start time only (content-width). Untimed tasks show a tiny kind dot.
+                    Tablet+ (sm:): up to 3 pills, time prefix + truncated title (full column width). */}
                 {isCurrentMonth && sortedTasks.length > 0 && (
-                  <div className={`flex flex-col items-start gap-1 min-w-0 max-w-full transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
-                    {sortedTasks.slice(0, 2).map(t => {
+                  <div className={`flex flex-col items-start gap-0.5 min-w-0 max-w-full transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                    {sortedTasks.slice(0, 3).map(t => {
                       const k = kindStyle(t.kind)
                       const done = isTaskDone(t, date)
                       const dot = k?.dot ?? '#cbc3d780'
@@ -516,7 +523,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         <div
                           key={t.id}
                           title={`${t.time ? formatTime(t.time) + ' · ' : ''}${t.title}`}
-                          className={`flex items-center gap-1 max-w-full sm:w-full px-1.5 py-0.5 rounded-full border text-[10px] leading-tight overflow-hidden ${
+                          className={`flex items-center gap-1 max-w-full sm:w-full px-1 py-px rounded-full border text-[9px] leading-tight overflow-hidden ${
                             done ? 'opacity-40 line-through' : ''
                           }`}
                           style={{
@@ -526,9 +533,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                           }}
                         >
                           {t.time ? (
-                            <span className="tabular-nums font-bold shrink-0">
-                              {formatTime(t.time).replace(' ', '').replace(':00', '')}
-                            </span>
+                            <span className="tabular-nums font-bold shrink-0">{shortTime(t.time)}</span>
                           ) : (
                             <span className="sm:hidden w-1 h-1 rounded-full shrink-0" style={{ background: dot }} />
                           )}
@@ -536,9 +541,9 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         </div>
                       )
                     })}
-                    {sortedTasks.length > 2 && (
-                      <span className="text-[9px] font-semibold text-on-surface-variant/55 leading-none px-1">
-                        +{sortedTasks.length - 2} more
+                    {sortedTasks.length > 3 && (
+                      <span className="text-[8px] font-semibold text-on-surface-variant/55 leading-none px-0.5">
+                        +{sortedTasks.length - 3} more
                       </span>
                     )}
                   </div>
@@ -660,21 +665,26 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
             nowInserted = true
           }
           const done = isTaskDone(task, date)
+          const k = kindStyle(task.kind)
+          const kdot = k?.dot ?? '#cbc3d780'
           items.push(
             <button key={task.id} onClick={() => onToggleTask(task, date)}
-              className={`w-full text-left text-[10px] px-1.5 py-1.5 rounded-lg flex flex-col gap-0.5 transition-colors ${
-                done ? 'text-on-surface-variant/30 bg-surface-container-low' : 'text-on-surface-variant'
+              title={`${task.time ? formatTime(task.time) + ' · ' : ''}${task.title}`}
+              className={`w-full text-left text-[9px] px-1 py-1 rounded-md flex flex-col gap-0.5 border overflow-hidden transition-colors ${
+                done ? 'opacity-40 line-through' : ''
               }`}
-              style={!done ? { backgroundColor: 'rgba(var(--c-p), 0.10)' } : undefined}
+              style={{
+                borderColor: `${kdot}55`,
+                background: `${kdot}1a`,
+                color: done ? undefined : kdot,
+              }}
             >
-              {task.time && (
-                <span className={`font-semibold ${done ? 'text-on-surface-variant/30' : ''}`}
-                  style={!done ? { color: 'var(--c-p-hex)' } : undefined}
-                >
-                  {formatTime(task.time)}
-                </span>
+              {task.time ? (
+                <span className="tabular-nums font-bold leading-tight shrink-0">{shortTime(task.time)}</span>
+              ) : (
+                <span className="sm:hidden w-1 h-1 rounded-full shrink-0" style={{ background: kdot }} />
               )}
-              <span className={`leading-tight ${done ? 'line-through' : ''}`}>{task.title}</span>
+              <span className="hidden sm:block leading-tight font-medium truncate min-w-0">{task.title}</span>
             </button>
           )
         }
