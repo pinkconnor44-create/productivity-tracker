@@ -480,16 +480,16 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
               onMouseLeave={() => setHover(null)}
             >
               <button onClick={() => onSelectDay(date)}
-                className={`group w-full h-[110px] sm:h-[100px] overflow-hidden px-2 pt-2 pb-3 border-b border-r border-outline-variant/30 text-left transition-colors flex flex-col gap-1.5
+                className={`group w-full h-[132px] sm:h-[124px] overflow-hidden px-2 pt-2 pb-2 border-b border-r border-outline-variant/30 text-left transition-colors flex flex-col gap-1
                   ${!isCurrentMonth ? 'opacity-30' : ''}
                   hover:bg-violet-500/5`}
               >
                 {/* Date row */}
-                <div className={`flex items-center justify-between w-full transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                <div className={`flex items-center justify-between w-full shrink-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
                   <span className={`tabular-nums leading-none ${
                     isToday
-                      ? 'font-display text-[22px] font-bold text-violet-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
-                      : 'text-[18px] font-medium text-on-surface'
+                      ? 'font-display text-[20px] font-bold text-violet-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
+                      : 'text-[16px] font-medium text-on-surface'
                   }`}>{dayNum}</span>
                   <div className="flex items-center gap-1.5">
                     {notes[date] && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Has note" />}
@@ -503,7 +503,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
 
                 {/* Task pills — kind-colored bordered chips, max 2 visible */}
                 {isCurrentMonth && sortedTasks.length > 0 && (
-                  <div className={`flex flex-col gap-1 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                  <div className={`flex flex-col gap-1 min-w-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
                     {sortedTasks.slice(0, 2).map(t => {
                       const k = kindStyle(t.kind)
                       const done = isTaskDone(t, date)
@@ -512,7 +512,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         <span
                           key={t.id}
                           title={t.title}
-                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] leading-tight truncate ${
+                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] leading-tight max-w-full ${
                             done ? 'opacity-40 line-through' : ''
                           }`}
                           style={{
@@ -524,7 +524,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                           {t.time && (
                             <span className="tabular-nums font-bold shrink-0">{formatTime(t.time).replace(' ', '').replace(':00', '')}</span>
                           )}
-                          <span className="truncate font-medium">{t.title}</span>
+                          <span className="truncate font-medium min-w-0">{t.title}</span>
                         </span>
                       )
                     })}
@@ -536,11 +536,11 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                   </div>
                 )}
 
-                {/* Score hairline at bottom */}
+                {/* Score hairline pinned to bottom */}
                 {sc && (
-                  <div className={`flex items-end gap-1.5 mt-auto transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
+                  <div className={`flex items-center gap-1.5 mt-auto shrink-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
                     <div className="flex-1 h-[1.5px] rounded-full" style={{ background: sc, opacity: 0.55 }} />
-                    <span className="text-[9px] font-bold tabular-nums leading-none" style={{ color: sc }}>{score!.pct}%</span>
+                    <span className="text-[9px] font-bold tabular-nums leading-none whitespace-nowrap" style={{ color: sc }}>{score!.pct}%</span>
                   </div>
                 )}
               </button>
