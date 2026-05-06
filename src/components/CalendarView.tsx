@@ -503,18 +503,20 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                   </div>
                 </div>
 
-                {/* Task pills — kind-colored bordered chips, max 2 visible */}
+                {/* Task pills — kind-colored bordered chips.
+                    Mobile (<sm): 1 pill, title only (cell is ~30px usable).
+                    Tablet+ (sm:): 2 pills, time prefix visible. */}
                 {isCurrentMonth && sortedTasks.length > 0 && (
                   <div className={`flex flex-col gap-1 min-w-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
-                    {sortedTasks.slice(0, 2).map(t => {
+                    {sortedTasks.slice(0, 2).map((t, idx) => {
                       const k = kindStyle(t.kind)
                       const done = isTaskDone(t, date)
                       const dot = k?.dot ?? '#cbc3d780'
                       return (
-                        <span
+                        <div
                           key={t.id}
                           title={t.title}
-                          className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[10px] leading-tight max-w-full ${
+                          className={`${idx === 0 ? 'flex' : 'hidden sm:flex'} items-center gap-1 w-full px-1.5 py-0.5 rounded-full border text-[10px] leading-tight overflow-hidden ${
                             done ? 'opacity-40 line-through' : ''
                           }`}
                           style={{
@@ -524,14 +526,20 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                           }}
                         >
                           {t.time && (
-                            <span className="tabular-nums font-bold shrink-0">{formatTime(t.time).replace(' ', '').replace(':00', '')}</span>
+                            <span className="hidden sm:inline tabular-nums font-bold shrink-0">{formatTime(t.time).replace(' ', '').replace(':00', '')}</span>
                           )}
-                          <span className="truncate font-medium min-w-0">{t.title}</span>
-                        </span>
+                          <span className="truncate font-medium min-w-0 flex-1">{t.title}</span>
+                        </div>
                       )
                     })}
+                    {/* +N more — mobile uses (length-1), desktop uses (length-2) */}
+                    {sortedTasks.length > 1 && (
+                      <span className="sm:hidden text-[9px] font-semibold text-on-surface-variant/55 leading-none px-1">
+                        +{sortedTasks.length - 1} more
+                      </span>
+                    )}
                     {sortedTasks.length > 2 && (
-                      <span className="text-[9px] font-semibold text-on-surface-variant/55 leading-none px-1">
+                      <span className="hidden sm:block text-[9px] font-semibold text-on-surface-variant/55 leading-none px-1">
                         +{sortedTasks.length - 2} more
                       </span>
                     )}
