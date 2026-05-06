@@ -35,7 +35,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen md:flex">
       <div className="aurora-orb aurora-orb-1" />
       <div className="aurora-orb aurora-orb-2" />
       <div className="aurora-orb aurora-orb-3" />

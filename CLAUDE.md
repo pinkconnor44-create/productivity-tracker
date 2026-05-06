@@ -29,11 +29,13 @@ Analytical, concise, no nonsense.
 **Shell architecture (`src/components/Shell.tsx`)**
 - Desktop: 240px fixed sidebar (md:+) with logo + Today widget (score % + 🔥 streak) + flat draggable nav + footer (Settings + Power)
 - Mobile: hamburger drawer; top bar shows greeting + streak chip; backdrop/Esc closes; body-scroll-locks while open
+- **Page wrapper layout**: `page.tsx` uses `<div className="min-h-screen md:flex">` — **block on mobile, flex on desktop**. Critical: do NOT use plain `flex` here. On mobile the `<aside>` is hidden (`hidden md:flex`) but the mobile `<header>` is a flex sibling of `<main>`. With plain `flex` they end up side-by-side in a row instead of stacked, squishing the main content into a narrow column. The `md:flex` switch is what makes mobile stack correctly.
 - Nav is a **single flat list** (no section labels). Order persists to `localStorage('nav-order-v1')` via HTML5 drag-reorder. Settings + Power are NOT draggable — anchored in the footer.
 - Tabs: `tasks | habits | lifts | stats | calendar | projects | weekly-review | scratchpad | settings`
 - **Lazy-mount + keep-mounted**: Shell tracks a `mounted: Set<Tab>` and renders each view in a `<div className={tab===activeTab ? '' : 'hidden'}>` once it's been visited. Views never unmount on tab switch — Lifts stopwatch, scratchpad drafts, in-progress edits all survive nav. The cost is concurrent fetches once a view's been opened.
 - **Z-index ladder** (documented in Shell.tsx): aurora -10 / content 0 / sidebar 30 / mobile drawer 40 / modals (createPortal at body) 50 / toasts + portal tooltips 60. Floating Stopwatch sits at 55 — above modals, below toasts.
 - `score-refresh` window event still dispatched on every tab change so any view listening to it refetches.
+- **PageHeader `right` slot** that contains many controls (e.g., Calendar's view-toggle + date nav) should use `flex-wrap` so it wraps onto a second row on narrow viewports instead of overflowing horizontally.
 
 **Data:** All data via `/api/*` route handlers (Prisma). Scores: `/api/scores`. Gmail import: `/api/gmail-import`. Task `kind` is a UI tag (5 enum values, optional) on the Task model — POST + PATCH `/api/tasks` accept it; nullable.
 

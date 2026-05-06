@@ -330,7 +330,7 @@ export default function CalendarView() {
         title={periodLabel()}
         sub={periodSub}
         right={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
               {(['month','week','day'] as View[]).map(v => (
                 <button
@@ -344,9 +344,11 @@ export default function CalendarView() {
                 </button>
               ))}
             </div>
-            <button onClick={() => navigate(-1)} aria-label="Previous" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">←</button>
-            <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-[12px] font-semibold bg-surface-container-low border border-outline-variant/40 rounded-lg text-on-surface-variant hover:text-violet-300 transition-colors">Today</button>
-            <button onClick={() => navigate(1)} aria-label="Next" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">→</button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate(-1)} aria-label="Previous" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">←</button>
+              <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-[12px] font-semibold bg-surface-container-low border border-outline-variant/40 rounded-lg text-on-surface-variant hover:text-violet-300 transition-colors">Today</button>
+              <button onClick={() => navigate(1)} aria-label="Next" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">→</button>
+            </div>
           </div>
         }
       />
