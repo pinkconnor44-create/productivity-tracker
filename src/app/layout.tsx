@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { Space_Grotesk, Manrope } from 'next/font/google'
 import './globals.css'
 import PWASetup from '@/components/PWASetup'
+import { ConfirmProvider } from '@/components/ui'
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -43,7 +44,9 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface antialiased font-body">
         <PWASetup />
-        {children}
+        <ConfirmProvider>
+          {children}
+        </ConfirmProvider>
       </body>
     </html>
   )

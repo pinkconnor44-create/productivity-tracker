@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PageHeader, StatCard } from '@/components/ui'
+import { PageHeader, StatCard, useConfirm } from '@/components/ui'
 
 type LiftEntry = {
   id: number
@@ -48,7 +48,7 @@ export default function LiftTracker() {
   const [activeGroupId, setActiveGroupId] = useState<number | null | 'ungrouped'>(null)
   const [showNewGroupInput, setShowNewGroupInput] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const confirm = useConfirm()
 
   // Stopwatch state lives here so the floating timer survives layer changes
   // and exercise modal open/close without resetting.
@@ -98,9 +98,15 @@ export default function LiftTracker() {
   }
 
   async function deleteGroup(groupId: number) {
+    const group = groups.find(g => g.id === groupId)
+    const ok = await confirm({
+      title: 'Delete workout day?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{group?.name ?? 'this day'}</span>? Exercises in this day will become ungrouped.</>,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     await fetch(`/api/lift-groups/${groupId}`, { method: 'DELETE' })
     setGroups(prev => prev.filter(g => g.id !== groupId))
-    setConfirmDeleteId(null)
     if (activeGroupId === groupId) setActiveGroupId(null)
   }
 
@@ -161,28 +167,15 @@ export default function LiftTracker() {
 
         {/* Header */}
         <div className="flex items-center gap-2">
-          <button onClick={() => { setActiveGroupId(null); setConfirmDeleteId(null) }}
+          <button onClick={() => setActiveGroupId(null)}
             className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
             ‹ Back
           </button>
           <h2 className="text-base font-bold text-on-surface flex-1">{currentGroup.name}</h2>
-          {confirmDeleteId === currentGroup.id ? (
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button onClick={() => deleteGroup(currentGroup.id)}
-                className="px-2.5 py-1 text-xs font-semibold bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition-colors">
-                Confirm
-              </button>
-              <button onClick={() => setConfirmDeleteId(null)}
-                className="px-2.5 py-1 text-xs text-on-surface-variant/60 hover:text-on-surface-variant rounded-lg transition-colors">
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmDeleteId(currentGroup.id)}
-              className="shrink-0 text-xs text-on-surface-variant/60 hover:text-rose-500 transition-colors px-2 py-1 rounded-lg hover:bg-rose-500/15">
-              Delete day
-            </button>
-          )}
+          <button onClick={() => deleteGroup(currentGroup.id)}
+            className="shrink-0 text-xs text-on-surface-variant/60 hover:text-rose-500 transition-colors px-2 py-1 rounded-lg hover:bg-rose-500/15">
+            Delete day
+          </button>
         </div>
 
         {/* Exercise list */}
@@ -620,7 +613,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
           className="text-on-surface-variant/[0.08]" strokeDasharray="3 3" />
       ))}
       {yTicks.map((v, i) => (
-        <text key={i} x={PAD.left - 6} y={cy(v) + 4} textAnchor="end" fontSize="11" fontWeight="600" className="fill-on-surface-variant/80">
+        <text key={i} x={PAD.left - 6} y={cy(v) + 4} textAnchor="end" fontSize="11" fontWeight="600" fill="var(--c-p-hex)" fillOpacity="0.85">
           {v >= 1000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v)}
         </text>
       ))}
@@ -647,7 +640,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
         )
       })}
       {labelIndices.map(i => (
-        <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="11" fontWeight="600" className="fill-on-surface-variant/80">
+        <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--c-p-hex)" fillOpacity="0.85">
           {shortDate(points[i].date)}
         </text>
       ))}
@@ -1074,6 +1067,15 @@ function SessionRow({ entry, onDelete }: { entry: LiftEntry; onDelete: (id: numb
   const sets: number[] = JSON.parse(entry.sets)
   const t = today()
   const volume = entry.weight * entry.totalReps
+  const confirm = useConfirm()
+  async function handleDelete() {
+    const ok = await confirm({
+      title: 'Delete session?',
+      message: <>Permanently delete this {entry.weight} lbs · {entry.totalReps} reps session?</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDelete(entry.id)
+  }
   return (
     <div className="group flex items-start gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors pl-6">
       <div className="flex-1 min-w-0">
@@ -1096,8 +1098,8 @@ function SessionRow({ entry, onDelete }: { entry: LiftEntry; onDelete: (id: numb
         </div>
       </div>
       <button
-        onClick={() => onDelete(entry.id)}
-        className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-on-surface hover:text-rose-400 hover:bg-rose-500/15 opacity-0 group-hover:opacity-100 transition-all text-xs">
+        onClick={handleDelete}
+        className="shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-on-surface hover:text-rose-400 hover:bg-rose-500/15 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all text-xs">
         ✕
       </button>
     </div>

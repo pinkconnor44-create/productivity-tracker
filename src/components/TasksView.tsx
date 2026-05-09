@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { isTaskActiveOnDate, recurringLabel } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, KindChip, KindPicker } from '@/components/ui'
+import { PageHeader, KindChip, KindPicker, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
@@ -136,7 +136,6 @@ export default function TasksView() {
   const [submitting, setSubmitting] = useState(false)
   const [showCompleted, setShowCompleted] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   const fetchTasks = useCallback(async () => {
     const res = await fetch('/api/tasks')
@@ -285,7 +284,7 @@ export default function TasksView() {
                         {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
                     </div>
-                    <RecurringRowActions taskId={task.id} skipped={!!skipped} onSkip={() => skipTask(task.id)} onEdit={() => setEditingId(task.id)} onDelete={() => deleteTask(task.id)} />
+                    <RecurringRowActions taskTitle={task.title} skipped={!!skipped} onSkip={() => skipTask(task.id)} onEdit={() => setEditingId(task.id)} onDelete={() => deleteTask(task.id)} />
                   </div>
                 )
               })}
@@ -356,7 +355,7 @@ export default function TasksView() {
                         {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
                     </div>
-                    <SimpleRowActions onEdit={() => setEditingId(task.id)} onDelete={() => deleteTask(task.id)} />
+                    <SimpleRowActions taskTitle={task.title} onEdit={() => setEditingId(task.id)} onDelete={() => deleteTask(task.id)} />
                   </div>
                 )
               })}
@@ -404,7 +403,15 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
   const t = today()
   const isOverdue = task.dueDate && task.dueDate < t && !task.completed
   const w = task.weight ?? 1
-  const [confirming, setConfirming] = useState(false)
+  const confirm = useConfirm()
+  async function handleDelete() {
+    const ok = await confirm({
+      title: 'Delete task?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{task.title}</span>? This can&apos;t be undone.</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDelete(task.id)
+  }
   return (
     <div className={`flex items-start gap-3 pl-0 pr-4 py-3 group transition-colors border-l-[3px] ${W_BORDER[w]} ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
       <button onClick={() => !skipped && onToggle(task)} disabled={!!skipped}
@@ -443,51 +450,46 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
             className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
         )}
         <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
-        {confirming ? (
-          <>
-            <button onClick={() => onDelete(task.id)} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-            <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-          </>
-        ) : (
-          <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
-        )}
+        <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       </div>
     </div>
   )
 }
 
 // ── Reusable confirm-delete action groups ──
-function RecurringRowActions({ taskId, skipped, onSkip, onEdit, onDelete }: { taskId: number; skipped: boolean; onSkip: () => void; onEdit: () => void; onDelete: () => void }) {
-  const [confirming, setConfirming] = useState(false)
+function RecurringRowActions({ taskTitle, skipped, onSkip, onEdit, onDelete }: { taskTitle: string; skipped: boolean; onSkip: () => void; onEdit: () => void; onDelete: () => void }) {
+  const confirm = useConfirm()
+  async function handleDelete() {
+    const ok = await confirm({
+      title: 'Delete recurring task?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{taskTitle}</span>? This removes the recurring rule.</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDelete()
+  }
   return (
     <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
       <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
         className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
       <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
-      {confirming ? (
-        <>
-          <button onClick={onDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-        </>
-      ) : (
-        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
-      )}
+      <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
     </div>
   )
 }
-function SimpleRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
-  const [confirming, setConfirming] = useState(false)
+function SimpleRowActions({ taskTitle, onEdit, onDelete }: { taskTitle: string; onEdit: () => void; onDelete: () => void }) {
+  const confirm = useConfirm()
+  async function handleDelete() {
+    const ok = await confirm({
+      title: 'Delete task?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{taskTitle}</span>?</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDelete()
+  }
   return (
     <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
       <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
-      {confirming ? (
-        <>
-          <button onClick={onDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-        </>
-      ) : (
-        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
-      )}
+      <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
     </div>
   )
 }

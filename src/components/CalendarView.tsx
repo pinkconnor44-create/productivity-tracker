@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { isTaskActiveOnDate, isHabitActiveOnDate, recurringLabel } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor } from '@/components/ui'
+import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
@@ -300,6 +300,12 @@ export default function CalendarView() {
     fetchData(); fetchScores(); fetchSummary()
   }
 
+  async function deleteHabit(id: number) {
+    await fetch(`/api/habits/${id}`, { method: 'DELETE' })
+    toast('Habit deleted', 'warning')
+    fetchData(); fetchScores(); fetchSummary()
+  }
+
   async function skipHabit(habitId: number, date: string) {
     await fetch('/api/habit-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ habitId, date }) })
     toast('Skipped for today', 'warning')
@@ -372,11 +378,11 @@ export default function CalendarView() {
           <div key={navKey} className={navDir === 'right' ? 'cal-slide-right' : 'cal-slide-left'}>
             {view === 'month' && <MonthView currentDate={currentDate} scores={scores} tasksForDate={tasksForDate} habitsForDate={habitsForDate} isTaskDone={isTaskDone} onSelectDay={setSelectedDate} notes={notes} isModalOpen={!!selectedDate} />}
             {view === 'week'  && <WeekView  currentDate={currentDate} scores={scores} tasksForDate={tasksForDate} isTaskDone={isTaskDone} onSelectDay={setSelectedDate} onToggleTask={toggleTask} />}
-            {view === 'day'   && <DayDetail date={currentDate} score={scores[currentDate]} tasks={tasksForDate(currentDate)} habits={habitsForDate(currentDate)} isTaskDone={isTaskDone} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[currentDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />}
+            {view === 'day'   && <DayDetail date={currentDate} score={scores[currentDate]} tasks={tasksForDate(currentDate)} habits={habitsForDate(currentDate)} isTaskDone={isTaskDone} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[currentDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onDeleteHabit={deleteHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />}
           </div>
 
           {selectedDate && (
-            <DayModal date={selectedDate} score={scores[selectedDate]} tasks={tasksForDate(selectedDate)} habits={habitsForDate(selectedDate)} isTaskDone={isTaskDone} onClose={() => setSelectedDate(null)} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[selectedDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />
+            <DayModal date={selectedDate} score={scores[selectedDate]} tasks={tasksForDate(selectedDate)} habits={habitsForDate(selectedDate)} isTaskDone={isTaskDone} onClose={() => setSelectedDate(null)} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[selectedDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onDeleteHabit={deleteHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />
           )}
         </div>
       </div>
@@ -719,7 +725,7 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
   )
 }
 
-function DayDetail({ date, score, tasks, habits, isTaskDone, onToggleTask, onToggleHabit, note, onSaveNote, onAddTask, onSkipTask, onDeleteTask, onSkipHabit, onUpdateTask, onReplaceRecurringDay, onUpdateHabit }: {
+function DayDetail({ date, score, tasks, habits, isTaskDone, onToggleTask, onToggleHabit, note, onSaveNote, onAddTask, onSkipTask, onDeleteTask, onSkipHabit, onDeleteHabit, onUpdateTask, onReplaceRecurringDay, onUpdateHabit }: {
   date: string; score?: DayScore; tasks: Task[]; habits: Habit[]
   isTaskDone: (t: Task, date: string) => boolean
   onToggleTask: (t: Task, date: string) => void; onToggleHabit: (id: number, date: string) => void
@@ -728,6 +734,7 @@ function DayDetail({ date, score, tasks, habits, isTaskDone, onToggleTask, onTog
   onSkipTask: (id: number, date: string) => void
   onDeleteTask: (id: number) => void
   onSkipHabit: (id: number, date: string) => void
+  onDeleteHabit: (id: number) => void
   onUpdateTask: (id: number, data: Record<string, unknown>) => void
   onReplaceRecurringDay: (task: Task, date: string, data: Record<string, unknown>) => void
   onUpdateHabit: (id: number, data: Record<string, unknown>) => void
@@ -753,7 +760,7 @@ function DayDetail({ date, score, tasks, habits, isTaskDone, onToggleTask, onTog
         )}
       </div>
       <QuickAddTask date={date} onAdd={onAddTask} />
-      <DayContent date={date} tasks={tasks} habits={habits} isTaskDone={isTaskDone} onToggleTask={onToggleTask} onToggleHabit={onToggleHabit} onSkipTask={onSkipTask} onDeleteTask={onDeleteTask} onSkipHabit={onSkipHabit} onUpdateTask={onUpdateTask} onReplaceRecurringDay={onReplaceRecurringDay} onUpdateHabit={onUpdateHabit} />
+      <DayContent date={date} tasks={tasks} habits={habits} isTaskDone={isTaskDone} onToggleTask={onToggleTask} onToggleHabit={onToggleHabit} onSkipTask={onSkipTask} onDeleteTask={onDeleteTask} onSkipHabit={onSkipHabit} onDeleteHabit={onDeleteHabit} onUpdateTask={onUpdateTask} onReplaceRecurringDay={onReplaceRecurringDay} onUpdateHabit={onUpdateHabit} />
       <NoteEditor date={date} note={note || ''} onSave={onSaveNote} />
     </div>
   )
@@ -844,20 +851,37 @@ type EditState =
   | { type: 'task'; task: Task; scope: 'choose' | 'all' | 'day' }
   | { type: 'habit'; habit: Habit }
 
-function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHabit, onSkipTask, onDeleteTask, onSkipHabit, onUpdateTask, onReplaceRecurringDay, onUpdateHabit }: {
+function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHabit, onSkipTask, onDeleteTask, onSkipHabit, onDeleteHabit, onUpdateTask, onReplaceRecurringDay, onUpdateHabit }: {
   date: string; tasks: Task[]; habits: Habit[]
   isTaskDone: (t: Task, date: string) => boolean
   onToggleTask: (t: Task, date: string) => void; onToggleHabit: (id: number, date: string) => void
   onSkipTask: (id: number, date: string) => void
   onDeleteTask: (id: number) => void
   onSkipHabit: (id: number, date: string) => void
+  onDeleteHabit: (id: number) => void
   onUpdateTask: (id: number, data: Record<string, unknown>) => void
   onReplaceRecurringDay: (task: Task, date: string, data: Record<string, unknown>) => void
   onUpdateHabit: (id: number, data: Record<string, unknown>) => void
 }) {
   const [editState, setEditState] = useState<EditState | null>(null)
   const [burstIds, setBurstIds] = useState<Set<number>>(new Set())
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const confirm = useConfirm()
+  async function handleDeleteTask(task: Task) {
+    const ok = await confirm({
+      title: 'Delete task?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{task.title}</span>?</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDeleteTask(task.id)
+  }
+  async function handleDeleteHabit(habit: Habit) {
+    const ok = await confirm({
+      title: 'Delete habit?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{habit.name}</span>? All completion history will be removed.</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDeleteHabit(habit.id)
+  }
 
   function triggerBurst(id: number) {
     setBurstIds(prev => new Set(Array.from(prev).concat(id)))
@@ -960,14 +984,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     <button onClick={() => startEditTask(task)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipTask(task.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
                       className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
-                    {confirmDeleteId === task.id ? (
-                      <>
-                        <button onClick={() => { onDeleteTask(task.id); setConfirmDeleteId(null) }} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-                      </>
-                    ) : (
-                      <button onClick={() => setConfirmDeleteId(task.id)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
-                    )}
+                    <button onClick={() => handleDeleteTask(task)} title="Delete task" className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
                   </div>
                 </div>
               )
@@ -1010,6 +1027,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     <button onClick={() => startEditHabit(habit)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipHabit(habit.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
                       className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
+                    <button onClick={() => handleDeleteHabit(habit)} title="Delete habit" className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
                   </div>
                 </div>
               )
@@ -1192,7 +1210,7 @@ function QuickAddTask({ date, onAdd }: { date: string; onAdd: (title: string, da
   )
 }
 
-function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTask, onToggleHabit, note, onSaveNote, onAddTask, onSkipTask, onDeleteTask, onSkipHabit, onUpdateTask, onReplaceRecurringDay, onUpdateHabit }: {
+function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTask, onToggleHabit, note, onSaveNote, onAddTask, onSkipTask, onDeleteTask, onSkipHabit, onDeleteHabit, onUpdateTask, onReplaceRecurringDay, onUpdateHabit }: {
   date: string; score?: DayScore; tasks: Task[]; habits: Habit[]
   isTaskDone: (t: Task, date: string) => boolean; onClose: () => void
   onToggleTask: (t: Task, date: string) => void; onToggleHabit: (id: number, date: string) => void
@@ -1201,6 +1219,7 @@ function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTas
   onSkipTask: (id: number, date: string) => void
   onDeleteTask: (id: number) => void
   onSkipHabit: (id: number, date: string) => void
+  onDeleteHabit: (id: number) => void
   onUpdateTask: (id: number, data: Record<string, unknown>) => void
   onReplaceRecurringDay: (task: Task, date: string, data: Record<string, unknown>) => void
   onUpdateHabit: (id: number, data: Record<string, unknown>) => void
@@ -1227,7 +1246,7 @@ function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTas
         </div>
         <div className="overflow-y-auto p-4 space-y-4 flex-1">
           <QuickAddTask date={date} onAdd={onAddTask} />
-          <DayContent date={date} tasks={tasks} habits={habits} isTaskDone={isTaskDone} onToggleTask={onToggleTask} onToggleHabit={onToggleHabit} onSkipTask={onSkipTask} onDeleteTask={onDeleteTask} onSkipHabit={onSkipHabit} onUpdateTask={onUpdateTask} onReplaceRecurringDay={onReplaceRecurringDay} onUpdateHabit={onUpdateHabit} />
+          <DayContent date={date} tasks={tasks} habits={habits} isTaskDone={isTaskDone} onToggleTask={onToggleTask} onToggleHabit={onToggleHabit} onSkipTask={onSkipTask} onDeleteTask={onDeleteTask} onSkipHabit={onSkipHabit} onDeleteHabit={onDeleteHabit} onUpdateTask={onUpdateTask} onReplaceRecurringDay={onReplaceRecurringDay} onUpdateHabit={onUpdateHabit} />
           <NoteEditor date={date} note={note || ''} onSave={onSaveNote} />
         </div>
       </div>

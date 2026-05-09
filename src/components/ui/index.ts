@@ -12,6 +12,7 @@ export { WeightChip } from './WeightChip'
 export { Checkbox } from './Checkbox'
 export { Eyebrow } from './Eyebrow'
 export { Hairline } from './Hairline'
+export { ConfirmProvider, useConfirm } from './ConfirmDialog'
 export { KIND_COLORS, KIND_LIST, kindStyle } from './kindColors'
 export type { Kind, KindStyle } from './kindColors'
 

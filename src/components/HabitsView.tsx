@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isHabitActiveOnDate } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, StatCard, scoreColor } from '@/components/ui'
+import { PageHeader, StatCard, scoreColor, useConfirm } from '@/components/ui'
 
 type HabitCompletion = { id: number; habitId: number; date: string }
 type Habit = {
@@ -344,7 +344,7 @@ export default function HabitsView() {
                             <div className="text-sm font-medium text-on-surface-variant">{habit.name}</div>
                             <div className="text-[10px] text-on-surface-variant mt-0.5">{scheduleLabel(habit.recurringDays)}</div>
                           </div>
-                          <AllHabitsRowActions onEdit={() => setEditingId(habit.id)} onDelete={() => deleteHabit(habit.id)} />
+                          <AllHabitsRowActions habitName={habit.name} onEdit={() => setEditingId(habit.id)} onDelete={() => deleteHabit(habit.id)} />
                         </div>
                       )
                   )}
@@ -374,7 +374,15 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
   onToggle: (id: number) => void; onDelete: (id: number) => void; onEdit: () => void
   onSkip?: () => void; onSelect: () => void; skipped?: boolean
 }) {
-  const [confirming, setConfirming] = useState(false)
+  const confirm = useConfirm()
+  async function handleDelete() {
+    const ok = await confirm({
+      title: 'Delete habit?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{habit.name}</span>? All completion history will be removed.</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDelete(habit.id)
+  }
   const streak = calcStreak(habit.completions, habit.skips ?? [], habit.recurringDays)
   const w = habit.weight ?? 1
   const rowStats = useMemo(() => {
@@ -430,33 +438,27 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
             className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
         )}
         <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
-        {confirming ? (
-          <>
-            <button onClick={() => onDelete(habit.id)} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-            <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-          </>
-        ) : (
-          <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
-        )}
+        <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       </div>
     </div>
   )
 }
 
 
-function AllHabitsRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
-  const [confirming, setConfirming] = useState(false)
+function AllHabitsRowActions({ habitName, onEdit, onDelete }: { habitName: string; onEdit: () => void; onDelete: () => void }) {
+  const confirm = useConfirm()
+  async function handleDelete() {
+    const ok = await confirm({
+      title: 'Delete habit?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{habitName}</span>? All completion history will be removed.</>,
+      confirmLabel: 'Delete',
+    })
+    if (ok) onDelete()
+  }
   return (
     <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
       <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
-      {confirming ? (
-        <>
-          <button onClick={onDelete} className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-          <button onClick={() => setConfirming(false)} className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-        </>
-      ) : (
-        <button onClick={() => setConfirming(true)} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
-      )}
+      <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
     </div>
   )
 }

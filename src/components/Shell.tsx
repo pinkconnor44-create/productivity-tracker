@@ -106,6 +106,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [navOrder, setNavOrder] = useState<Tab[]>(() => NAV_ITEMS.map(i => i.id))
   const [dragOver, setDragOver] = useState<Tab | null>(null)
+  const [draggingId, setDraggingId] = useState<Tab | null>(null)
   const dragIdRef = useRef<Tab | null>(null)
 
   // Hydrate saved order on mount (avoids SSR/client mismatch)
@@ -187,9 +188,9 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
             label={item.label}
             active={activeTab === item.id}
             isDragOver={dragOver === item.id}
-            isDragging={dragIdRef.current === item.id}
+            isDragging={draggingId === item.id}
             onTap={() => onNavClick(item.id)}
-            onDragStart={() => { dragIdRef.current = item.id }}
+            onDragStart={() => { dragIdRef.current = item.id; setDraggingId(item.id) }}
             onDragOver={(targetId) => {
               if (dragIdRef.current && dragIdRef.current !== targetId) setDragOver(targetId)
             }}
@@ -198,6 +199,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
               if (from && targetId && from !== targetId) reorder(from, targetId)
               dragIdRef.current = null
               setDragOver(null)
+              setDraggingId(null)
             }}
           />
         ))}
@@ -450,13 +452,27 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{
+        WebkitUserSelect: 'none',
+        userSelect: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'none',
+      }}
       className={[
-        'group relative flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-colors touch-none',
-        isDragging ? 'opacity-40 scale-[0.98]' : pressed ? 'scale-[0.99]' : '',
-        isDragOver ? 'ring-2 ring-violet-400/70' : '',
-        active
+        'group relative flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-all select-none',
+        isDragging
+          ? 'scale-[1.04] shadow-2xl ring-2 ring-violet-400/80 z-10 bg-violet-500/20 cursor-grabbing'
+          : pressed
+            ? 'scale-[0.99] cursor-grabbing'
+            : 'cursor-pointer',
+        isDragOver && !isDragging ? 'ring-2 ring-violet-400/70' : '',
+        active && !isDragging
           ? 'bg-violet-500/16 border border-violet-400/30 text-on-surface font-semibold'
-          : 'border border-transparent text-on-surface-variant/70 active:bg-surface-container-low md:hover:text-on-surface md:hover:bg-surface-container-low/50',
+          : !isDragging
+            ? 'border border-transparent text-on-surface-variant/70 active:bg-surface-container-low md:hover:text-on-surface md:hover:bg-surface-container-low/50'
+            : 'border border-transparent text-on-surface',
       ].join(' ')}
     >
       <span className={`w-4 h-4 inline-flex items-center justify-center shrink-0 ${active ? 'text-violet-300' : ''}`}>

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { PageHeader, Card } from '@/components/ui'
+import { PageHeader, Card, useConfirm } from '@/components/ui'
 
 type Item = { id: string; text: string; done: boolean }
 
@@ -78,11 +78,27 @@ export default function Scratchpad() {
     saveChecklist(checklist.map(i => i.id === id ? { ...i, done: !i.done } : i))
   }
 
-  function deleteItem(id: string) {
+  const confirm = useConfirm()
+  async function deleteItem(id: string) {
+    const item = checklist.find(i => i.id === id)
+    const ok = await confirm({
+      title: 'Delete item?',
+      message: <>Remove <span className="font-semibold text-on-surface">{item?.text || 'this item'}</span> from the checklist?</>,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     saveChecklist(checklist.filter(i => i.id !== id))
   }
 
-  function clearDone() {
+  async function clearDone() {
+    const doneCount = checklist.filter(i => i.done).length
+    if (doneCount === 0) return
+    const ok = await confirm({
+      title: 'Clear completed?',
+      message: `Remove ${doneCount} completed item${doneCount === 1 ? '' : 's'} from the checklist?`,
+      confirmLabel: 'Clear',
+    })
+    if (!ok) return
     saveChecklist(checklist.filter(i => !i.done))
   }
 

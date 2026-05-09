@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { toast } from '@/lib/toast'
-import { PageHeader } from '@/components/ui'
+import { PageHeader, useConfirm } from '@/components/ui'
 
 type ChecklistItem = { id: string; text: string; done: boolean }
 type Project = {
@@ -30,7 +30,6 @@ export default function ProjectsView() {
   const [loaded, setLoaded] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
 
@@ -45,7 +44,6 @@ export default function ProjectsView() {
   const closeModal = useCallback(() => {
     setModalOpen(false)
     setEditingTitle(false)
-    setConfirmDeleteId(null)
   }, [])
 
   useEffect(() => {
@@ -120,14 +118,21 @@ export default function ProjectsView() {
     setAdding(false)
   }
 
+  const confirm = useConfirm()
   async function deleteProject(id: number) {
+    const project = projects.find(p => p.id === id)
+    const ok = await confirm({
+      title: 'Delete project?',
+      message: <>Permanently delete <span className="font-semibold text-on-surface">{project?.title ?? 'this project'}</span>? Notes and checklist will be lost.</>,
+      confirmLabel: 'Delete',
+    })
+    if (!ok) return
     try {
       const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error()
       const remaining = projects.filter(p => p.id !== id)
       setProjects(remaining)
       setActiveId(remaining[0]?.id ?? null)
-      setConfirmDeleteId(null)
       setModalOpen(false)
       toast('Project deleted', 'warning')
     } catch {
@@ -351,20 +356,11 @@ export default function ProjectsView() {
                     ✏
                   </button>
                 )}
-                {confirmDeleteId === active.id ? (
-                  <>
-                    <button onClick={() => deleteProject(active.id)}
-                      className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-colors">Delete</button>
-                    <button onClick={() => setConfirmDeleteId(null)}
-                      className="px-2 py-1 rounded-lg text-[10px] font-semibold text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
-                  </>
-                ) : (
-                  <button onClick={() => setConfirmDeleteId(active.id)}
-                    title="Delete project"
-                    className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant/40 hover:text-rose-500 hover:bg-rose-500/15 transition-all">
-                    🗑
-                  </button>
-                )}
+                <button onClick={() => deleteProject(active.id)}
+                  title="Delete project"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant/40 hover:text-rose-500 hover:bg-rose-500/15 transition-all">
+                  🗑
+                </button>
                 <button onClick={closeModal}
                   title="Close"
                   className="w-8 h-8 flex items-center justify-center rounded-xl text-base font-bold text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high transition-all">
