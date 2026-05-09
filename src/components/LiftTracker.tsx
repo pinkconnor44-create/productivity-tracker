@@ -491,13 +491,13 @@ function ExerciseModal({
         </div>
 
         <div className="overflow-y-auto flex-1 min-h-0">
+          <InlineLogForm exName={exName} onAdd={onAdd} />
+
           <div className="divide-y divide-outline-variant/40">
             {sessions.map(session => (
               <SessionRow key={session.id} entry={session} onDelete={onDelete} />
             ))}
           </div>
-
-          <InlineLogForm exName={exName} onAdd={onAdd} />
 
           {sessions.length >= 2 && (
             <div className="px-4 pb-6 pt-2 border-t border-outline-variant/40">
@@ -879,7 +879,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
               placeholder="lbs"
               min={0}
               inputMode="decimal"
-              className="w-full px-2.5 py-2 text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
+              className="w-full px-2.5 py-2 text-base sm:text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
             />
             <input
               type="number"
@@ -889,7 +889,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
               placeholder="reps"
               min={0}
               inputMode="numeric"
-              className="w-full px-2.5 py-2 text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
+              className="w-full px-2.5 py-2 text-base sm:text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
             />
             <button
               onClick={() => removeRow(i)}

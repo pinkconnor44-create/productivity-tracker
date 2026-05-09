@@ -438,7 +438,7 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
           }
         </div>
       </div>
-      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         {onSkip && (
           <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
             className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
@@ -461,7 +461,7 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
 function RecurringRowActions({ taskId, skipped, onSkip, onEdit, onDelete }: { taskId: number; skipped: boolean; onSkip: () => void; onEdit: () => void; onDelete: () => void }) {
   const [confirming, setConfirming] = useState(false)
   return (
-    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
       <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
         className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
       <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
@@ -479,7 +479,7 @@ function RecurringRowActions({ taskId, skipped, onSkip, onEdit, onDelete }: { ta
 function SimpleRowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
   const [confirming, setConfirming] = useState(false)
   return (
-    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
       <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
       {confirming ? (
         <>

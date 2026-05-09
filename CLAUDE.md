@@ -76,3 +76,5 @@ Analytical, concise, no nonsense.
 
 **Migration scripts** — `.claude/token-migrate{1..5}.ps1` were one-shot bulk regex passes that converted the legacy light-first slate/white token palette to the Lumina semantic ladder. Kept in tree as historical reference only; no need to re-run them.
 
+**Neon (database)** — Postgres is hosted on Neon free tier (console.neon.tech). Cap is **0.5 GB storage**; hitting it blocks writes and every `/api/*` route 500s (UI loads but no data populates — exact symptom from 2026-05-07 outage). Storage is real rows + history/PITR retention; the latter often dominates. If usage creeps up, lower history retention in Neon → Settings before considering a paid tier. Free tier also auto-suspends after ~5 min idle — first request wakes it.
+
