@@ -24,7 +24,6 @@ const counts = {
   liftEntries:     await prisma.liftEntry.count(),
   liftGroups:      await prisma.liftGroup.count(),
   projects:        await prisma.project.count(),
-  weeklyReviews:   await prisma.weeklyReview.count(),
 }
 console.log(counts)
 

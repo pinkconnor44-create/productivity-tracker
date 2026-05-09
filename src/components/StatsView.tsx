@@ -154,7 +154,7 @@ function WeekdayBars({ data }: { data: { date: string; pct: number }[] }) {
   )
 }
 
-// 365-day heatmap (folded in from former HotmapView)
+// 365-day activity heatmap.
 function YearHeatmap({ scores, todayStr, onHover }: {
   scores: ScoreData
   todayStr: string
@@ -382,7 +382,7 @@ export default function StatsView() {
         </Section>
       </div>
 
-      {/* 365-day heatmap (folded in from HotmapView) */}
+      {/* 365-day heatmap */}
       <Section label="365-day Activity" color="#a78bfa" dotColor="#a78bfa">
         <Card padding={20}>
           {loading

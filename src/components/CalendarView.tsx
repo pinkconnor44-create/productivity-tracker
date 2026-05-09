@@ -91,61 +91,6 @@ function useWheelAnim(target: number, duration = 900) {
   return { arc, display }
 }
 
-function MiniWheel({ pct, size = 28 }: { pct: number; size?: number }) {
-  const { arc, display } = useWheelAnim(pct, 900)
-  const r = 10, circ = 2 * Math.PI * r
-  const fill = (arc / 100) * circ
-  const color = wheelColor(pct)
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg className="-rotate-90" width={size} height={size} viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r={r} fill="none" className="stroke-outline-variant/40" strokeWidth="2.5" />
-        <circle cx="12" cy="12" r={r} fill="none" stroke={wheelGrad(pct)} strokeWidth="2.5"
-          strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
-          style={{ transition: 'stroke-dasharray 0.9s cubic-bezier(0.4,0,0.2,1)' }} />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[7px] font-bold leading-none" style={{ color }}>{display}%</span>
-      </div>
-    </div>
-  )
-}
-
-function SummaryWheel({ label, pct, compact = false }: { label: string; pct: number | null; compact?: boolean }) {
-  const { arc, display } = useWheelAnim(pct ?? 0, 1000)
-  const dim = compact ? 70 : 80
-  const r = compact ? 28 : 34
-  const sw = compact ? 5 : 6
-  const circ = 2 * Math.PI * r
-  const fill = (arc / 100) * circ
-  const color = pct === null ? '#94a3b8' : wheelColor(pct)
-  const cx = compact ? 35 : 40
-  const vb = compact ? '0 0 70 70' : '0 0 80 80'
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative" style={{ width: dim, height: dim }}>
-        <svg className="w-full h-full -rotate-90" viewBox={vb}>
-          <circle cx={cx} cy={cx} r={r} fill="none" className="stroke-outline-variant/40" strokeWidth={sw} />
-          {pct !== null && (
-            <circle cx={cx} cy={cx} r={r} fill="none" stroke={wheelGrad(pct)} strokeWidth={sw}
-              strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
-              style={{ transition: 'stroke-dasharray 1s cubic-bezier(0.4,0,0.2,1)' }} />
-          )}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-          <span className={`font-bold leading-none ${compact ? 'text-[12px]' : 'text-[13px]'}`} style={{ color }}>
-            {pct === null ? '—' : `${display}%`}
-          </span>
-        </div>
-      </div>
-      <span className={`font-semibold text-on-surface-variant uppercase tracking-wider ${compact ? 'text-[9px]' : 'text-[10px]'}`}>{label}</span>
-    </div>
-  )
-}
-
-function startOfWeekStr(s: string) {
-  const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() - d.getDay()); return localDate(d)
-}
 function aggregatePct(scores: Scores, start: string, end: string): number | null {
   let completed = 0, total = 0
   for (const [date, s] of Object.entries(scores)) {
@@ -169,7 +114,7 @@ export default function CalendarView() {
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
   const t = today()
-  const ws = startOfWeekStr(t)
+  const ws = startOfWeek(t)
   const monthStart = t.slice(0, 8) + '01'
   const yearStart  = t.slice(0, 4) + '-01-01'
   const dayPct   = summaryScores[t]?.pct ?? null

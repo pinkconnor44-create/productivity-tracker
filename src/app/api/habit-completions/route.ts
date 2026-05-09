@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/habit-completions?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const startDate = searchParams.get('startDate')
-  const endDate = searchParams.get('endDate')
-
-  const completions = await prisma.habitCompletion.findMany({
-    where: {
-      ...(startDate && endDate
-        ? { date: { gte: startDate, lte: endDate } }
-        : {}),
-    },
-    orderBy: { date: 'desc' },
-  })
-  return NextResponse.json(completions)
-}
-
-// POST /api/habit-completions { habitId, date }
+// POST /api/habit-completions { habitId, date } — toggles completion on/off
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { habitId, date } = body

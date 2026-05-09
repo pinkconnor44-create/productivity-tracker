@@ -71,7 +71,6 @@ const PLAN = [
   ['LiftEntry',        ['id','date','name','weight','sets','totalReps','createdAt']],
   ['LiftGroup',        ['id','name','exercises','order','createdAt']],
   ['Project',          ['id','title','notes','checklist','order','createdAt','updatedAt']],
-  ['WeeklyReview',     ['id','weekStart','wins','lessons','focus','updatedAt']],
 ]
 
 async function main() {

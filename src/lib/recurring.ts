@@ -1,4 +1,4 @@
-export type RecurringType = 'daily' | 'weekdays' | 'weekends' | 'weekly' | 'monthly'
+export type RecurringType = 'daily' | 'weekdays' | 'weekends' | 'weekly'
 
 // Convert a createdAt value (Date object or ISO string) to YYYY-MM-DD
 function toDateStr(createdAt: string | Date): string {
@@ -54,7 +54,6 @@ function matchesPattern(
     case 'weekly':
       if (!days) return false
       return days.split(',').map(Number).includes(dow)
-    case 'monthly':  return true
     default:         return false
   }
 }
@@ -64,7 +63,6 @@ export function recurringLabel(type: string, days?: string | null): string {
     case 'daily':    return 'Every day'
     case 'weekdays': return 'Weekdays'
     case 'weekends': return 'Weekends'
-    case 'monthly':  return 'Monthly'
     case 'weekly': {
       if (!days) return 'Weekly'
       const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']

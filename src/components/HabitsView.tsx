@@ -542,8 +542,8 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
         ))}
         <polygon
           points={`${cx(0)},${PAD.top + plotH} ${polyline} ${cx(data.length - 1)},${PAD.top + plotH}`}
-          fill="#7c3aed" opacity="0.08" />
-        <polyline points={polyline} fill="none" stroke="#7c3aed" strokeWidth="2"
+          fill="var(--c-p-hex)" opacity="0.08" />
+        <polyline points={polyline} fill="none" stroke="var(--c-p-hex)" strokeWidth="2"
           strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
         {data.map((d, i) => (
           <g key={i}
@@ -552,7 +552,7 @@ function WeeklyCompletionChart({ data }: { data: { weekLabel: string; pct: numbe
             onMouseLeave={() => setTooltip(null)}
             style={{ cursor: 'default' }}>
             <circle cx={cx(i)} cy={cy(d.pct)} r="8" fill="transparent" />
-            <circle cx={cx(i)} cy={cy(d.pct)} r="3" fill="#7c3aed" opacity="0.9" />
+            <circle cx={cx(i)} cy={cy(d.pct)} r="3" fill="var(--c-p-hex)" opacity="0.9" />
           </g>
         ))}
         {labelIndices.map(i => (

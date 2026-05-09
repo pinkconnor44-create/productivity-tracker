@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
-import { PageHeader, Card, Section } from '@/components/ui'
+import { useState, useEffect } from 'react'
+import { PageHeader, Card } from '@/components/ui'
 
-type AccentTheme = 'purple' | 'green' | 'red' | 'pink' | 'cyan'
+export type AccentTheme = 'violet' | 'green' | 'red' | 'pink' | 'cyan'
 
 const THEMES: {
   id: AccentTheme
@@ -11,36 +11,41 @@ const THEMES: {
   light: string
   glow: string
 }[] = [
-  { id: 'purple', label: 'Purple', hex: '#7c3aed', light: '#a78bfa', glow: 'rgba(139,92,246,0.5)'  },
+  { id: 'violet', label: 'Violet', hex: '#7c3aed', light: '#a78bfa', glow: 'rgba(139,92,246,0.5)'  },
   { id: 'green',  label: 'Green',  hex: '#10b981', light: '#34d399', glow: 'rgba(16,185,129,0.5)'  },
   { id: 'red',    label: 'Red',    hex: '#f43f5e', light: '#fb7185', glow: 'rgba(244,63,94,0.5)'   },
   { id: 'pink',   label: 'Pink',   hex: '#ec4899', light: '#f472b6', glow: 'rgba(236,72,153,0.5)'  },
   { id: 'cyan',   label: 'Cyan',   hex: '#06b6d4', light: '#22d3ee', glow: 'rgba(6,182,212,0.5)'   },
 ]
 
-function applyTheme(theme: AccentTheme) {
+export function applyTheme(theme: AccentTheme) {
   localStorage.setItem('accent-theme', theme)
-  if (theme === 'purple') {
+  if (theme === 'violet') {
     document.documentElement.removeAttribute('data-theme')
   } else {
     document.documentElement.setAttribute('data-theme', theme)
   }
 }
 
-export { applyTheme }
+// Migrates legacy `'purple'` localStorage value to `'violet'`. Safe to call repeatedly.
+export function readAccentTheme(): AccentTheme {
+  if (typeof window === 'undefined') return 'violet'
+  const stored = localStorage.getItem('accent-theme')
+  if (stored === 'purple') {
+    localStorage.setItem('accent-theme', 'violet')
+    return 'violet'
+  }
+  if (stored && (['violet','green','red','pink','cyan'] as const).includes(stored as AccentTheme)) {
+    return stored as AccentTheme
+  }
+  return 'violet'
+}
 
 export default function SettingsView() {
-  const [accent, setAccent] = useState<AccentTheme>('purple')
-  const [shutdownState, setShutdownState] = useState<'idle' | 'confirm' | 'stopping'>('idle')
-
-  const shutdown = useCallback(async () => {
-    setShutdownState('stopping')
-    await fetch('/api/shutdown', { method: 'POST' }).catch(() => {})
-  }, [])
+  const [accent, setAccent] = useState<AccentTheme>('violet')
 
   useEffect(() => {
-    const stored = localStorage.getItem('accent-theme') as AccentTheme | null
-    if (stored) setAccent(stored)
+    setAccent(readAccentTheme())
   }, [])
 
   function handleTheme(theme: AccentTheme) {
@@ -125,34 +130,6 @@ export default function SettingsView() {
             />
           </div>
         </div>
-      </Card>
-
-      {/* Shutdown */}
-      <Card padding={24} className="neon-card">
-        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70 mb-1">Server</div>
-        <p className="text-xs text-on-surface-variant/70 mb-4">Stop the local server. The app will stop working until you restart it.</p>
-        {shutdownState === 'idle' && (
-          <button onClick={() => setShutdownState('confirm')}
-            className="px-4 py-2 rounded-xl text-xs font-semibold border border-rose-800/60 text-rose-400 hover:bg-rose-500/15 transition-all">
-            Stop Server
-          </button>
-        )}
-        {shutdownState === 'confirm' && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-on-surface-variant">Are you sure?</span>
-            <button onClick={shutdown}
-              className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-500 text-white hover:bg-rose-600 transition-all">
-              Yes, stop it
-            </button>
-            <button onClick={() => setShutdownState('idle')}
-              className="px-4 py-2 rounded-xl text-xs font-semibold border border-outline-variant text-on-surface-variant hover:bg-surface-container-low transition-all">
-              Cancel
-            </button>
-          </div>
-        )}
-        {shutdownState === 'stopping' && (
-          <p className="text-xs text-rose-500 font-semibold">Stopping… you can close this tab.</p>
-        )}
       </Card>
 
       {/* About */}

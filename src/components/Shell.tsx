@@ -168,8 +168,6 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
   const todayPct = todayScore?.pct ?? 0
   const streak = calcStreak(scores)
 
-  const taskBadgeRef = useRef<{ overdue: number }>({ overdue: 0 })
-
   const onNavClick = useCallback((t: Tab) => {
     onTabChange(t)
     setDrawerOpen(false)

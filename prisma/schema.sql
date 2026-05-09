@@ -109,16 +109,6 @@ CREATE TABLE "Project" (
     "updatedAt" DATETIME NOT NULL
 );
 
--- CreateTable
-CREATE TABLE "WeeklyReview" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "weekStart" TEXT NOT NULL,
-    "wins" TEXT NOT NULL DEFAULT '',
-    "lessons" TEXT NOT NULL DEFAULT '',
-    "focus" TEXT NOT NULL DEFAULT '',
-    "updatedAt" DATETIME NOT NULL
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "TaskCompletion_taskId_date_key" ON "TaskCompletion"("taskId", "date");
 
@@ -136,7 +126,4 @@ CREATE UNIQUE INDEX "HabitSkip_habitId_date_key" ON "HabitSkip"("habitId", "date
 
 -- CreateIndex
 CREATE UNIQUE INDEX "LiftGroup_name_key" ON "LiftGroup"("name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "WeeklyReview_weekStart_key" ON "WeeklyReview"("weekStart");
 

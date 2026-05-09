@@ -8,13 +8,9 @@ export { Card } from './Card'
 export { Section } from './Section'
 export { KindChip } from './KindChip'
 export { KindPicker } from './KindPicker'
-export { WeightChip } from './WeightChip'
-export { Checkbox } from './Checkbox'
-export { Eyebrow } from './Eyebrow'
-export { Hairline } from './Hairline'
 export { ConfirmProvider, useConfirm } from './ConfirmDialog'
 export { KIND_COLORS, KIND_LIST, kindStyle } from './kindColors'
-export type { Kind, KindStyle } from './kindColors'
+export type { Kind } from './kindColors'
 
 // Score color helper — used across views for "today" stats and bars.
 export function scoreColor(pct: number | null | undefined): string {

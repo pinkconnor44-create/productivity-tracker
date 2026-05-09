@@ -26,7 +26,6 @@ const RECURRING_TYPES = [
 const W_BORDER = ['','border-l-outline-variant/60','border-l-blue-400','border-l-orange-400']
 const W_LABEL  = ['','Normal','Important','Critical']
 const W_COLOR  = ['','text-on-surface-variant','text-blue-500','text-orange-500']
-const W_BG     = ['','bg-surface-container-lowest','bg-blue-500/15','bg-orange-500/15']
 
 function today(): string {
   const n = new Date()

@@ -6,7 +6,7 @@ import TasksView from '@/components/TasksView'
 import HabitsView from '@/components/HabitsView'
 import StatsView from '@/components/StatsView'
 import WeeklyReview from '@/components/WeeklyReview'
-import SettingsView, { applyTheme } from '@/components/SettingsView'
+import SettingsView, { applyTheme, readAccentTheme } from '@/components/SettingsView'
 import LiftTracker from '@/components/LiftTracker'
 import ProjectsView from '@/components/ProjectsView'
 import Scratchpad from '@/components/Scratchpad'
@@ -16,8 +16,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
 
   useEffect(() => {
-    const accent = localStorage.getItem('accent-theme')
-    if (accent && accent !== 'purple') applyTheme(accent as Parameters<typeof applyTheme>[0])
+    const accent = readAccentTheme()
+    if (accent !== 'violet') applyTheme(accent)
   }, [])
 
   // Views are constructed once. Shell handles lazy-mount + keep-mounted via its
