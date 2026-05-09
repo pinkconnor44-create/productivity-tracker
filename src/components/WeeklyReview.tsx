@@ -218,7 +218,6 @@ export default function WeeklyReview() {
       <PageHeader
         eyebrow="Weekly Review"
         title={weekLabel(weekStart)}
-        sub="Reflect on the week — wins, lessons, and what's worth carrying forward."
         right={
           <div className="flex items-center gap-1.5">
             <button onClick={() => setWeekStart(w => addDays(w, -7))}

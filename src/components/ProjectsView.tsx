@@ -268,7 +268,6 @@ export default function ProjectsView() {
       <PageHeader
         eyebrow="Projects"
         title={<>{projects.length}<span className="text-on-surface-variant/50"> active</span></>}
-        sub="Per-project notes + checklist. Click any card to expand the detail view."
       />
 
       {/* Add project */}

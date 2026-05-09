@@ -325,17 +325,12 @@ export default function CalendarView() {
   if (loading) return <div className="flex items-center justify-center py-20 text-on-surface-variant/60">Loading...</div>
 
   const todayStrVal = today()
-  const periodSub =
-    view === 'month' ? 'Quiet cells, kind-colored dots, score hairlines.' :
-    view === 'week'  ? 'A scannable week with timeline cues.' :
-                       `Detailed view for ${new Date(currentDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}.`
 
   return (
     <div>
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}
-        sub={periodSub}
         right={
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
@@ -961,7 +956,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
                     <button onClick={() => startEditTask(task)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipTask(task.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
                       className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
@@ -1011,7 +1006,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     {skipped && <div className="text-[10px] font-semibold text-amber-400 mt-0.5">Skipped today</div>}
                     {habit.description && !skipped && <div className="text-xs text-on-surface-variant mt-0.5">{habit.description}</div>}
                   </div>
-                  <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
                     <button onClick={() => startEditHabit(habit)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipHabit(habit.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
                       className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>

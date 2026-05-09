@@ -299,7 +299,6 @@ export default function StatsView() {
       <PageHeader
         eyebrow="Stats"
         title={<>You&apos;re at <span className="text-violet-400">{avg7}%</span> this week</>}
-        sub="Rolling view of your weighted completion score. The bold line is the 7-day moving average — smoothed to show direction, not noise."
         right={
           <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
             {(['30','90','365'] as Range[]).map(r => (

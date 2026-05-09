@@ -173,7 +173,6 @@ export default function Scratchpad() {
       <PageHeader
         eyebrow="Scratchpad"
         title="Quick notes"
-        sub="Anything ephemeral — drafts, todos, half-thoughts. Notes auto-save on pause; checklist saves on every change."
       />
       <Card className="overflow-hidden">
 

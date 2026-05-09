@@ -310,7 +310,6 @@ export default function LiftTracker() {
       <PageHeader
         eyebrow="Lifts"
         title={<>{last7}<span className="text-on-surface-variant/50"> sessions</span> this week</>}
-        sub="Push / pull / legs split. Click a workout day to log exercises and see trends."
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
@@ -582,8 +581,8 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
   const sorted = sessions.slice().sort((a, b) => a.date.localeCompare(b.date))
   const points = sorted.map(s => ({ date: s.date, volume: s.weight * s.totalReps }))
 
-  const W = 300, H = 130
-  const PAD = { left: 52, right: 14, top: 14, bottom: 32 }
+  const W = 300, H = 140
+  const PAD = { left: 56, right: 14, top: 14, bottom: 36 }
   const plotW = W - PAD.left - PAD.right
   const plotH = H - PAD.top - PAD.bottom
 
@@ -614,14 +613,14 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
   const yTicks = [minV, minV + vRange / 2, maxV]
 
   return (<>
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 130 }} aria-hidden="true">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 140 }} aria-hidden="true">
       {yTicks.map((v, i) => (
         <line key={i} x1={PAD.left} y1={cy(v)} x2={W - PAD.right} y2={cy(v)}
           stroke="currentColor" strokeWidth="0.5"
           className="text-on-surface-variant/[0.08]" strokeDasharray="3 3" />
       ))}
       {yTicks.map((v, i) => (
-        <text key={i} x={PAD.left - 6} y={cy(v) + 4} textAnchor="end" fontSize="9" className="fill-on-surface-variant/40">
+        <text key={i} x={PAD.left - 6} y={cy(v) + 4} textAnchor="end" fontSize="11" fontWeight="600" className="fill-on-surface-variant/80">
           {v >= 1000 ? `${(v / 1000).toFixed(1)}k` : Math.round(v)}
         </text>
       ))}
@@ -648,7 +647,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
         )
       })}
       {labelIndices.map(i => (
-        <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="9" className="fill-on-surface-variant/40">
+        <text key={i} x={cx(i)} y={H - 6} textAnchor="middle" fontSize="11" fontWeight="600" className="fill-on-surface-variant/80">
           {shortDate(points[i].date)}
         </text>
       ))}
@@ -694,6 +693,35 @@ function useStopwatchState() {
 
 // Floating, draggable timer overlay. Sits on top of the exercise modal so you
 // can use it while inputting sets. Z-index 55 = above modal (50), below toasts (60).
+// Position is persisted to localStorage so it survives layer changes / reloads.
+const STOPWATCH_POS_KEY = 'stopwatch-pos-v1'
+type StopwatchPos = { x: number; y: number }
+
+function loadStopwatchPos(): StopwatchPos | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = localStorage.getItem(STOPWATCH_POS_KEY)
+    if (!raw) return null
+    const p = JSON.parse(raw) as StopwatchPos
+    if (typeof p.x === 'number' && typeof p.y === 'number') return p
+  } catch {}
+  return null
+}
+
+function saveStopwatchPos(p: StopwatchPos) {
+  try { localStorage.setItem(STOPWATCH_POS_KEY, JSON.stringify(p)) } catch {}
+}
+
+function clampPos(p: StopwatchPos, w: number, h: number): StopwatchPos {
+  if (typeof window === 'undefined') return p
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  return {
+    x: Math.max(8, Math.min(p.x, vw - w - 8)),
+    y: Math.max(8, Math.min(p.y, vh - h - 8)),
+  }
+}
+
 function FloatingStopwatch({ ms, running, start, stop, reset }: {
   ms: number
   running: boolean
@@ -702,6 +730,82 @@ function FloatingStopwatch({ ms, running, start, stop, reset }: {
   reset: () => void
 }) {
   const [collapsed, setCollapsed] = useState(false)
+  // null = not yet measured → use default bottom-right via inline style
+  const [pos, setPos] = useState<StopwatchPos | null>(null)
+  const dragRef = useRef<{ dx: number; dy: number; w: number; h: number; pid: number } | null>(null)
+  const elRef = useRef<HTMLDivElement | null>(null)
+  const movedRef = useRef(false)
+
+  // Initialize position on mount: saved value, else default bottom-right.
+  useEffect(() => {
+    const saved = loadStopwatchPos()
+    if (saved) {
+      setPos(saved)
+      return
+    }
+    // Default: bottom-right with 16px margin. Approx widget size used as fallback;
+    // measured size is used once the element renders.
+    const measure = () => {
+      const w = elRef.current?.offsetWidth ?? (collapsed ? 120 : 260)
+      const h = elRef.current?.offsetHeight ?? (collapsed ? 44 : 152)
+      setPos({ x: window.innerWidth - w - 16, y: window.innerHeight - h - 16 })
+    }
+    // Defer so the DOM is laid out
+    requestAnimationFrame(measure)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Re-clamp on viewport resize
+  useEffect(() => {
+    function onResize() {
+      setPos(prev => {
+        if (!prev || !elRef.current) return prev
+        return clampPos(prev, elRef.current.offsetWidth, elRef.current.offsetHeight)
+      })
+    }
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Re-clamp when collapsed/expanded changes (size changes substantially)
+  useEffect(() => {
+    if (!pos || !elRef.current) return
+    const next = clampPos(pos, elRef.current.offsetWidth, elRef.current.offsetHeight)
+    if (next.x !== pos.x || next.y !== pos.y) setPos(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collapsed])
+
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    if (!elRef.current) return
+    const r = elRef.current.getBoundingClientRect()
+    dragRef.current = {
+      dx: e.clientX - r.left,
+      dy: e.clientY - r.top,
+      w: r.width,
+      h: r.height,
+      pid: e.pointerId,
+    }
+    movedRef.current = false
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) } catch {}
+  }, [])
+
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    const d = dragRef.current
+    if (!d || d.pid !== e.pointerId) return
+    e.preventDefault()
+    movedRef.current = true
+    const next = clampPos({ x: e.clientX - d.dx, y: e.clientY - d.dy }, d.w, d.h)
+    setPos(next)
+  }, [])
+
+  const onPointerUp = useCallback((e: React.PointerEvent<HTMLElement>) => {
+    const d = dragRef.current
+    if (!d || d.pid !== e.pointerId) return
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId) } catch {}
+    dragRef.current = null
+    if (movedRef.current && pos) saveStopwatchPos(pos)
+  }, [pos])
+
   const totalSec = Math.floor(ms / 1000)
   const m = Math.floor(totalSec / 60)
   const s = totalSec % 60
@@ -709,30 +813,62 @@ function FloatingStopwatch({ ms, running, start, stop, reset }: {
   const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${tenth}`
   const display2 = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 
+  // Style: explicit top/left if positioned; otherwise hidden until measured to avoid flicker.
+  const style: React.CSSProperties = pos
+    ? { top: pos.y, left: pos.x, touchAction: 'none' }
+    : { top: -9999, left: -9999, touchAction: 'none' }
+
   if (collapsed) {
     return (
-      <button
-        onClick={() => setCollapsed(false)}
-        className="fixed bottom-4 right-4 z-[55] flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-surface-container-high border border-violet-400/40 shadow-2xl backdrop-blur-md hover:bg-surface-container-highest transition-colors"
-        aria-label="Expand timer"
+      <div
+        ref={elRef}
+        style={style}
+        className="fixed z-[55] select-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
       >
-        <span className="text-base">⏱</span>
-        <span className={`font-mono font-bold tabular-nums text-sm ${running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/60'}`}>
-          {display2}
-        </span>
-        {running && <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />}
-      </button>
+        <button
+          onClick={(e) => {
+            // Prevent click after drag
+            if (movedRef.current) { e.preventDefault(); return }
+            setCollapsed(false)
+          }}
+          className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-surface-container-high border border-violet-400/40 shadow-2xl backdrop-blur-md hover:bg-surface-container-highest transition-colors cursor-grab active:cursor-grabbing"
+          aria-label="Expand timer"
+        >
+          <span className="text-base">⏱</span>
+          <span className={`font-mono font-bold tabular-nums text-sm ${running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/60'}`}>
+            {display2}
+          </span>
+          {running && <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />}
+        </button>
+      </div>
     )
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-[55] w-[260px] rounded-2xl bg-surface-container-high/95 border border-violet-400/40 shadow-2xl backdrop-blur-md overflow-hidden">
-      <div className="flex items-center gap-2 px-4 pt-3">
+    <div
+      ref={elRef}
+      style={style}
+      className="fixed z-[55] w-[260px] rounded-2xl bg-surface-container-high/95 border border-violet-400/40 shadow-2xl backdrop-blur-md overflow-hidden select-none"
+    >
+      {/* Drag handle: top strip. Body buttons remain clickable. */}
+      <div
+        className="flex items-center gap-2 px-4 pt-3 cursor-grab active:cursor-grabbing"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
         <span className="text-sm">⏱</span>
         <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70">Rest Timer</span>
+        <span className="ml-auto text-[10px] text-on-surface-variant/40 select-none" aria-hidden>⋮⋮</span>
         <button
           onClick={() => setCollapsed(true)}
-          className="ml-auto w-6 h-6 flex items-center justify-center rounded-md text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container transition-colors text-xs"
+          onPointerDown={(e) => e.stopPropagation()}
+          className="w-6 h-6 flex items-center justify-center rounded-md text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container transition-colors text-xs"
           aria-label="Collapse timer"
           title="Collapse"
         >

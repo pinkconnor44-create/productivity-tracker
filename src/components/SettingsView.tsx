@@ -53,7 +53,6 @@ export default function SettingsView() {
       <PageHeader
         eyebrow="Settings"
         title="Preferences"
-        sub="Personalize the look and tear down or restart the local server."
       />
 
       {/* Accent Color */}

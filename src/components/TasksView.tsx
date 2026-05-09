@@ -239,7 +239,6 @@ export default function TasksView() {
           const now = new Date()
           return <>{now.toLocaleDateString('en-US', { weekday: 'long' })} <span className="text-on-surface-variant/50 font-medium">· {now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span></>
         })()}
-        sub="Recurring rituals plus what's on the docket. Excused items don't count against your score."
       />
 
       {/* Add task */}

@@ -182,22 +182,23 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
         {orderedItems.map(item => (
           <NavItem
             key={item.id}
+            id={item.id}
             icon={item.icon}
             label={item.label}
             active={activeTab === item.id}
             isDragOver={dragOver === item.id}
-            onClick={() => onNavClick(item.id)}
+            isDragging={dragIdRef.current === item.id}
+            onTap={() => onNavClick(item.id)}
             onDragStart={() => { dragIdRef.current = item.id }}
-            onDragOver={(e) => { e.preventDefault(); if (dragIdRef.current && dragIdRef.current !== item.id) setDragOver(item.id) }}
-            onDragLeave={() => setDragOver(prev => prev === item.id ? null : prev)}
-            onDrop={(e) => {
-              e.preventDefault()
+            onDragOver={(targetId) => {
+              if (dragIdRef.current && dragIdRef.current !== targetId) setDragOver(targetId)
+            }}
+            onDragEnd={(targetId) => {
               const from = dragIdRef.current
-              if (from) reorder(from, item.id)
+              if (from && targetId && from !== targetId) reorder(from, targetId)
               dragIdRef.current = null
               setDragOver(null)
             }}
-            onDragEnd={() => { dragIdRef.current = null; setDragOver(null) }}
           />
         ))}
       </nav>
@@ -335,38 +336,124 @@ function TodayWidget({ pct, streak }: { pct: number; streak: number }) {
   )
 }
 
-function NavItem({ icon, label, active, isDragOver, onClick, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd }: {
+// Long-press threshold (ms) before a press becomes a drag
+const LONG_PRESS_MS = 350
+// Movement threshold (px) before a press is treated as scroll/cancel
+const PRESS_MOVE_CANCEL = 8
+
+function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDragStart, onDragOver, onDragEnd }: {
+  id: Tab
   icon: ReactNode
   label: string
   active: boolean
   isDragOver?: boolean
-  onClick: () => void
+  isDragging?: boolean
+  onTap: () => void
   onDragStart?: () => void
-  onDragOver?: (e: React.DragEvent) => void
-  onDragLeave?: () => void
-  onDrop?: (e: React.DragEvent) => void
-  onDragEnd?: () => void
+  onDragOver?: (targetId: Tab) => void
+  onDragEnd?: (targetId: Tab | null) => void
 }) {
-  const [dragging, setDragging] = useState(false)
+  // Pointer-event drag: works for both mouse and touch (mobile-friendly).
+  // Long-press initiates drag; short tap fires onTap; movement before long-press cancels.
+  const [pressed, setPressed] = useState(false)
+  const dragStateRef = useRef<{
+    pid: number | null
+    startX: number
+    startY: number
+    longPressTimer: ReturnType<typeof setTimeout> | null
+    isDragging: boolean
+  }>({ pid: null, startX: 0, startY: 0, longPressTimer: null, isDragging: false })
+
+  function clearTimer() {
+    const s = dragStateRef.current
+    if (s.longPressTimer) { clearTimeout(s.longPressTimer); s.longPressTimer = null }
+  }
+
+  function findTargetTabAt(x: number, y: number): Tab | null {
+    const el = document.elementFromPoint(x, y)
+    const navEl = el?.closest('[data-tab]') as HTMLElement | null
+    return (navEl?.dataset.tab as Tab) ?? null
+  }
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    // Only react to primary button / single-touch
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    const s = dragStateRef.current
+    s.pid = e.pointerId
+    s.startX = e.clientX
+    s.startY = e.clientY
+    s.isDragging = false
+    setPressed(true)
+
+    s.longPressTimer = setTimeout(() => {
+      // Promote to drag
+      s.isDragging = true
+      onDragStart?.()
+      try { (e.currentTarget as HTMLElement)?.setPointerCapture?.(s.pid!) } catch {}
+    }, LONG_PRESS_MS)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const s = dragStateRef.current
+    if (s.pid !== e.pointerId) return
+    const dx = e.clientX - s.startX
+    const dy = e.clientY - s.startY
+
+    if (!s.isDragging) {
+      // Cancel long-press if user moved beyond threshold (likely scrolling)
+      if (Math.hypot(dx, dy) > PRESS_MOVE_CANCEL) {
+        clearTimer()
+        s.pid = null
+        setPressed(false)
+      }
+      return
+    }
+    // Active drag: prevent scroll, hit-test
+    e.preventDefault()
+    const target = findTargetTabAt(e.clientX, e.clientY)
+    if (target && target !== id) onDragOver?.(target)
+  }
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const s = dragStateRef.current
+    if (s.pid !== e.pointerId) return
+    clearTimer()
+    setPressed(false)
+
+    if (s.isDragging) {
+      const target = findTargetTabAt(e.clientX, e.clientY)
+      onDragEnd?.(target && target !== id ? target : null)
+      try { (e.currentTarget as HTMLElement)?.releasePointerCapture?.(e.pointerId) } catch {}
+    } else {
+      // Short press → tap
+      onTap()
+    }
+    s.pid = null
+    s.isDragging = false
+  }
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const s = dragStateRef.current
+    if (s.pid !== e.pointerId) return
+    clearTimer()
+    if (s.isDragging) onDragEnd?.(null)
+    setPressed(false)
+    s.pid = null
+    s.isDragging = false
+  }
+
   return (
     <button
-      onClick={onClick}
-      draggable
-      onDragStart={(e) => {
-        // Required so drop targets fire in some browsers
-        try { e.dataTransfer.setData('text/plain', label) } catch {}
-        e.dataTransfer.effectAllowed = 'move'
-        setDragging(true)
-        onDragStart?.()
-      }}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onDragEnd={() => { setDragging(false); onDragEnd?.() }}
+      type="button"
+      data-tab={id}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       className={[
-        'group relative flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-colors cursor-grab active:cursor-grabbing',
-        dragging ? 'opacity-40' : '',
-        isDragOver ? 'ring-1 ring-violet-400/60' : '',
+        'group relative flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-colors touch-none',
+        isDragging ? 'opacity-40 scale-[0.98]' : pressed ? 'scale-[0.99]' : '',
+        isDragOver ? 'ring-2 ring-violet-400/70' : '',
         active
           ? 'bg-violet-500/16 border border-violet-400/30 text-on-surface font-semibold'
           : 'border border-transparent text-on-surface-variant/70 active:bg-surface-container-low md:hover:text-on-surface md:hover:bg-surface-container-low/50',
@@ -376,7 +463,7 @@ function NavItem({ icon, label, active, isDragOver, onClick, onDragStart, onDrag
         {icon}
       </span>
       <span className="text-[13px] tracking-[-0.005em] flex-1">{label}</span>
-      <span className="opacity-0 group-hover:opacity-30 text-[10px] leading-none select-none" aria-hidden>⋮⋮</span>
+      <span className="opacity-30 md:opacity-0 md:group-hover:opacity-30 text-[10px] leading-none select-none" aria-hidden>⋮⋮</span>
     </button>
   )
 }

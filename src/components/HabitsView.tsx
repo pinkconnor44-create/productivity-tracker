@@ -236,7 +236,6 @@ export default function HabitsView() {
       <PageHeader
         eyebrow="Habits"
         title={<>{doneToday}<span className="text-on-surface-variant/50">/{activeToday.length}</span> done today</>}
-        sub="Daily rituals you're working to make automatic. Heatmaps show the last 30 days — filled is done, empty is missed."
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
