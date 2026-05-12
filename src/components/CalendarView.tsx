@@ -531,7 +531,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
           : Math.min(window.innerWidth - POP_W - 8, hover.rect.left)
         return createPortal(
           <div
-            className="glass fixed z-[9999] w-52 rounded-xl p-3 pointer-events-none"
+            className="glass fixed z-[60] w-52 rounded-xl p-3 pointer-events-none"
             style={{ top, left }}
           >
             <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">

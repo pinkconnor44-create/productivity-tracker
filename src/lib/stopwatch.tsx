@@ -41,6 +41,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const start = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
     startRef.current = Date.now() - ms
     intervalRef.current = setInterval(() => setMs(Date.now() - startRef.current), 100)
     setRunning(true)

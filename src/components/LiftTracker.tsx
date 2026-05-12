@@ -614,13 +614,13 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
         </text>
       ))}
       {points.length > 1 && (
-        <polyline points={polyline} fill="none" stroke="#7c3aed" strokeWidth="2"
+        <polyline points={polyline} fill="none" stroke="var(--c-p-hex)" strokeWidth="2"
           strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
       )}
       {points.length > 1 && (
         <polygon
           points={`${cx(0)},${PAD.top + plotH} ${polyline} ${cx(points.length - 1)},${PAD.top + plotH}`}
-          fill="#7c3aed" opacity="0.08" />
+          fill="var(--c-p-hex)" opacity="0.08" />
       )}
       {points.map((p, i) => {
         const volLabel = p.volume >= 1000 ? `${(p.volume / 1000).toFixed(1)}k` : String(p.volume)
@@ -631,7 +631,7 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
             onMouseLeave={() => setTooltip(null)}
             style={{ cursor: 'default' }}>
             <circle cx={cx(i)} cy={cy(p.volume)} r="8" fill="transparent" />
-            <circle cx={cx(i)} cy={cy(p.volume)} r="3" fill="#7c3aed" opacity="0.9" />
+            <circle cx={cx(i)} cy={cy(p.volume)} r="3" fill="var(--c-p-hex)" opacity="0.9" />
           </g>
         )
       })}

@@ -34,7 +34,7 @@ export default function ToastContainer() {
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 right-4 z-[100] flex flex-col gap-2 items-end pointer-events-none">
+    <div className="fixed bottom-20 sm:bottom-6 right-4 z-[60] flex flex-col gap-2 items-end pointer-events-none">
       {toasts.map(t => (
         <div key={t.id}
           className={`${t.exiting ? 'toast-exit' : 'toast-enter'} flex items-center gap-2.5 px-4 py-2.5 rounded-xl shadow-lg text-white text-sm font-medium backdrop-blur-sm bg-surface-container/90 border border-white/10`}>

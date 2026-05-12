@@ -138,15 +138,26 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
   }, [activeTab, mounted])
 
   // Score refresh — listens for cross-view dispatches and refetches on tab change.
+  // AbortController per fetch so an older in-flight request can't overwrite newer data
+  // when the user tab-switches faster than scores resolve.
   useEffect(() => {
     const t = todayStr()
+    let inflight: AbortController | null = null
     const refresh = () => {
-      fetch(`/api/scores?startDate=${t.slice(0, 4)}-01-01&endDate=${t}`)
-        .then(r => r.ok ? r.json() : {}).then(setScores).catch(() => {})
+      inflight?.abort()
+      const ctrl = new AbortController()
+      inflight = ctrl
+      fetch(`/api/scores?startDate=${t.slice(0, 4)}-01-01&endDate=${t}`, { signal: ctrl.signal })
+        .then(r => r.ok ? r.json() : {})
+        .then(data => { if (!ctrl.signal.aborted) setScores(data) })
+        .catch(() => {})
     }
     refresh()
     window.addEventListener('score-refresh', refresh)
-    return () => window.removeEventListener('score-refresh', refresh)
+    return () => {
+      inflight?.abort()
+      window.removeEventListener('score-refresh', refresh)
+    }
   }, [])
   useEffect(() => {
     window.dispatchEvent(new Event('score-refresh'))

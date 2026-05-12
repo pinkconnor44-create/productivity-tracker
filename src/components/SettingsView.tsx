@@ -19,7 +19,7 @@ const THEMES: {
 ]
 
 export function applyTheme(theme: AccentTheme) {
-  localStorage.setItem('accent-theme', theme)
+  try { localStorage.setItem('accent-theme', theme) } catch {}
   if (theme === 'violet') {
     document.documentElement.removeAttribute('data-theme')
   } else {
@@ -28,16 +28,19 @@ export function applyTheme(theme: AccentTheme) {
 }
 
 // Migrates legacy `'purple'` localStorage value to `'violet'`. Safe to call repeatedly.
+// localStorage is wrapped in try/catch — Safari private mode throws on access.
 export function readAccentTheme(): AccentTheme {
   if (typeof window === 'undefined') return 'violet'
-  const stored = localStorage.getItem('accent-theme')
-  if (stored === 'purple') {
-    localStorage.setItem('accent-theme', 'violet')
-    return 'violet'
-  }
-  if (stored && (['violet','green','red','pink','cyan'] as const).includes(stored as AccentTheme)) {
-    return stored as AccentTheme
-  }
+  try {
+    const stored = localStorage.getItem('accent-theme')
+    if (stored === 'purple') {
+      try { localStorage.setItem('accent-theme', 'violet') } catch {}
+      return 'violet'
+    }
+    if (stored && (['violet','green','red','pink','cyan'] as const).includes(stored as AccentTheme)) {
+      return stored as AccentTheme
+    }
+  } catch {}
   return 'violet'
 }
 

@@ -100,7 +100,7 @@ export default function FloatingStopwatch() {
 
   const style: React.CSSProperties = pos
     ? { top: pos.y, left: pos.x, touchAction: 'none' }
-    : { top: -9999, left: -9999, touchAction: 'none' }
+    : { top: 0, left: 0, visibility: 'hidden', touchAction: 'none' }
 
   return (
     <div
