@@ -345,8 +345,12 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           )
         })}
       </main>
-      <FloatingStopwatch />
-      <DockedStopwatch />
+      {activeTab === 'lifts' && (
+        <>
+          <FloatingStopwatch />
+          <DockedStopwatch />
+        </>
+      )}
     </>
   )
 }
