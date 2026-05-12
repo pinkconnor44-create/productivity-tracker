@@ -5,12 +5,12 @@ import CalendarView from '@/components/CalendarView'
 import TasksView from '@/components/TasksView'
 import HabitsView from '@/components/HabitsView'
 import StatsView from '@/components/StatsView'
-import WeeklyReview from '@/components/WeeklyReview'
 import SettingsView, { applyTheme, readAccentTheme } from '@/components/SettingsView'
 import LiftTracker from '@/components/LiftTracker'
 import ProjectsView from '@/components/ProjectsView'
 import Scratchpad from '@/components/Scratchpad'
 import ToastContainer from '@/components/ToastContainer'
+import { StopwatchProvider } from '@/lib/stopwatch'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
@@ -29,7 +29,6 @@ export default function Home() {
     lifts: <LiftTracker />,
     stats: <StatsView />,
     projects: <ProjectsView />,
-    'weekly-review': <WeeklyReview />,
     scratchpad: <Scratchpad />,
     settings: <SettingsView />,
   }
@@ -58,7 +57,9 @@ export default function Home() {
         </defs>
       </svg>
 
-      <Shell activeTab={activeTab} onTabChange={setActiveTab} views={views} />
+      <StopwatchProvider>
+        <Shell activeTab={activeTab} onTabChange={setActiveTab} views={views} />
+      </StopwatchProvider>
 
       <ToastContainer />
     </div>

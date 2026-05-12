@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { PageHeader, StatCard, useConfirm } from '@/components/ui'
+import { useStopwatch } from '@/lib/stopwatch'
 
 type LiftEntry = {
   id: number
@@ -52,7 +53,6 @@ export default function LiftTracker() {
 
   // Stopwatch state lives here so the floating timer survives layer changes
   // and exercise modal open/close without resetting.
-  const stopwatch = useStopwatchState()
 
   const t = today()
   const startDate = addDays(t, -89)
@@ -163,7 +163,7 @@ export default function LiftTracker() {
   if (typeof activeGroupId === 'number' && currentGroup) {
     return (
       <div className="space-y-4">
-        <FloatingStopwatch {...stopwatch} />
+        <FloatingStopwatch />
 
         {/* Header */}
         <div className="flex items-center gap-2">
@@ -242,7 +242,7 @@ export default function LiftTracker() {
   if (activeGroupId === 'ungrouped') {
     return (
       <div className="space-y-4">
-        <FloatingStopwatch {...stopwatch} />
+        <FloatingStopwatch />
         <div className="flex items-center gap-2">
           <button onClick={() => setActiveGroupId(null)}
             className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
@@ -312,7 +312,7 @@ export default function LiftTracker() {
         <StatCard label="Last session" value={lastDate ? new Date(lastDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'} sub="most recent" barPct={lastDate ? 100 : 0} />
       </div>
 
-      <FloatingStopwatch {...stopwatch} />
+      <FloatingStopwatch />
 
       {/* Quick log form removed in redesign — logging now happens inside the per-exercise modal with stacked sets + drafts. */}
 
@@ -657,33 +657,6 @@ function VolumeChart({ sessions }: { sessions: LiftEntry[] }) {
   )
 }
 
-// Stopwatch state hook — owned by LiftTracker so the timer survives layer changes
-// (Layer 1 ↔ Layer 2 ↔ exercise modal) without remounting/resetting.
-function useStopwatchState() {
-  const [ms, setMs] = useState(0)
-  const [running, setRunning] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const startRef = useRef<number>(0)
-
-  const start = useCallback(() => {
-    startRef.current = Date.now() - ms
-    intervalRef.current = setInterval(() => setMs(Date.now() - startRef.current), 100)
-    setRunning(true)
-  }, [ms])
-  const stop = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    setRunning(false)
-  }, [])
-  const reset = useCallback(() => {
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    setMs(0); setRunning(false)
-  }, [])
-
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, [])
-
-  return { ms, running, start, stop, reset }
-}
-
 // Floating, draggable timer overlay. Sits on top of the exercise modal so you
 // can use it while inputting sets. Z-index 55 = above modal (50), below toasts (60).
 // Position is persisted to localStorage so it survives layer changes / reloads.
@@ -715,14 +688,8 @@ function clampPos(p: StopwatchPos, w: number, h: number): StopwatchPos {
   }
 }
 
-function FloatingStopwatch({ ms, running, start, stop, reset }: {
-  ms: number
-  running: boolean
-  start: () => void
-  stop: () => void
-  reset: () => void
-}) {
-  const [collapsed, setCollapsed] = useState(false)
+function FloatingStopwatch() {
+  const { ms, running, mode, start, stop, reset, setMode } = useStopwatch()
   // null = not yet measured → use default bottom-right via inline style
   const [pos, setPos] = useState<StopwatchPos | null>(null)
   const dragRef = useRef<{ dx: number; dy: number; w: number; h: number; pid: number } | null>(null)
@@ -736,14 +703,11 @@ function FloatingStopwatch({ ms, running, start, stop, reset }: {
       setPos(saved)
       return
     }
-    // Default: bottom-right with 16px margin. Approx widget size used as fallback;
-    // measured size is used once the element renders.
     const measure = () => {
-      const w = elRef.current?.offsetWidth ?? (collapsed ? 120 : 260)
-      const h = elRef.current?.offsetHeight ?? (collapsed ? 44 : 152)
+      const w = elRef.current?.offsetWidth ?? 260
+      const h = elRef.current?.offsetHeight ?? 152
       setPos({ x: window.innerWidth - w - 16, y: window.innerHeight - h - 16 })
     }
-    // Defer so the DOM is laid out
     requestAnimationFrame(measure)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -760,13 +724,8 @@ function FloatingStopwatch({ ms, running, start, stop, reset }: {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  // Re-clamp when collapsed/expanded changes (size changes substantially)
-  useEffect(() => {
-    if (!pos || !elRef.current) return
-    const next = clampPos(pos, elRef.current.offsetWidth, elRef.current.offsetHeight)
-    if (next.x !== pos.x || next.y !== pos.y) setPos(next)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collapsed])
+  // When user docks the widget the DockedStopwatch in Shell takes over and this returns null.
+  if (mode === 'dock') return null
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
     if (!elRef.current) return
@@ -804,46 +763,16 @@ function FloatingStopwatch({ ms, running, start, stop, reset }: {
   const s = totalSec % 60
   const tenth = Math.floor((ms % 1000) / 100)
   const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${tenth}`
-  const display2 = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 
   // Style: explicit top/left if positioned; otherwise hidden until measured to avoid flicker.
   const style: React.CSSProperties = pos
     ? { top: pos.y, left: pos.x, touchAction: 'none' }
     : { top: -9999, left: -9999, touchAction: 'none' }
 
-  if (collapsed) {
-    return (
-      <div
-        ref={elRef}
-        style={style}
-        className="fixed z-[55] select-none"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-      >
-        <button
-          onClick={(e) => {
-            // Prevent click after drag
-            if (movedRef.current) { e.preventDefault(); return }
-            setCollapsed(false)
-          }}
-          className="flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-surface-container-high border border-violet-400/40 shadow-2xl backdrop-blur-md hover:bg-surface-container-highest transition-colors cursor-grab active:cursor-grabbing"
-          aria-label="Expand timer"
-        >
-          <span className="text-base">⏱</span>
-          <span className={`font-mono font-bold tabular-nums text-sm ${running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/60'}`}>
-            {display2}
-          </span>
-          {running && <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />}
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div
       ref={elRef}
+      data-no-swipe
       style={style}
       className="fixed z-[55] w-[260px] rounded-2xl bg-surface-container-high/95 border border-violet-400/40 shadow-2xl backdrop-blur-md overflow-hidden select-none"
     >
@@ -859,11 +788,11 @@ function FloatingStopwatch({ ms, running, start, stop, reset }: {
         <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70">Rest Timer</span>
         <span className="ml-auto text-[10px] text-on-surface-variant/40 select-none" aria-hidden>⋮⋮</span>
         <button
-          onClick={() => setCollapsed(true)}
+          onClick={() => setMode('dock')}
           onPointerDown={(e) => e.stopPropagation()}
           className="w-6 h-6 flex items-center justify-center rounded-md text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container transition-colors text-xs"
-          aria-label="Collapse timer"
-          title="Collapse"
+          aria-label="Dock timer to right edge"
+          title="Dock to side"
         >
           –
         </button>

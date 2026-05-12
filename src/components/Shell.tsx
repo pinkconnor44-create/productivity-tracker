@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { scoreColor } from '@/components/ui'
+import DockedStopwatch from '@/components/DockedStopwatch'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Z-INDEX LADDER (documented for future modals — keep in sync with new code)
@@ -20,7 +21,7 @@ import { scoreColor } from '@/components/ui'
 
 export type Tab =
   | 'calendar' | 'tasks' | 'habits' | 'lifts'
-  | 'stats' | 'projects' | 'weekly-review' | 'scratchpad' | 'settings'
+  | 'stats' | 'projects' | 'scratchpad' | 'settings'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -40,7 +41,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'stats',         label: 'Stats',         icon: <IconStats    /> },
   { id: 'calendar',      label: 'Calendar',      icon: <IconCalendar /> },
   { id: 'projects',      label: 'Projects',      icon: <IconProjects /> },
-  { id: 'weekly-review', label: 'Weekly Review', icon: <IconReview   /> },
   { id: 'scratchpad',    label: 'Scratchpad',    icon: <IconNote     /> },
 ]
 
@@ -173,6 +173,39 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
     setDrawerOpen(false)
   }, [onTabChange])
 
+  // Mobile horizontal swipe between tabs. Touch-only, mobile-only. Skips when the
+  // gesture starts inside a [data-no-swipe] subtree (horizontal carousels,
+  // draggable widgets) or when the user is scrolling vertically. No wrap at ends.
+  const swipeRef = useRef<{ pid: number; x: number; y: number; ignore: boolean } | null>(null)
+  const onMainPointerDown = (e: React.PointerEvent<HTMLElement>) => {
+    if (e.pointerType !== 'touch') return
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) return
+    const target = e.target as HTMLElement | null
+    if (target?.closest('[data-no-swipe]')) return
+    swipeRef.current = { pid: e.pointerId, x: e.clientX, y: e.clientY, ignore: false }
+  }
+  const onMainPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    const s = swipeRef.current
+    if (!s || s.pid !== e.pointerId || s.ignore) return
+    const dx = e.clientX - s.x
+    const dy = e.clientY - s.y
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) s.ignore = true
+  }
+  const onMainPointerUp = (e: React.PointerEvent<HTMLElement>) => {
+    const s = swipeRef.current
+    swipeRef.current = null
+    if (!s || s.pid !== e.pointerId || s.ignore) return
+    const dx = e.clientX - s.x
+    const dy = e.clientY - s.y
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const idx = navOrder.indexOf(activeTab)
+      if (idx === -1) return
+      const next = idx + (dx < 0 ? 1 : -1)
+      if (next < 0 || next >= navOrder.length) return
+      onTabChange(navOrder[next])
+    }
+  }
+
   const sidebarBody = (
     <>
       <Logo />
@@ -265,7 +298,13 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
       </div>
 
       {/* Main view stack — lazy-mount + keep-mounted */}
-      <main className="flex-1 min-w-0 relative z-0">
+      <main
+        className="flex-1 min-w-0 relative z-0"
+        onPointerDown={onMainPointerDown}
+        onPointerMove={onMainPointerMove}
+        onPointerUp={onMainPointerUp}
+        onPointerCancel={() => { swipeRef.current = null }}
+      >
         {Array.from(mounted).map(tab => {
           const wide = tab === 'calendar' || tab === 'stats'
           const containerClass = wide
@@ -278,6 +317,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           )
         })}
       </main>
+      <DockedStopwatch />
     </>
   )
 }
@@ -574,13 +614,6 @@ function IconProjects() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-    </svg>
-  )
-}
-function IconReview() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 11H7v9h10v-9h-2" /><path d="M9 4h6v4H9z" /><path d="M9 14h6M9 17h6" />
     </svg>
   )
 }

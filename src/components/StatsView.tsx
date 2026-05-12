@@ -257,18 +257,21 @@ export default function StatsView() {
   }, [])
 
   const t = today()
+  // n-1: aggregate windows end at yesterday so today's in-progress score doesn't drag them down.
+  // The "Today" stat card below still reads scores365[t] directly.
+  const yesterday = addDays(t, -1)
   const rangeDays = parseInt(range)
   const start = addDays(t, -(rangeDays - 1))
 
-  // Chart data: every day in range that has a score
+  // Chart data: every day in range that has a score (excluding today)
   const chartData: { date: string; pct: number }[] = []
   let cur = start
-  while (cur <= t) {
+  while (cur <= yesterday) {
     if (scores365[cur]) chartData.push({ date: cur, pct: scores365[cur].pct })
     cur = addDays(cur, 1)
   }
 
-  const activeDays = Object.keys(scores365).filter(d => d >= start && d <= t && scores365[d].total > 0)
+  const activeDays = Object.keys(scores365).filter(d => d >= start && d <= yesterday && scores365[d].total > 0)
   const avgPct = activeDays.length === 0 ? null
     : Math.round(activeDays.reduce((s,d) => s + scores365[d].pct, 0) / activeDays.length)
   const last7 = chartData.slice(-7)

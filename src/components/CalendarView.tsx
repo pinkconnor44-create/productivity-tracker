@@ -114,13 +114,15 @@ export default function CalendarView() {
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
   const t = today()
+  const yesterday = addDays(t, -1)
   const ws = startOfWeek(t)
   const monthStart = t.slice(0, 8) + '01'
   const yearStart  = t.slice(0, 4) + '-01-01'
   const dayPct   = summaryScores[t]?.pct ?? null
-  const weekPct  = aggregatePct(summaryScores, ws, addDays(ws, 6))
-  const monthPct = aggregatePct(summaryScores, monthStart, t)
-  const yearPct  = aggregatePct(summaryScores, yearStart, t)
+  // n-1: aggregate windows end at yesterday so today's in-progress score doesn't drag them down
+  const weekPct  = aggregatePct(summaryScores, ws, yesterday)
+  const monthPct = aggregatePct(summaryScores, monthStart, yesterday)
+  const yearPct  = aggregatePct(summaryScores, yearStart, yesterday)
 
   const fetchData = useCallback(async () => {
     const [tr, hr] = await Promise.all([fetch('/api/tasks'), fetch('/api/habits')])
@@ -400,7 +402,15 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
   const todayStr = today()
   const [hover, setHover] = useState<{ date: string; rect: DOMRect; col: number; row: number } | null>(null)
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  // Touch devices synthesize mouseenter on tap but never fire mouseleave, so the
+  // hover popover lingers indefinitely behind the day modal. Suppress hover entirely
+  // when the primary pointer can't hover, and force-clear when a modal opens.
+  const canHoverRef = useRef(true)
+  useEffect(() => {
+    setMounted(true)
+    canHoverRef.current = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches
+  }, [])
+  useEffect(() => { if (isModalOpen) setHover(null) }, [isModalOpen])
 
   return (
     <div className="bg-surface-container rounded-2xl border border-outline-variant/40 overflow-hidden">
@@ -431,7 +441,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
 
           return (
             <div key={i} className="relative"
-              onMouseEnter={(e) => isCurrentMonth && setHover({ date, rect: (e.currentTarget as HTMLDivElement).getBoundingClientRect(), col, row })}
+              onMouseEnter={(e) => { if (canHoverRef.current && isCurrentMonth) setHover({ date, rect: (e.currentTarget as HTMLDivElement).getBoundingClientRect(), col, row }) }}
               onMouseLeave={() => setHover(null)}
             >
               <button onClick={() => onSelectDay(date)}

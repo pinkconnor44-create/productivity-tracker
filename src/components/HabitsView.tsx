@@ -52,13 +52,16 @@ function calcStreak(completions: HabitCompletion[], skips: {date:string}[], recu
   }
   return streak
 }
+// Exclude today (n-1 rule): aggregates end at yesterday so today's in-progress
+// completions don't drag the rate down.
 function countInWindow(completions: HabitCompletion[], recurringDays: string|null|undefined, windowDays: number, habitStart?: string): { done: number; scheduled: number } {
   const t = today()
+  const end = addDays(t, -1)
   const windowStart = addDays(t, -(windowDays - 1))
   const start = habitStart && habitStart > windowStart ? habitStart : windowStart
   const doneSet = new Set(completions.map(c => c.date))
   let scheduled = 0, done = 0, cursor = start
-  while (cursor <= t) {
+  while (cursor <= end) {
     if (isHabitActiveOnDate({ recurringDays }, cursor)) {
       scheduled++
       if (doneSet.has(cursor)) done++
@@ -81,8 +84,9 @@ function getWeeklyData(completions: HabitCompletion[], recurringDays: string|nul
   for (let w = weeks - 1; w >= 0; w--) {
     const weekStart = addDays(currentMonday, -w * 7)
     const weekEnd = addDays(weekStart, 6)
+    const yesterday = addDays(t, -1)
     const effectiveStart = weekStart < habitStart ? habitStart : weekStart
-    const effectiveEnd = weekEnd > t ? t : weekEnd
+    const effectiveEnd = weekEnd > yesterday ? yesterday : weekEnd
     if (effectiveStart > effectiveEnd) continue
     let scheduled = 0, done = 0, cursor = effectiveStart
     while (cursor <= effectiveEnd) {
@@ -228,7 +232,7 @@ export default function HabitsView() {
     const w = countInWindow(h.completions, h.recurringDays, 30, (h as { startDate?: string }).startDate)
     return { done: acc.done + w.done, scheduled: acc.scheduled + w.scheduled }
   }, { done: 0, scheduled: 0 })
-  const w30pct = w30.scheduled ? Math.round((w30.done / w30.scheduled) * 100) : 0
+  const w30pct: number | null = w30.scheduled ? Math.round((w30.done / w30.scheduled) * 100) : null
   const totalThisMonth = w30.done
 
   return (
@@ -240,7 +244,7 @@ export default function HabitsView() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <StatCard label="Today" value={`${doneToday}/${activeToday.length}`} sub="scheduled habits" color={activeToday.length > 0 && doneToday === activeToday.length ? '#10b981' : undefined} barPct={activeToday.length ? (doneToday / activeToday.length) * 100 : 0} />
-        <StatCard label="30-day rate" value={w30pct} suffix="%" sub={`${w30.done} of ${w30.scheduled}`} color={scoreColor(w30pct)} barPct={w30pct} />
+        <StatCard label="30-day rate" value={w30pct ?? 'N/A'} suffix={w30pct != null ? '%' : undefined} sub={w30pct != null ? `${w30.done} of ${w30.scheduled}` : 'no data yet'} color={w30pct != null ? scoreColor(w30pct) : undefined} barPct={w30pct ?? 0} />
         <StatCard label="Longest streak" value={longestStreak} suffix="d" sub="across all habits" color="#fb923c" barPct={Math.min(100, longestStreak * 1.5)} />
         <StatCard label="Completions" value={totalThisMonth} sub="last 30 days" barPct={Math.min(100, totalThisMonth)} />
       </div>
@@ -424,6 +428,18 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
                 <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
                   {rowStats.all.done}/{rowStats.all.scheduled} all
                 </span>
+                {(() => {
+                  const pct = rowStats.all.scheduled ? Math.round((rowStats.all.done / rowStats.all.scheduled) * 100) : null
+                  if (pct == null) return (
+                    <span className="text-[11px] font-semibold text-on-surface-variant/55 bg-surface-container-high px-2 py-0.5 rounded-md border border-outline-variant/40">N/A</span>
+                  )
+                  const c = scoreColor(pct)
+                  return (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md border" style={{ color: c, borderColor: `${c}66`, background: `${c}22` }}>
+                      {pct}%
+                    </span>
+                  )
+                })()}
                 {w > 1 && <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
                   w === 2 ? 'text-blue-300 bg-blue-500/15 border-blue-700/40'
                           : 'text-orange-300 bg-orange-500/15 border-orange-700/40'
