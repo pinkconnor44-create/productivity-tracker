@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { scoreColor } from '@/components/ui'
 import DockedStopwatch from '@/components/DockedStopwatch'
+import FloatingStopwatch from '@/components/FloatingStopwatch'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Z-INDEX LADDER (documented for future modals — keep in sync with new code)
@@ -173,38 +174,71 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
     setDrawerOpen(false)
   }, [onTabChange])
 
-  // Mobile horizontal swipe between tabs. Touch-only, mobile-only. Skips when the
-  // gesture starts inside a [data-no-swipe] subtree (horizontal carousels,
-  // draggable widgets) or when the user is scrolling vertically. No wrap at ends.
-  const swipeRef = useRef<{ pid: number; x: number; y: number; ignore: boolean } | null>(null)
-  const onMainPointerDown = (e: React.PointerEvent<HTMLElement>) => {
-    if (e.pointerType !== 'touch') return
-    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) return
-    const target = e.target as HTMLElement | null
-    if (target?.closest('[data-no-swipe]')) return
-    swipeRef.current = { pid: e.pointerId, x: e.clientX, y: e.clientY, ignore: false }
-  }
-  const onMainPointerMove = (e: React.PointerEvent<HTMLElement>) => {
-    const s = swipeRef.current
-    if (!s || s.pid !== e.pointerId || s.ignore) return
-    const dx = e.clientX - s.x
-    const dy = e.clientY - s.y
-    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) s.ignore = true
-  }
-  const onMainPointerUp = (e: React.PointerEvent<HTMLElement>) => {
-    const s = swipeRef.current
-    swipeRef.current = null
-    if (!s || s.pid !== e.pointerId || s.ignore) return
-    const dx = e.clientX - s.x
-    const dy = e.clientY - s.y
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      const idx = navOrder.indexOf(activeTab)
+  // Mobile horizontal swipe between tabs. Document-level native touch listeners —
+  // React pointer events on a button get pointercancel'd by the browser as soon
+  // as the user moves, which killed the swipe whenever the gesture started on
+  // anything tappable. Native touch events don't have that cancellation, and
+  // direction is committed once at a 10px deadzone so we don't fight scrolling.
+  const activeTabRef = useRef(activeTab)
+  const navOrderRef = useRef(navOrder)
+  const onTabChangeRef = useRef(onTabChange)
+  useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
+  useEffect(() => { navOrderRef.current = navOrder }, [navOrder])
+  useEffect(() => { onTabChangeRef.current = onTabChange }, [onTabChange])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia('(min-width: 768px)').matches) return
+
+    let active = false
+    let startX = 0, startY = 0
+    let dir: 'h' | 'v' | null = null
+    const DEAD = 10        // dead-zone radius before committing direction
+    const SWIPE = 50       // horizontal travel needed at touchend to switch tabs
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) { active = false; return }
+      const target = e.target as HTMLElement | null
+      if (target?.closest('[data-no-swipe]')) { active = false; return }
+      active = true
+      dir = null
+      startX = e.touches[0].clientX
+      startY = e.touches[0].clientY
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!active || dir !== null) return
+      const t = e.touches[0]
+      const dx = t.clientX - startX
+      const dy = t.clientY - startY
+      if (Math.hypot(dx, dy) > DEAD) dir = Math.abs(dx) >= Math.abs(dy) ? 'h' : 'v'
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (!active) return
+      active = false
+      if (dir !== 'h') return
+      const t = e.changedTouches[0]
+      const dx = t.clientX - startX
+      if (Math.abs(dx) < SWIPE) return
+      const order = navOrderRef.current
+      const idx = order.indexOf(activeTabRef.current)
       if (idx === -1) return
       const next = idx + (dx < 0 ? 1 : -1)
-      if (next < 0 || next >= navOrder.length) return
-      onTabChange(navOrder[next])
+      if (next < 0 || next >= order.length) return
+      onTabChangeRef.current(order[next])
     }
-  }
+    const onCancel = () => { active = false }
+
+    document.addEventListener('touchstart', onStart, { passive: true })
+    document.addEventListener('touchmove', onMove, { passive: true })
+    document.addEventListener('touchend', onEnd, { passive: true })
+    document.addEventListener('touchcancel', onCancel, { passive: true })
+    return () => {
+      document.removeEventListener('touchstart', onStart)
+      document.removeEventListener('touchmove', onMove)
+      document.removeEventListener('touchend', onEnd)
+      document.removeEventListener('touchcancel', onCancel)
+    }
+  }, [])
 
   const sidebarBody = (
     <>
@@ -298,13 +332,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
       </div>
 
       {/* Main view stack — lazy-mount + keep-mounted */}
-      <main
-        className="flex-1 min-w-0 relative z-0"
-        onPointerDown={onMainPointerDown}
-        onPointerMove={onMainPointerMove}
-        onPointerUp={onMainPointerUp}
-        onPointerCancel={() => { swipeRef.current = null }}
-      >
+      <main className="flex-1 min-w-0 relative z-0">
         {Array.from(mounted).map(tab => {
           const wide = tab === 'calendar' || tab === 'stats'
           const containerClass = wide
@@ -317,6 +345,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           )
         })}
       </main>
+      <FloatingStopwatch />
       <DockedStopwatch />
     </>
   )
