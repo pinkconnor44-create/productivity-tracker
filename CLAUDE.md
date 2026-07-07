@@ -1,3 +1,9 @@
+# Initial Protocol
+I like responses to be structured as such if I gave you a task
+1. what did you do in the last generation
+2. what is needed from me
+3. scan what is needed from me and if it can be done by you then ask questions if needed and autonomously do it
+
 # About Me
 Analytical, concise, no nonsense.
 
