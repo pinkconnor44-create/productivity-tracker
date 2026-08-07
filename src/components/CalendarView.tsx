@@ -6,7 +6,6 @@ import { toast } from '@/lib/toast'
 import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 import Scratchpad from '@/components/Scratchpad'
-import CalendarHorizon from '@/components/CalendarHorizon'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
@@ -282,12 +281,7 @@ export default function CalendarView() {
   const todayStrVal = today()
 
   return (
-    // `relative` only — deliberately NOT transform/perspective. DayModal is
-    // position:fixed and renders inside the column below; an ancestor with a
-    // transform would become its containing block and break it. The horizon
-    // owns its own perspective and is a sibling of the content, never a wrapper.
-    <div className="relative">
-      <CalendarHorizon dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct} />
+    <div>
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}
@@ -431,7 +425,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
   useEffect(() => { if (isModalOpen) setHover(null) }, [isModalOpen])
 
   return (
-    <div className="rounded-2xl border border-white/[0.09] overflow-hidden backdrop-blur-[2px] bg-black/20">
+    <div className="bg-surface-container rounded-2xl border border-outline-variant/40 overflow-hidden">
       <div className="grid grid-cols-7 border-b border-outline-variant/40">
         {WEEKDAYS.map(wd => (
           <div key={wd} className="py-2.5 text-center text-micro font-bold text-on-surface-variant/55 uppercase tracking-[0.12em]">{wd}</div>
