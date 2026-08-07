@@ -88,9 +88,13 @@ body {
   --outline-variant-rgb:   5,  70,  82;
 }
 
-/* Smooth transitions for interactive elements */
+/* Smooth transitions for interactive elements.
+   Explicit property list, not `all` — `all` animates layout properties too
+   (width/height/padding), so any size change reflowed over 150ms. */
 button, input, textarea, select {
-  transition: all 0.15s ease;
+  transition-property: background-color, border-color, color, box-shadow, opacity, transform;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
 }
 
 /* ── Force outline borders to dark-accent shade of active theme ── */
@@ -109,7 +113,11 @@ button, input, textarea, select {
 ::-webkit-scrollbar-thumb { background: rgba(var(--c-p), 0.25); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(var(--c-p), 0.5); }
 
-*, *::before, *::after { transition-property: background-color, border-color, color; transition-duration: 150ms; }
+/* Colour-only transition on every element. Many hover states in the app
+   (nav rows, list items) carry no transition class of their own and rely on
+   this to fade rather than snap, so it stays — but pseudo-elements are
+   dropped, which halves the number of animatable objects for no visual loss. */
+* { transition-property: background-color, border-color, color; transition-duration: 150ms; }
 
 /* ── Aurora orbs ── */
 @keyframes aurora-drift {
@@ -432,3 +440,48 @@ button, input, textarea, select {
 [data-theme="cyan"] .from-violet-500 { --tw-gradient-from: #06b6d4 !important; }
 [data-theme="cyan"] .to-violet-700   { --tw-gradient-to:   #0e7490 !important; }
 [data-theme="cyan"] .to-violet-600   { --tw-gradient-to:   #0891b2 !important; }
+
+/* ──────────────────────────────────────────────────────────────────────────
+   REDUCED MOTION
+   The app runs five permanently-looping animations — three blur(90px) fixed
+   aurora orbs, a breathing full-viewport dot grid, a streak glow, a neon
+   pulse and a text gradient shimmer — and until now honoured no motion
+   preference at all.
+
+   Blanket rule first (catches one-shot animations too: tab-fade, toasts,
+   calendar slide, completion burst — all collapse to their end state), then
+   explicit resting values for the few whose *appearance* is defined by the
+   animation rather than by their base rule.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Ambient background: hold still rather than snapping to a keyframe end. */
+  .aurora-orb { animation: none !important; }
+  .dot-grid   { animation: none !important; opacity: 0.6; }
+
+  /* grid-breathe and gradient-shift define their own visible state, so a
+     frozen frame has to be pinned explicitly or they render wrong. */
+  .gradient-text { animation: none !important; background-position: 0% 50%; }
+
+  /* neon-pulse IS the "happening now" indicator — without it the dot is
+     indistinguishable from any other. Keep a static glow. */
+  .neon-pulse {
+    animation: none !important;
+    transform: none;
+    box-shadow: 0 0 6px rgba(var(--c-p), 0.9), 0 0 12px rgba(var(--c-p), 0.5);
+  }
+
+  .streak-glow {
+    animation: none !important;
+    filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.75));
+  }
+
+  /* Hover lift is motion for its own sake; keep the shadow, drop the travel. */
+  .card-lift:hover, .neon-card:hover { transform: none !important; }
+}
