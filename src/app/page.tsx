@@ -6,7 +6,7 @@ import TasksView from '@/components/TasksView'
 import HabitsView from '@/components/HabitsView'
 import StatsView from '@/components/StatsView'
 import SettingsView from '@/components/SettingsView'
-import LiftTracker from '@/components/LiftTracker'
+import BevelView from '@/components/BevelView'
 import ProjectsView from '@/components/ProjectsView'
 import ToastContainer from '@/components/ToastContainer'
 import { StopwatchProvider } from '@/lib/stopwatch'
@@ -20,7 +20,7 @@ export default function Home() {
     calendar: <CalendarView />,
     tasks: <TasksView />,
     habits: <HabitsView />,
-    lifts: <LiftTracker />,
+    bevel: <BevelView />,
     stats: <StatsView />,
     projects: <ProjectsView />,
     settings: <SettingsView />,

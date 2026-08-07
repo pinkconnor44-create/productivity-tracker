@@ -29,6 +29,10 @@ type Props = {
   /** Tooltip value formatting. Defaults to a bare percentage. */
   format?: (v: number) => string
   emptyMessage?: string
+  /** Horizontal reference line — the trailing baseline on a health metric.
+   *  Drawn dashed and labelled at the right edge so a reading can be read as
+   *  "above or below my normal" without doing arithmetic. */
+  refLine?: { value: number; label?: string; color?: string } | null
 }
 
 // Score line chart with an optional moving-average overlay.
@@ -43,6 +47,7 @@ export function TrendChart({
   color = 'var(--c-p-hex)',
   format = v => `${v}%`,
   emptyMessage = 'Complete tasks and habits to start seeing your trend here.',
+  refLine = null,
 }: Props) {
   // Unique per instance — the Trends tab renders several of these on one page,
   // and a shared gradient id would make every chart after the first reference
@@ -65,7 +70,11 @@ export function TrendChart({
 
   const values = data.map(d => d.value)
   const [lo, hi] = domain ?? (() => {
-    const min = Math.min(...values), max = Math.max(...values)
+    // The reference line participates in the auto-domain — a baseline that
+    // fell outside the data's own range would otherwise be clipped away and
+    // silently absent, which looks like a bug rather than like good news.
+    const extent = refLine ? [...values, refLine.value] : values
+    const min = Math.min(...extent), max = Math.max(...extent)
     if (min === max) return [min - 1, max + 1] as [number, number]
     const pad = (max - min) * 0.1
     return [min - pad, max + pad] as [number, number]
@@ -124,6 +133,22 @@ export function TrendChart({
       {monthTicks.map(t => (
         <text key={t.i} x={xOf(t.i)} y={H-8} textAnchor="start" fontSize="10" fill="#8b8da3" fontWeight="700" letterSpacing="0.08em">{t.label.toUpperCase()}</text>
       ))}
+      {refLine && (
+        <g>
+          <line
+            x1={PL} y1={yOf(refLine.value)} x2={W - PR} y2={yOf(refLine.value)}
+            stroke={refLine.color ?? '#9a9a9a'} strokeWidth="1.5" strokeDasharray="5,5" strokeOpacity="0.65"
+          />
+          {refLine.label && (
+            <text
+              x={W - PR} y={yOf(refLine.value) - 6} textAnchor="end"
+              fontSize="10" fontWeight="700" fill={refLine.color ?? '#9a9a9a'} opacity="0.8"
+            >
+              {refLine.label}
+            </text>
+          )}
+        </g>
+      )}
       <path d={areaPath} fill={`url(#${fillId})`} />
       <path d={linePath} fill="none" stroke={color} strokeOpacity="0.55" strokeWidth="1.5" strokeLinejoin="round" />
       {avgPath && <path d={avgPath} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" />}
