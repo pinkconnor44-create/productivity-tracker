@@ -112,3 +112,41 @@ Connor reviews preview URL on phone → approve → merge → `npx vercel --prod
 ## Files
 **Modified**: `prisma/schema.prisma`, `src/components/Shell.tsx`, `src/app/page.tsx`, `src/components/StatsView.tsx`, `src/components/CalendarView.tsx` (embed Scratchpad), `src/components/ui/index.ts`, `.env`. (`LiftTracker.tsx` / `Scratchpad.tsx` reused as-is, only remounted.)
 **New**: `src/app/api/health-import/route.ts`, `src/app/api/health/route.ts`, `src/lib/health-import.ts`, `src/lib/health.ts`, `src/components/ui/Ring.tsx`, `src/components/BevelView.tsx`, `src/components/bevel/*`, `scripts/backfill-health.mjs`.
+
+---
+
+# STATUS 2026-08-07 — parked
+
+Phases A (tokens/radius/motion/extractions) and B-core (void black + Electric
+Iris, accent-theme system deleted) are **done and deployed to prod**.
+
+## Parked in storage — do not start without Connor saying so
+- **C0–C3 · data pipeline** — the 3 Prisma models, `POST /api/health-import`,
+  `GET /api/health` + `src/lib/health.ts` scoring. Everything in Phases 1–3
+  above still stands as written.
+- **C4 · Bevel tab** — BevelView, its 6 sub-tabs, and the 7 new primitives
+  (`MetricRow`, `StatusChip`, `RangeGauge`, `SegmentedBar`, `InsightCard`,
+  3-ring cluster). `Ring` is being built early for C6, so C4 inherits it.
+- **C5** — Health Auto Export purchase + phone automation. Blocked on Connor.
+
+Nothing about these is stale; they were deprioritised in favour of making the
+app *look* finished first, which needs none of them.
+
+## Backlog — depth / hero imagery (Connor, 2026-08-07)
+Explicitly "don't make it yet, keep it in mind."
+
+Add depth behind each screen instead of a flat panel-on-black look: large,
+low-opacity 3D/landscape imagery acting as a hero backdrop — the reference is
+Bevel's Sleep detail screen, where the ring sits over a photographic night
+mountain range that fades into the surface.
+
+Notes for whoever picks this up:
+- The glass layer already in place is the right substrate — translucent panels
+  over a photographic backdrop is exactly what that screenshot does.
+- Watch page weight. The Website Scraper research (`the-stack.md`) measured
+  photography at ~94% of page weight on a comparable build; this is a PWA that
+  loads on mobile data.
+- Backdrop imagery must not defeat text contrast. Bevel gets away with it via a
+  heavy dark gradient scrim between photo and content.
+- Per-screen art direction is the interesting question: one shared hero, or a
+  different landscape per tab (calendar/lifts/stats)?
