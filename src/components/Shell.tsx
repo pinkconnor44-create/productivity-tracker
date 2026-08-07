@@ -22,7 +22,7 @@ import FloatingStopwatch from '@/components/FloatingStopwatch'
 
 export type Tab =
   | 'calendar' | 'tasks' | 'habits' | 'lifts'
-  | 'stats' | 'projects' | 'scratchpad' | 'settings'
+  | 'stats' | 'projects' | 'settings'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -42,7 +42,6 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'stats',         label: 'Stats',         icon: <IconStats    /> },
   { id: 'calendar',      label: 'Calendar',      icon: <IconCalendar /> },
   { id: 'projects',      label: 'Projects',      icon: <IconProjects /> },
-  { id: 'scratchpad',    label: 'Scratchpad',    icon: <IconNote     /> },
 ]
 
 const NAV_ORDER_KEY = 'nav-order-v1'
@@ -333,7 +332,11 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           onClick={() => setDrawerOpen(false)}
         />
+        {/* data-no-swipe: the document-level tab-swipe listener is passive and
+            fires regardless of touch-action, so without this a horizontal drag
+            while reordering also switches tabs. */}
         <aside
+          data-no-swipe
           className={`absolute top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-surface flex flex-col gap-5 px-3.5 py-5 border-r border-violet-500/20 shadow-2xl transition-transform duration-200 ${
             drawerOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
@@ -421,9 +424,15 @@ function TodayWidget({ pct, streak }: { pct: number; streak: number }) {
 }
 
 // Long-press threshold (ms) before a press becomes a drag
-const LONG_PRESS_MS = 350
-// Movement threshold (px) before a press is treated as scroll/cancel
-const PRESS_MOVE_CANCEL = 8
+const LONG_PRESS_MS = 300
+// Movement threshold (px) before a press is treated as scroll and the long-press
+// is abandoned. Must clear a thumb's natural drift while holding still — at the
+// old 8px a stationary press on a phone cancelled itself before promoting.
+const PRESS_MOVE_CANCEL = 14
+// Total travel (px) still counted as a tap on release. Deliberately larger than
+// PRESS_MOVE_CANCEL so there's a band where the drag is abandoned but the press
+// still navigates; a real scroll travels far further than this.
+const TAP_SLOP = 24
 
 function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDragStart, onDragOver, onDragEnd }: {
   id: Tab
@@ -446,7 +455,11 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
     startY: number
     longPressTimer: ReturnType<typeof setTimeout> | null
     isDragging: boolean
-  }>({ pid: null, startX: 0, startY: 0, longPressTimer: null, isDragging: false })
+    // Long-press abandoned by movement. We keep `pid` alive so pointerup still
+    // resolves — a press that drifted a little must still register as a tap.
+    cancelled: boolean
+    el: HTMLElement | null
+  }>({ pid: null, startX: 0, startY: 0, longPressTimer: null, isDragging: false, cancelled: false, el: null })
 
   function clearTimer() {
     const s = dragStateRef.current
@@ -463,17 +476,23 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
     // Only react to primary button / single-touch
     if (e.button !== 0 && e.pointerType === 'mouse') return
     const s = dragStateRef.current
+    // Grab the element synchronously — React nulls `e.currentTarget` once this
+    // handler returns, so reading it inside the timer below yields null and the
+    // `?.` silently swallows the capture call.
+    const el = e.currentTarget as HTMLElement
     s.pid = e.pointerId
     s.startX = e.clientX
     s.startY = e.clientY
     s.isDragging = false
+    s.cancelled = false
+    s.el = el
     setPressed(true)
 
     s.longPressTimer = setTimeout(() => {
       // Promote to drag
       s.isDragging = true
       onDragStart?.()
-      try { (e.currentTarget as HTMLElement)?.setPointerCapture?.(s.pid!) } catch {}
+      try { el.setPointerCapture?.(s.pid!) } catch {}
     }, LONG_PRESS_MS)
   }
 
@@ -484,10 +503,11 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
     const dy = e.clientY - s.startY
 
     if (!s.isDragging) {
-      // Cancel long-press if user moved beyond threshold (likely scrolling)
-      if (Math.hypot(dx, dy) > PRESS_MOVE_CANCEL) {
+      // Cancel long-press if user moved beyond threshold (likely scrolling).
+      // Keep `pid` so pointerup still runs — it decides tap vs nothing by travel.
+      if (!s.cancelled && Math.hypot(dx, dy) > PRESS_MOVE_CANCEL) {
         clearTimer()
-        s.pid = null
+        s.cancelled = true
         setPressed(false)
       }
       return
@@ -507,13 +527,17 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
     if (s.isDragging) {
       const target = findTargetTabAt(e.clientX, e.clientY)
       onDragEnd?.(target && target !== id ? target : null)
-      try { (e.currentTarget as HTMLElement)?.releasePointerCapture?.(e.pointerId) } catch {}
-    } else {
-      // Short press → tap
+      try { s.el?.releasePointerCapture?.(e.pointerId) } catch {}
+    } else if (Math.hypot(e.clientX - s.startX, e.clientY - s.startY) <= TAP_SLOP) {
+      // Press that never promoted to a drag and stayed roughly put → tap.
+      // Deliberately not gated on `cancelled`: a hold that drifted past the
+      // drag threshold then released should still navigate, not dead-end.
       onTap()
     }
     s.pid = null
     s.isDragging = false
+    s.cancelled = false
+    s.el = null
   }
 
   const handlePointerCancel = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -524,6 +548,8 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
     setPressed(false)
     s.pid = null
     s.isDragging = false
+    s.cancelled = false
+    s.el = null
   }
 
   return (
@@ -535,6 +561,7 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerCancel}
       onContextMenu={(e) => e.preventDefault()}
+      title={`${label} — press and hold to reorder`}
       style={{
         WebkitUserSelect: 'none',
         userSelect: 'none',
@@ -561,7 +588,7 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
         {icon}
       </span>
       <span className="text-[13px] tracking-[-0.005em] flex-1">{label}</span>
-      <span className="opacity-30 md:opacity-0 md:group-hover:opacity-30 text-[10px] leading-none select-none" aria-hidden>⋮⋮</span>
+      <span className="opacity-50 md:opacity-0 md:group-hover:opacity-30 text-[10px] leading-none select-none" aria-hidden>⋮⋮</span>
     </button>
   )
 }
@@ -658,13 +685,6 @@ function IconProjects() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
-    </svg>
-  )
-}
-function IconNote() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" />
     </svg>
   )
 }

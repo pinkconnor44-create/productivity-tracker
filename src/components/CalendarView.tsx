@@ -5,6 +5,7 @@ import { isTaskActiveOnDate, isHabitActiveOnDate, recurringLabel } from '@/lib/r
 import { toast } from '@/lib/toast'
 import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
+import Scratchpad from '@/components/Scratchpad'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
@@ -316,8 +317,13 @@ export default function CalendarView() {
         <StatCard label="Year"  value={yearPct ?? '—'}  suffix={yearPct != null ? '%' : undefined}  sub="year-to-date"    color={yearPct != null ? scoreColor(yearPct) : undefined}   barPct={yearPct ?? undefined}  />
       </div>
 
-      {/* Year spine (xl:+) + calendar */}
-      <div className="flex gap-4 items-start">
+      {/* Year spine (xl:+) + calendar + scratchpad.
+          Column below lg (scratchpad falls under the grid), row at lg:+.
+          Single Scratchpad instance — CSS-only reflow, so no remount on resize
+          and no double-write to the singleton /api/scratchpad row.
+          Do NOT give this container a transform/filter: DayModal below is
+          `fixed` and rendered inside the calendar column, not portalled. */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-start">
         <div className="hidden xl:block shrink-0">
           <YearSpine scores={scores} today={todayStrVal} onSelectDay={setSelectedDate} />
         </div>
@@ -332,6 +338,12 @@ export default function CalendarView() {
             <DayModal date={selectedDate} score={scores[selectedDate]} tasks={tasksForDate(selectedDate)} habits={habitsForDate(selectedDate)} isTaskDone={isTaskDone} onClose={() => setSelectedDate(null)} onToggleTask={toggleTask} onToggleHabit={toggleHabit} note={notes[selectedDate]} onSaveNote={saveNote} onAddTask={addTask} onSkipTask={skipTask} onDeleteTask={deleteTask} onSkipHabit={skipHabit} onDeleteHabit={deleteHabit} onUpdateTask={updateTask} onReplaceRecurringDay={replaceRecurringDay} onUpdateHabit={updateHabit} />
           )}
         </div>
+
+        {/* Scratchpad. Sticky at lg:+ with its own scroll — the notes textarea
+            auto-grows with no max-height, which would otherwise defeat sticky. */}
+        <aside className="w-full lg:w-[280px] xl:w-[340px] shrink-0 lg:sticky lg:top-5 lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto">
+          <Scratchpad embedded />
+        </aside>
       </div>
     </div>
   )

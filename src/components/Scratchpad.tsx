@@ -4,7 +4,10 @@ import { PageHeader, Card, useConfirm } from '@/components/ui'
 
 type Item = { id: string; text: string; done: boolean }
 
-export default function Scratchpad() {
+// `embedded` = rendered inside another page (the Calendar side column) rather than
+// as its own tab. Swaps the full PageHeader for a compact eyebrow so it doesn't
+// shout over the host page's own title.
+export default function Scratchpad({ embedded = false }: { embedded?: boolean }) {
   const [notes, setNotes] = useState('')
   const [checklist, setChecklist] = useState<Item[]>([])
   const [newItem, setNewItem] = useState('')
@@ -186,10 +189,16 @@ export default function Scratchpad() {
 
   return (
     <div>
-      <PageHeader
-        eyebrow="Scratchpad"
-        title="Quick notes"
-      />
+      {embedded ? (
+        <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-violet-400 mb-3">
+          Scratchpad
+        </div>
+      ) : (
+        <PageHeader
+          eyebrow="Scratchpad"
+          title="Quick notes"
+        />
+      )}
       <Card className="overflow-hidden">
 
         {/* Notes */}

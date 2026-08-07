@@ -8,7 +8,6 @@ import StatsView from '@/components/StatsView'
 import SettingsView, { applyTheme, readAccentTheme } from '@/components/SettingsView'
 import LiftTracker from '@/components/LiftTracker'
 import ProjectsView from '@/components/ProjectsView'
-import Scratchpad from '@/components/Scratchpad'
 import ToastContainer from '@/components/ToastContainer'
 import { StopwatchProvider } from '@/lib/stopwatch'
 
@@ -29,7 +28,6 @@ export default function Home() {
     lifts: <LiftTracker />,
     stats: <StatsView />,
     projects: <ProjectsView />,
-    scratchpad: <Scratchpad />,
     settings: <SettingsView />,
   }
 
