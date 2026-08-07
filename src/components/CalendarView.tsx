@@ -287,7 +287,7 @@ export default function CalendarView() {
     // transform would become its containing block and break it. The horizon
     // owns its own perspective and is a sibling of the content, never a wrapper.
     <div className="relative">
-      <CalendarHorizon dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct}>
+      <CalendarHorizon dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct} />
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}
@@ -314,7 +314,6 @@ export default function CalendarView() {
           </div>
         }
       />
-      </CalendarHorizon>
 
       {/* Stat strip (Variation A) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">
@@ -432,7 +431,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
   useEffect(() => { if (isModalOpen) setHover(null) }, [isModalOpen])
 
   return (
-    <div className="bg-surface-container rounded-2xl border border-outline-variant/40 overflow-hidden">
+    <div className="rounded-2xl border border-white/[0.09] overflow-hidden backdrop-blur-[2px] bg-black/20">
       <div className="grid grid-cols-7 border-b border-outline-variant/40">
         {WEEKDAYS.map(wd => (
           <div key={wd} className="py-2.5 text-center text-micro font-bold text-on-surface-variant/55 uppercase tracking-[0.12em]">{wd}</div>
