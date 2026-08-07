@@ -97,12 +97,25 @@ const config: Config = {
         display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         body: ['var(--font-body)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      // A ladder that actually ascends. Previously `2xl` was never declared, so
+      // it fell through to stock Tailwind's 1rem while `lg` was also overridden
+      // to 1rem and `xl` to 1.5rem — meaning rounded-lg (59 uses) and
+      // rounded-2xl (31) rendered identically, and rounded-xl (48) was LARGER
+      // than rounded-2xl. Card used 2xl and StatCard used xl, so every StatCard
+      // was rounder than the Card containing it.
+      //
+      // Correcting the ladder needs no call-site changes: Card's `2xl` lands on
+      // 24px (the reference brief's card radius) and StatCard's `xl` on 16px,
+      // which reverses the inversion by itself. rounded-xl at 24px was also
+      // over-round on the many w-8 h-8 icon buttons that use it.
       borderRadius: {
-        sm: '0.25rem',
-        DEFAULT: '0.5rem',
-        md: '0.75rem',
-        lg: '1rem',
-        xl: '1.5rem',
+        sm: '0.25rem',     // 4
+        DEFAULT: '0.375rem', // 6
+        md: '0.5rem',      // 8
+        lg: '0.75rem',     // 12
+        xl: '1rem',        // 16
+        '2xl': '1.5rem',   // 24 — cards
+        '3xl': '2rem',     // 32
       },
       maxWidth: {
         container: '1280px',
