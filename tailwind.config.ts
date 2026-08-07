@@ -23,9 +23,75 @@ const config: Config = {
         'on-surface-variant': 'var(--on-surface-variant)',
         outline: 'rgb(var(--outline-rgb) / <alpha-value>)',
         'outline-variant': 'rgb(var(--outline-variant-rgb) / <alpha-value>)',
-        primary: 'rgb(var(--c-p) / <alpha-value>)',
+        // Electric Iris. Shaped deliberately like Tailwind's violet ramp so the
+        // `violet-N` -> `primary-N` sweep is a 1:1 rename that preserves all 7
+        // shades in use and the 20 base/hover pairs that differ only by shade.
+        // Collapsing these to one colour would silently kill every button hover.
+        // DEFAULT stays var-driven — `bg-primary` is already in use.
+        primary: {
+          DEFAULT: 'rgb(var(--c-p) / <alpha-value>)',
+          50: '#f2eeff',
+          100: '#e6ddff',
+          200: '#cdbaff',
+          300: '#b096ff',
+          400: '#9873ff',
+          500: '#8052ff', // Electric Iris — the brand anchor
+          600: '#6d3ae8',
+          700: '#5a2cc4',
+          800: '#47219c',
+          900: '#351a73',
+          950: '#1f0f45',
+        },
+        // Saffron Spark — second accent. Strain in the Bevel triad.
+        accent: {
+          DEFAULT: '#ffb829',
+          50: '#fff8eb',
+          100: '#ffefcc',
+          200: '#ffdd99',
+          300: '#ffcb5c',
+          400: '#ffb829',
+          500: '#f5a300',
+          600: '#cc8600',
+          700: '#a36a00',
+          800: '#7a4f00',
+          900: '#523500',
+        },
         secondary: 'var(--secondary)',
         'secondary-container': 'var(--secondary-container)',
+      },
+      // Semantic scale. Deliberately does NOT reuse Tailwind's xs/sm/base/lg
+      // names — redefining those would move 200+ existing call sites and this
+      // step must be pixel-identical. Views migrate onto these during B-sweep.
+      // Sizes chosen from what the app actually uses: it is micro-label dense
+      // (10px x77, 11px x67, 12px x91, 14px x94), not headline-driven.
+      fontSize: {
+        micro: ['0.625rem', { lineHeight: '1' }],        // 10px — eyebrows, chips
+        tiny: ['0.6875rem', { lineHeight: '1.1' }],      // 11px — secondary micro
+        caption: ['0.75rem', { lineHeight: '1.4' }],     // 12px
+        body: ['0.875rem', { lineHeight: '1.5' }],       // 14px — default body
+        'body-lg': ['1rem', { lineHeight: '1.5' }],      // 16px
+        title: ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.01em' }],
+        headline: ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }],
+        'display-sm': ['1.875rem', { lineHeight: '1.1', letterSpacing: '-0.025em' }],
+        display: ['2.25rem', { lineHeight: '1.05', letterSpacing: '-0.03em' }],
+        // Hero metrics — net new. Nothing in the app currently exceeds 36px;
+        // Bevel's ring centres and big-number cards need to go bigger.
+        metric: ['3rem', { lineHeight: '1', letterSpacing: '-0.035em' }],
+        'metric-lg': ['4rem', { lineHeight: '1', letterSpacing: '-0.04em' }],
+      },
+      boxShadow: {
+        // Real glass: white top-edge highlight + depth. Replaces the hand-written
+        // inset strings in Card/StatCard and the accent-tinted one in .glass.
+        glass: 'inset 0 1px 0 0 rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.6)',
+        'glass-lg': 'inset 0 1px 0 0 rgba(255,255,255,0.08), 0 16px 48px rgba(0,0,0,0.7)',
+        glow: '0 0 20px rgba(128,82,255,0.35)',
+        'glow-lg': '0 0 40px rgba(128,82,255,0.28)',
+        // Bevel's sparkline end-dot bloom.
+        dot: '0 0 8px 2px currentColor',
+      },
+      transitionTimingFunction: {
+        // Emil-style: fast out, settled in. Replaces ad-hoc cubic-beziers.
+        snap: 'cubic-bezier(0.32, 0.72, 0, 1)',
       },
       fontFamily: {
         display: ['var(--font-display)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
