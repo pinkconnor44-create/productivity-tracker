@@ -72,18 +72,9 @@ export default function OrreryHero(scores: OrreryScores) {
     return () => ro.disconnect()
   }, [node])
 
-  // WORKAROUND, and it is one. R3F never calls setSize on mount in this
-  // layout — its container measures 1280x380 correctly, but the canvas stays
-  // at the 300x150 default until a window resize event arrives, at which point
-  // it corrects itself permanently. Neither `resize={{debounce:0}}` nor
-  // `offsetSize` nor an explicitly px-sized parent changed that. So: fire one
-  // resize shortly after the canvas mounts. rAF was too early — R3F's listener
-  // is not attached yet — hence a timeout.
-  useEffect(() => {
-    if (!ready || !size) return
-    const id = setTimeout(() => window.dispatchEvent(new Event('resize')), 150)
-    return () => clearTimeout(id)
-  }, [ready, size])
+  // The measured size is handed to the scene, which calls R3F's setSize
+  // directly — see ForceSize in Orrery3D. R3F does not size its own canvas in
+  // this stack, so nothing here can rely on it doing so.
 
   if (!ok) return null
 
@@ -105,7 +96,7 @@ export default function OrreryHero(scores: OrreryScores) {
       }} />
       {ready && size && (
         <div className="absolute left-0 top-0" style={{ width: size.w, height: size.h }}>
-          <Orrery3D {...scores} />
+          <Orrery3D {...scores} w={size.w} h={size.h} />
         </div>
       )}
       {/* Legend — the object is data, so say what it is reading. */}
