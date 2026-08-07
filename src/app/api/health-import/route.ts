@@ -20,8 +20,14 @@ export const maxDuration = 60
 const CHUNK = 50
 
 function keyMatches(provided: string, expected: string): boolean {
-  const a = Buffer.from(provided)
-  const b = Buffer.from(expected)
+  // Both sides are trimmed. A secret set through a shell pipe, pasted into the
+  // Vercel dashboard, or typed into a phone keyboard picks up trailing
+  // whitespace or a newline with depressing regularity — and the failure mode
+  // is a 401 that looks exactly like a wrong key, on a background automation
+  // nobody is watching. Surrounding whitespace is never meaningful in an API
+  // key, so refusing to tolerate it buys no security and costs real debugging.
+  const a = Buffer.from(provided.trim())
+  const b = Buffer.from(expected.trim())
   // timingSafeEqual throws on length mismatch, which would itself leak length.
   if (a.length !== b.length) return false
   return timingSafeEqual(a, b)
