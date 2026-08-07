@@ -6,6 +6,7 @@ import { toast } from '@/lib/toast'
 import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 import Scratchpad from '@/components/Scratchpad'
+import OrreryHero from '@/components/orrery/OrreryHero'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
@@ -282,6 +283,10 @@ export default function CalendarView() {
 
   return (
     <div>
+      {/* Sibling of the content, never a wrapper — DayModal is position:fixed
+          and lives in the column below, so an ancestor with a transform would
+          become its containing block and break it. */}
+      <OrreryHero dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct} />
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}

@@ -72,9 +72,29 @@ export default function OrreryHero(scores: OrreryScores) {
     return () => ro.disconnect()
   }, [node])
 
-  // The measured size is handed to the scene, which calls R3F's setSize
-  // directly — see ForceSize in Orrery3D. R3F does not size its own canvas in
-  // this stack, so nothing here can rely on it doing so.
+  // THE FIX, and the reason it has to live out here.
+  //
+  // Under Next 16 + Turbopack + React 19, R3F 9.7 latches a zero measurement of
+  // its container on mount and never re-measures. That deadlocks: R3F does not
+  // mount <Canvas> children until it has a non-zero size, so nothing *inside*
+  // the scene can break it — a component calling setSize via useThree never
+  // runs at all. Only a window resize event unblocks the observer, after which
+  // it sizes correctly and stays correct.
+  //
+  // So: fire a short burst of resize events once the canvas is mounted. The
+  // burst rather than a single shot because the exact frame R3F starts
+  // listening is not deterministic. Verified: canvas goes 300x150 -> full size
+  // and the scene paints.
+  // Keyed on `ready && size` because that is the condition under which the
+  // canvas is actually in the DOM — keying on `ready` alone fired the burst
+  // before it existed. `size` keeps a stable identity (see the observer above),
+  // so this does not re-fire on every observation.
+  useEffect(() => {
+    if (!ready || !size) return
+    const timers = [0, 50, 150, 350, 700, 1200].map(ms =>
+      setTimeout(() => window.dispatchEvent(new Event('resize')), ms))
+    return () => timers.forEach(clearTimeout)
+  }, [ready, size])
 
   if (!ok) return null
 
@@ -96,7 +116,7 @@ export default function OrreryHero(scores: OrreryScores) {
       }} />
       {ready && size && (
         <div className="absolute left-0 top-0" style={{ width: size.w, height: size.h }}>
-          <Orrery3D {...scores} w={size.w} h={size.h} />
+          <Orrery3D {...scores} />
         </div>
       )}
       {/* Legend — the object is data, so say what it is reading. */}

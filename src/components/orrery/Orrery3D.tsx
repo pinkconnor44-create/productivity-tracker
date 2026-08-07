@@ -1,6 +1,6 @@
 'use client'
-import { useRef, useMemo, useEffect, Suspense } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useRef, useMemo, Suspense } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer, MeshReflectorMaterial, Float } from '@react-three/drei'
 import { EffectComposer, Bloom, Vignette, ChromaticAberration } from '@react-three/postprocessing'
 import * as THREE from 'three'
@@ -27,17 +27,6 @@ import * as THREE from 'three'
  *
  * Desktop only, mounted lazily — see OrreryHero.
  */
-
-// R3F never sizes its own canvas in this stack (Next 16 + Turbopack + React 19
-// + R3F 9.7). Verified in isolation: a bare Canvas with no drei, no
-// postprocessing and a fixed-size parent on its own route still renders at the
-// 300x150 default. Calling R3F's own setSize with a measured value is the fix —
-// deterministic, and it needs no synthetic resize events.
-function ForceSize({ w, h }: { w: number; h: number }) {
-  const setSize = useThree(s => s.setSize)
-  useEffect(() => { if (w > 0 && h > 0) setSize(w, h) }, [w, h, setSize])
-  return null
-}
 
 export type OrreryScores = {
   dayPct: number | null
@@ -149,24 +138,14 @@ function Orbit({ orbit }: { orbit: Orbit }) {
   )
 }
 
-export default function Orrery3D({ w, h, ...scores }: OrreryScores & { w: number; h: number }) {
+export default function Orrery3D(scores: OrreryScores) {
   return (
     <Canvas
-      // R3F measures its container with getBoundingClientRect by default and,
-      // in this layout, latched a zero reading at mount and never re-measured
-      // — leaving the canvas stuck at its 300x150 default. offsetSize switches
-      // to offsetWidth/offsetHeight, which is immune to that.
-      resize={{ debounce: 0, scroll: false, offsetSize: true }}
       dpr={[1, 1.75]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 1.15, 6.4], fov: 38 }}
       style={{ background: 'transparent' }}
     >
-      {/* ForceSize sits OUTSIDE the Suspense boundary below. drei's
-          <Environment> suspends while it builds its cube target, and React
-          does not run effects inside a suspended subtree — so with ForceSize
-          under it, setSize never fired and the canvas stayed 300x150. */}
-      <ForceSize w={w} h={h} />
       <Suspense fallback={null}>
       <fog attach="fog" args={['#04040c', 7, 17]} />
       <ambientLight intensity={0.22} />
