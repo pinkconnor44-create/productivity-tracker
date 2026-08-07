@@ -23,16 +23,19 @@ Analytical, concise, no nonsense.
 - Fonts via `next/font/google` in `layout.tsx`: Space Grotesk (display, `--font-display`) + Manrope (body, `--font-body`)
 
 ## Features
-Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, Lift Tracker (workout groups + draggable floating timer + stacked-set drafts), Notes, Scratchpad (embedded in the Calendar page — no tab of its own), Weekly Review, Daily Score, Projects, Stats (includes 365-day heatmap inside StatsView)
+Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, **Bevel** (Apple Watch health — Dashboard / Sleep / Recovery / Strain / **Lifts** / Trends), Notes, Scratchpad (embedded in the Calendar page — no tab of its own), Weekly Review, Daily Score, Projects, Stats (includes 365-day heatmap inside StatsView)
+
+The Lift Tracker (workout groups + draggable floating timer + stacked-set drafts) is unchanged but **no longer has its own tab** — it is the Lifts sub-tab of Bevel.
 
 ## Repo layout
 - `src/app/` — Next.js App Router (pages, layout, API routes)
-- `src/app/api/` — route handlers: tasks, habits, lifts, lift-groups, projects, scratchpad, notes, scores, weekly-review, gmail-import, pwa-icon, shutdown, plus completion/skip endpoints
-- `src/components/` — view components (CalendarView, TasksView, HabitsView, LiftTracker, ProjectsView, StatsView, WeeklyReview, SettingsView, Scratchpad, ToastContainer, PWASetup) + `Shell.tsx` (sidebar/drawer chrome)
+- `src/app/api/` — route handlers: tasks, habits, lifts, lift-groups, projects, scratchpad, notes, scores, weekly-review, gmail-import, pwa-icon, shutdown, **health, health-import**, plus completion/skip endpoints
+- `src/components/` — view components (CalendarView, TasksView, HabitsView, LiftTracker, BevelView, ProjectsView, StatsView, WeeklyReview, SettingsView, Scratchpad, ToastContainer, PWASetup) + `Shell.tsx` (sidebar/drawer chrome)
+- `src/components/bevel/` — Bevel sub-tabs + `shared.tsx` (`useHealthData`, date helpers, `ChartTip`)
 - `src/components/ui/` — shared design primitives. Use these instead of building local copies — they route through the semantic token ladder so the palette stays consistent:
-  `PageHeader`, `StatCard`, `Card`, `Section`, `KindChip`, `KindPicker`, `Ring`, `TrendChart`, `SegmentedControl`, `kindColors`, `metricColors` (`metricColor`/`statusFor`), `scoreColor`, `ConfirmProvider` + `useConfirm`.
+  `PageHeader`, `StatCard`, `Card`, `Section`, `KindChip`, `KindPicker`, `Ring`, `RingCluster`, `MetricRow`, `StatusChip`, `RangeGauge`, `SegmentedBar`, `InsightCard`, `TrendChart`, `SegmentedControl`, `kindColors`, `metricColors` (`metricColor`/`statusFor`), `scoreColor`, `ConfirmProvider` + `useConfirm`.
   (`WeightChip`, `Checkbox`, `Eyebrow`, `Hairline` were documented for a long time but never existed.)
-- `src/lib/` — `prisma.ts` (singleton client), `recurring.ts` (date-pattern helpers), `toast.ts` (window-event toast dispatcher)
+- `src/lib/` — `prisma.ts` (singleton client), `recurring.ts` (date-pattern helpers), `toast.ts` (window-event toast dispatcher), `health.ts` (scoring + API contract), `health-import.ts` (pure HAE parser)
 - `prisma/schema.prisma` — single source of truth. After editing, run `npm run db:push` to apply the schema to Turso (regenerates `prisma/schema.sql` and pushes via `scripts/push-schema.mjs`). The Vercel build no longer auto-pushes — push manually before deploy.
 - `docs/DESIGN.md` — design system spec
 
@@ -44,7 +47,8 @@ Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, 
   - `PRESS_MOVE_CANCEL` (14px) abandons the long-press, but must **not** clear `pid` — otherwise `pointerup` bails early and the press registers as neither drag nor tap. Tap fires on release when travel ≤ `TAP_SLOP` (24px), regardless of whether the drag was abandoned.
   - `setPointerCapture` must use an element grabbed synchronously in `pointerdown` — React nulls `e.currentTarget` before the long-press timer fires.
   - The mobile drawer carries `data-no-swipe`. The document-level tab-swipe listener is `passive` and ignores `touch-action`, so without it a horizontal reorder drag also switches tabs.
-- Tabs: `tasks | habits | lifts | stats | calendar | projects | settings`
+- Tabs: `tasks | habits | bevel | stats | calendar | projects | settings`
+- The floating + docked stopwatch are gated on `activeTab === 'bevel'` (was `'lifts'`), so they show across all Bevel sub-tabs, not just Lifts. Deliberate — the plan called for tab-level gating.
 - **Lazy-mount + keep-mounted**: views render in `<div className={tab===activeTab ? '' : 'hidden'}>` once visited and never unmount on tab switch. State survives nav (Lifts stopwatch, scratchpad drafts, in-progress edits). Cost: concurrent fetches once a view's been opened.
 - **Z-index ladder**: aurora `-10` / content `0` / sidebar `30` / mobile drawer `40` / modals (createPortal at body) `50` / Floating Stopwatch `55` / toasts + portal tooltips `60`
 - `score-refresh` window event dispatched on every tab change so any view listening to it refetches
@@ -52,10 +56,20 @@ Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, 
 ## Data
 All data via `/api/*` route handlers (Prisma). Scores: `/api/scores`. Gmail import: `/api/gmail-import`. Task `kind` is a UI tag (5 enum values, optional, nullable) on the Task model — POST + PATCH `/api/tasks` accept it.
 
+### Health (Apple Watch → Bevel tab)
+- **`POST /api/health-import`** — the **only authenticated route in the app**. `X-Api-Key` vs `HEALTH_IMPORT_KEY`; **fails closed** (500 if the env var is unset, 401 on mismatch). Takes Health Auto Export's JSON. Used by both the live phone automation *and* the historical backfill, on purpose: one parser, one set of timezone assumptions. `GET` on the same route returns row counts (handy for checking the key from the phone) — never data.
+- **`GET /api/health?start&end`** — per-day metrics + sleep + workouts + `{sleep, recovery, strain}` scores, plus baselines. Reads 30 days *before* `start` so the first day in range has a full trailing baseline.
+- **Tables**: `HealthMetricDaily` (`@@unique([date, metric])`), `SleepSession` (`date @unique`, keyed on the **wake** day), `HealthWorkout` (`externalId @unique` = idempotency key). Daily aggregates only; no baseline table — baselines are computed on the fly.
+- **`toLocalDay()` is `slice(0,10)`, not `Date` parsing.** HAE sends `"2026-01-21 06:00:00 -0400"` and with *Aggregate: Days* that prefix is already the phone's local day. Parsing to a `Date` and reading UTC fields pushes evening entries onto the next day. This is the highest-risk assumption in the import path — raw timestamps are stored so history can be reprocessed instead of re-exported.
+- **A missing score is `null`, never `0`.** A missing HRV reading is not a bad recovery day; the Ring draws null as a dashed state. Score components renormalise over whatever data exists.
+- Every weight/anchor lives in `HEALTH_CONSTANTS` in `src/lib/health.ts` — tuning is a one-file change.
+- **Scripts**: `test-health-import.mjs` (21-check verification suite against a running server), `backfill-health.mjs` (POSTs an HAE export file in day-aligned chunks), `seed-health-fixtures.mjs` (~75 days of **demo** data), `wipe-health-fixtures.mjs` (clears the 3 health tables, dry-run by default).
+- ⚠️ **Preview and prod share one Turso DB.** Run `node scripts/wipe-health-fixtures.mjs --yes` before the first real backfill, or demo HRV values end up inside the same trailing baselines as real readings.
+
 ## Deployment
 - `npx vercel --prod` — Vercel is **not** connected to GitHub auto-deploy; always deploy manually
 - Build: `prisma generate && next build` (schema is no longer pushed at build time — push manually with `npm run db:push` before deploys that include schema changes)
-- Env vars in `.env` (never commit) + Vercel dashboard. Required: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DATABASE_URL=file:./prisma/dev.db` (typegen-only, not used at runtime).
+- Env vars in `.env` (never commit) + Vercel dashboard. Required: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DATABASE_URL=file:./prisma/dev.db` (typegen-only, not used at runtime), `HEALTH_IMPORT_KEY` (32-byte hex; the health import route 500s without it — by design).
 - Prod URL: `productivity-tracker-murex.vercel.app`
 
 ## Design tokens (Void / Electric Iris)

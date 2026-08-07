@@ -21,7 +21,7 @@ import FloatingStopwatch from '@/components/FloatingStopwatch'
 // ──────────────────────────────────────────────────────────────────────────
 
 export type Tab =
-  | 'calendar' | 'tasks' | 'habits' | 'lifts'
+  | 'calendar' | 'tasks' | 'habits' | 'bevel'
   | 'stats' | 'projects' | 'settings'
 
 type DayScore = { completed: number; total: number; pct: number }
@@ -38,7 +38,11 @@ type NavItem = { id: Tab; label: string; icon: ReactNode }
 const NAV_ITEMS: NavItem[] = [
   { id: 'tasks',         label: 'Tasks',         icon: <IconTasks    /> },
   { id: 'habits',        label: 'Habits',        icon: <IconHabits   /> },
-  { id: 'lifts',         label: 'Lifts',         icon: <IconLifts    /> },
+  // Lifts is no longer a top-level tab — it lives inside Bevel as a sub-tab.
+  // loadOrder() filters saved ids against NAV_ITEMS and appends unknown ones,
+  // so a stored order containing 'lifts' self-heals in both directions and
+  // reverting this commit restores the old nav exactly.
+  { id: 'bevel',         label: 'Bevel',         icon: <IconBevel    /> },
   { id: 'stats',         label: 'Stats',         icon: <IconStats    /> },
   { id: 'calendar',      label: 'Calendar',      icon: <IconCalendar /> },
   { id: 'projects',      label: 'Projects',      icon: <IconProjects /> },
@@ -348,7 +352,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
       {/* Main view stack — lazy-mount + keep-mounted */}
       <main className="flex-1 min-w-0 relative z-0">
         {Array.from(mounted).map(tab => {
-          const wide = tab === 'calendar' || tab === 'stats'
+          const wide = tab === 'calendar' || tab === 'stats' || tab === 'bevel'
           const containerClass = wide
             ? 'mx-auto w-full max-w-container px-4 sm:px-6 py-5'
             : 'mx-auto w-full max-w-3xl px-4 sm:px-6 py-5'
@@ -359,7 +363,9 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           )
         })}
       </main>
-      {activeTab === 'lifts' && (
+      {/* Re-gated from 'lifts' to 'bevel' — the timer belongs to the tab that
+          now contains the lift tracker. */}
+      {activeTab === 'bevel' && (
         <>
           <FloatingStopwatch />
           <DockedStopwatch />
@@ -655,10 +661,12 @@ function IconHabits() {
     </svg>
   )
 }
-function IconLifts() {
+// Bevel: a heartbeat trace. The tab covers recovery/sleep/strain as well as
+// lifts, so the old dumbbell would have under-described it.
+function IconBevel() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 6v12M18 6v12M2 9v6M22 9v6M6 12h12" />
+      <path d="M3 12h3.5l2-5 3 10 2.5-5H21" />
     </svg>
   )
 }

@@ -1,0 +1,110 @@
+{
+  "_comment": "Hand-written Health Auto Export v2 payload used by scripts/test-health-import.mjs. Deliberately mixes shapes HAE has actually shipped: a qty metric, a Min/Avg/Max metric, lowercase min/avg/max, sleep in hours, a metric we have no MetricDef for, a workout with an id, a workout without one, and two malformed points that must be skipped rather than fail the batch.",
+  "data": {
+    "metrics": [
+      {
+        "name": "step_count",
+        "units": "count",
+        "data": [
+          { "date": "2026-08-05 00:00:00 -0400", "qty": 9124 },
+          { "date": "2026-08-06 00:00:00 -0400", "qty": 11402 }
+        ]
+      },
+      {
+        "name": "heart_rate_variability",
+        "units": "ms",
+        "data": [
+          { "date": "2026-08-05 00:00:00 -0400", "Min": 31, "Avg": 58.4, "Max": 96 },
+          { "date": "2026-08-06 00:00:00 -0400", "min": 34, "avg": 64.1, "max": 101 }
+        ]
+      },
+      {
+        "name": "resting_heart_rate",
+        "units": "count/min",
+        "data": [
+          { "date": "2026-08-05 00:00:00 -0400", "Avg": 54 },
+          { "date": "2026-08-06 00:00:00 -0400", "Avg": 51 }
+        ]
+      },
+      {
+        "name": "active_energy",
+        "units": "kcal",
+        "data": [
+          { "date": "2026-08-05 00:00:00 -0400", "qty": 612.4 },
+          { "date": "2026-08-06 00:00:00 -0400", "qty": 845.9 }
+        ]
+      },
+      {
+        "name": "apple_exercise_time",
+        "units": "min",
+        "data": [
+          { "date": "2026-08-05 00:00:00 -0400", "qty": 42 },
+          { "date": "2026-08-06 00:00:00 -0400", "qty": 71 }
+        ]
+      },
+      {
+        "name": "sleep_analysis",
+        "units": "hr",
+        "data": [
+          {
+            "date": "2026-08-05 00:00:00 -0400",
+            "sleepStart": "2026-08-04 23:12:00 -0400",
+            "sleepEnd": "2026-08-05 07:04:00 -0400",
+            "inBed": 7.87,
+            "asleep": 7.21,
+            "core": 4.02,
+            "deep": 1.18,
+            "rem": 2.01,
+            "awake": 0.31
+          },
+          {
+            "date": "2026-08-06 00:00:00 -0400",
+            "sleepStart": "2026-08-05 23:58:00 -0400",
+            "sleepEnd": "2026-08-06 06:12:00 -0400",
+            "inBed": 6.23,
+            "asleep": 5.88,
+            "core": 3.61,
+            "deep": 0.72,
+            "rem": 1.55,
+            "awake": 0.35
+          }
+        ]
+      },
+      {
+        "name": "environmental_audio_exposure",
+        "units": "dBASPL",
+        "data": [
+          { "date": "2026-08-06 00:00:00 -0400", "Avg": 62.5 }
+        ]
+      },
+      {
+        "name": "broken_metric",
+        "units": "count",
+        "data": [
+          { "date": "not-a-date", "qty": 5 },
+          { "date": "2026-08-06 00:00:00 -0400" }
+        ]
+      }
+    ],
+    "workouts": [
+      {
+        "id": "E9F7A2C1-0000-4A11-9C3D-FIXTURE000001",
+        "name": "Traditional Strength Training",
+        "start": "2026-08-06 17:04:00 -0400",
+        "end": "2026-08-06 18:11:00 -0400",
+        "duration": 4020,
+        "activeEnergyBurned": { "qty": 431.2, "units": "kcal" },
+        "avgHeartRate": 128,
+        "maxHeartRate": 166
+      },
+      {
+        "name": "Outdoor Walk",
+        "start": "2026-08-05 12:30:00 -0400",
+        "end": "2026-08-05 13:05:00 -0400",
+        "activeEnergyBurned": { "qty": 142.0, "units": "kcal" },
+        "distance": { "qty": 2.4, "units": "mi" },
+        "avgHeartRate": 104
+      }
+    ]
+  }
+}

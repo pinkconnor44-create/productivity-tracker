@@ -115,22 +115,38 @@ Connor reviews preview URL on phone → approve → merge → `npx vercel --prod
 
 ---
 
-# STATUS 2026-08-07 — parked
+# STATUS 2026-08-07 (second update) — Phases 0–5 built
 
-Phases A (tokens/radius/motion/extractions) and B-core (void black + Electric
-Iris, accent-theme system deleted) are **done and deployed to prod**.
+Phases A and B-core (void black + Electric Iris) are **deployed to prod**.
+Phases **0–5 of this plan are now built** on `feature/bevel-health` and live on
+a preview deploy. Prod is untouched.
 
-## Parked in storage — do not start without Connor saying so
-- **C0–C3 · data pipeline** — the 3 Prisma models, `POST /api/health-import`,
-  `GET /api/health` + `src/lib/health.ts` scoring. Everything in Phases 1–3
-  above still stands as written.
-- **C4 · Bevel tab** — BevelView, its 6 sub-tabs, and the 7 new primitives
-  (`MetricRow`, `StatusChip`, `RangeGauge`, `SegmentedBar`, `InsightCard`,
-  3-ring cluster). `Ring` is being built early for C6, so C4 inherits it.
-- **C5** — Health Auto Export purchase + phone automation. Blocked on Connor.
+## Done
+- **Phase 0** — branch + `HEALTH_IMPORT_KEY` in `.env` and all three Vercel envs.
+- **Phase 1** — the 3 models, applied to Turso via `npm run db:push`.
+- **Phase 2** — `POST /api/health-import`, verified by a 21-check suite.
+- **Phase 3** — `GET /api/health` + `src/lib/health.ts`.
+- **Phase 4** — BevelView, 6 sub-tabs, 6 new primitives, nav restructure. Lifts
+  moved inside Bevel; Scratchpad→Calendar was already done on 2026-08-06.
+- **Phase 5 tooling** — `backfill-health.mjs` written and ready; the HAE
+  purchase and phone automation are still blocked on Connor.
+- **Phase 6** — was already delivered as C6 last session.
 
-Nothing about these is stale; they were deprioritised in favour of making the
-app *look* finished first, which needs none of them.
+## Deviations from the plan as written
+- `Ring`, `TrendChart` and `SegmentedControl` already existed (extracted during
+  Phase A), so Phase 4 consumed them instead of forking copies — the plan had
+  called for a copy of StatsView's chart.
+- Ring defaults to `scoreColor` per plan.md:66, but every health ring passes
+  `metricColor` explicitly: a low Strain day is a rest day and the traffic light
+  would paint it red.
+- The 7th primitive never materialised as its own file — the 3-ring cluster is
+  `RingCluster`, and Ring already existed. Six new files, not seven.
+
+## Remaining
+- **Phase 7** — device QA. `docs/BEVEL-QA.md`. **Unrun.**
+- **Phase 5 proper** — buy HAE, configure the automation, wipe demo rows,
+  backfill.
+- **Phase 8** — approve, merge, `npx vercel --prod`.
 
 ## Backlog — depth / hero imagery (Connor, 2026-08-07)
 Explicitly "don't make it yet, keep it in mind."

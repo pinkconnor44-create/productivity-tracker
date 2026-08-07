@@ -119,3 +119,60 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ── Health (Apple Watch via Health Auto Export) ────────────────────────────
+// Additive-only: nothing above this line was modified. Dropping these three
+// tables is the complete DB rollback. Daily aggregates only — no minute-level
+// samples — and baselines are computed on the fly, so there is no baseline
+// table to keep in sync.
+
+// One row per (day, metric). `metric` is HAE's own metric name, stored
+// verbatim so an unrecognised metric is still persisted rather than dropped.
+model HealthMetricDaily {
+  id     Int     @id @default(autoincrement())
+  date   String // YYYY-MM-DD (local day)
+  metric String // HAE name, e.g. "heart_rate_variability"
+  qty    Float? // sum/total-style metrics (steps, active_energy)
+  min    Float?
+  avg    Float?
+  max    Float?
+  units  String?
+
+  @@unique([date, metric])
+  @@index([date])
+}
+
+// One row per night, keyed on the WAKE day — matching how Bevel and Apple
+// Health both attribute a night's sleep.
+model SleepSession {
+  id        Int     @id @default(autoincrement())
+  date      String  @unique // YYYY-MM-DD wake day
+  start     String? // ISO timestamp as delivered
+  end       String?
+  inBedMin  Float?
+  asleepMin Float?
+  coreMin   Float?
+  deepMin   Float?
+  remMin    Float?
+  awakeMin  Float?
+  raw       String? // original JSON, so a parser fix can reprocess history
+}
+
+// `externalId` is HAE's workout id — the idempotency key. Re-POSTing the same
+// export updates in place instead of duplicating.
+model HealthWorkout {
+  id          Int     @id @default(autoincrement())
+  externalId  String  @unique
+  date        String // YYYY-MM-DD (local day of start)
+  type        String
+  start       String?
+  end         String?
+  durationMin Float?
+  activeKcal  Float?
+  avgHr       Float?
+  maxHr       Float?
+  distanceKm  Float?
+  raw         String?
+
+  @@index([date])
+}
