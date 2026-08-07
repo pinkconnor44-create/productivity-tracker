@@ -352,3 +352,10 @@ button, input, textarea, select {
   -ms-overflow-style: none;
 }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Orrery orbit rotation. Lives here rather than inline so the reduced-motion
+   block at the top of this file can reach it. */
+@keyframes orrery-spin {
+  from { transform: rotateZ(0deg); }
+  to   { transform: rotateZ(360deg); }
+}

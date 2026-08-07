@@ -6,6 +6,7 @@ import { toast } from '@/lib/toast'
 import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 import Scratchpad from '@/components/Scratchpad'
+import CalendarHorizon from '@/components/CalendarHorizon'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
@@ -281,7 +282,12 @@ export default function CalendarView() {
   const todayStrVal = today()
 
   return (
-    <div>
+    // `relative` only — deliberately NOT transform/perspective. DayModal is
+    // position:fixed and renders inside the column below; an ancestor with a
+    // transform would become its containing block and break it. The horizon
+    // owns its own perspective and is a sibling of the content, never a wrapper.
+    <div className="relative">
+      <CalendarHorizon dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct} />
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}
