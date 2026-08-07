@@ -23,7 +23,7 @@ export type { Metric, MetricStatus } from './metricColors'
 // day, not a failure. Use metricColor() from ./metricColors for those.
 export function scoreColor(pct: number | null | undefined): string {
   const p = pct ?? 0
-  if (p >= 75) return '#10b981'
-  if (p >= 50) return '#f59e0b'
+  if (p >= 75) return '#4ade80'
+  if (p >= 50) return '#ffb829'
   return '#f43f5e'
 }

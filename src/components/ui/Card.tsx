@@ -7,16 +7,21 @@ type Props = HTMLAttributes<HTMLDivElement> & {
   noBorder?: boolean
   // Toggle the inset top highlight + drop shadow combo from the design.
   flat?: boolean
+  // Opt out of translucency — opaque near-black surface instead.
+  solid?: boolean
 }
 
-// Standard panel container — glass-tinted, accent-bordered.
-// Use for any list, chart, or grouped content. Inherits accent color via globals.css overrides.
+// Standard panel container. Renders as real glass (`.glass` — translucent +
+// backdrop blur), so the ambient bloom reads through it. Pass `solid` for the
+// rare case that needs an opaque surface, e.g. a panel sitting over another
+// blurred panel, where stacking two backdrop-filters muddies both.
 export function Card({
   children,
   padding,
   className = '',
   noBorder = false,
   flat = false,
+  solid = false,
   style,
   ...rest
 }: Props) {
@@ -31,9 +36,14 @@ export function Card({
       {...rest}
       style={{ ...padStyle, ...style }}
       className={[
-        'bg-surface-container rounded-2xl overflow-hidden',
-        noBorder ? '' : 'border border-outline-variant/40',
-        flat ? '' : 'shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_8px_32px_rgba(0,0,0,0.4)]',
+        'rounded-2xl overflow-hidden',
+        // `.glass` supplies its own border + highlight + depth shadow, and it
+        // is declared after @tailwind utilities, so it would win the border at
+        // equal specificity anyway. Only the solid variant styles those here.
+        solid ? 'bg-surface-container' : 'glass',
+        solid && !noBorder ? 'border border-outline-variant/40' : '',
+        solid && !flat ? 'shadow-glass' : '',
+        noBorder ? 'border-0' : '',
         className,
       ].filter(Boolean).join(' ')}
     >

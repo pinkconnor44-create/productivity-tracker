@@ -221,7 +221,7 @@ export default function HabitsView() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -252,8 +252,8 @@ export default function HabitsView() {
       {/* Add habit */}
       {!showForm ? (
         <button onClick={() => setShowForm(true)}
-          className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-surface-container border border-dashed border-outline-variant rounded-2xl text-on-surface-variant/60 hover:text-violet-400 hover:border-violet-300/50 transition-all text-sm font-medium group">
-          <span className="w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-on-surface-variant/30 group-hover:border-violet-400 group-hover:text-violet-400 transition-colors text-xs font-bold">+</span>
+          className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-surface-container border border-dashed border-outline-variant rounded-2xl text-on-surface-variant/60 hover:text-primary-400 hover:border-primary-300/50 transition-all text-sm font-medium group">
+          <span className="w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-on-surface-variant/30 group-hover:border-primary-400 group-hover:text-primary-400 transition-colors text-xs font-bold">+</span>
           New habit
         </button>
       ) : (
@@ -270,7 +270,7 @@ export default function HabitsView() {
               {SCHEDULE_PRESETS.map(p => (
                 <button key={String(p.value)} type="button" onClick={() => setField('schedulePreset',p.value)}
                   className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
-                    form.schedulePreset===p.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                    form.schedulePreset===p.value ? 'bg-primary-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
                   }`}>{p.label}</button>
               ))}
             </div>
@@ -279,7 +279,7 @@ export default function HabitsView() {
                 <div className="flex gap-1">
                   {DAY_NAMES.map((d,i) => (
                     <button key={i} type="button" onClick={() => toggleCustomDay(i)}
-                      className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.customDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                      className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.customDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                       {d[0]}
                     </button>
                   ))}
@@ -296,7 +296,7 @@ export default function HabitsView() {
               <button type="button" onClick={() => { setShowForm(false); setForm(blankForm()) }}
                 className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
               <button type="submit" disabled={!form.name.trim()||submitting||(form.schedulePreset==='custom'&&form.customDays.length===0)}
-                className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Add Habit</button>
+                className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors shadow-sm">Add Habit</button>
             </div>
           </div>
         </form>
@@ -419,13 +419,13 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
                     🔥 {streak}d
                   </span>
                 )}
-                <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
+                <span className="text-[11px] font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
                   {rowStats.w7.done}/{rowStats.w7.scheduled} wk
                 </span>
-                <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
+                <span className="text-[11px] font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
                   {rowStats.w30.done}/{rowStats.w30.scheduled} mo
                 </span>
-                <span className="text-[11px] font-semibold text-violet-300 bg-violet-500/15 px-2 py-0.5 rounded-md border border-violet-200/40">
+                <span className="text-[11px] font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
                   {rowStats.all.done}/{rowStats.all.scheduled} all
                 </span>
                 {(() => {
@@ -453,7 +453,7 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
           <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
             className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
         )}
-        <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
+        <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all text-xs">✏</button>
         <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       </div>
     </div>
@@ -473,7 +473,7 @@ function AllHabitsRowActions({ habitName, onEdit, onDelete }: { habitName: strin
   }
   return (
     <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
+      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all text-xs">✏</button>
       <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
     </div>
   )
@@ -615,17 +615,17 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-violet-500/10 border-l-[3px] border-l-violet-400">
+    <div className="px-4 py-3 space-y-3 bg-primary-500/10 border-l-[3px] border-l-primary-400">
       <input autoFocus type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Habit name"
         className="w-full text-sm font-medium bg-transparent border-0 outline-none text-on-surface placeholder-white/70 p-0" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description"
         className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
-      <div className="border-t border-violet-500/30 pt-2 space-y-2">
+      <div className="border-t border-primary-500/30 pt-2 space-y-2">
         <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
         <div className="flex flex-wrap gap-1">
           {SCHEDULE_PRESETS.map(p => (
             <button key={String(p.value)} type="button" onClick={() => setSchedulePreset(p.value)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${schedulePreset===p.value ? 'bg-violet-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${schedulePreset===p.value ? 'bg-primary-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
               {p.label}
             </button>
           ))}
@@ -635,7 +635,7 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
             <div className="flex gap-1">
               {DAY_NAMES.map((d,i) => (
                 <button key={i} type="button" onClick={() => toggleCustomDay(i)}
-                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${customDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${customDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                   {d[0]}
                 </button>
               ))}
@@ -646,11 +646,11 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
           </>
         )}
       </div>
-      <div className="flex items-center justify-between border-t border-violet-500/30 pt-2">
+      <div className="flex items-center justify-between border-t border-primary-500/30 pt-2">
         <WeightPicker value={weight} onChange={setWeight} />
         <div className="flex gap-2">
           <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
-          <button type="button" onClick={handleSave} disabled={!name.trim()||(schedulePreset==='custom'&&customDays.length===0)} className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>
+          <button type="button" onClick={handleSave} disabled={!name.trim()||(schedulePreset==='custom'&&customDays.length===0)} className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>
         </div>
       </div>
     </div>

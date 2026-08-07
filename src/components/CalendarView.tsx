@@ -293,7 +293,7 @@ export default function CalendarView() {
                   key={v}
                   onClick={() => setView(v)}
                   className={`px-3 py-1.5 rounded-md text-[12px] font-semibold capitalize transition-colors ${
-                    view === v ? 'bg-violet-500/16 text-violet-300 border border-violet-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
+                    view === v ? 'bg-primary-500/16 text-primary-300 border border-primary-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
                   }`}
                 >
                   {v}
@@ -302,7 +302,7 @@ export default function CalendarView() {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => navigate(-1)} aria-label="Previous" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">←</button>
-              <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-[12px] font-semibold bg-surface-container-low border border-outline-variant/40 rounded-lg text-on-surface-variant hover:text-violet-300 transition-colors">Today</button>
+              <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-[12px] font-semibold bg-surface-container-low border border-outline-variant/40 rounded-lg text-on-surface-variant hover:text-primary-300 transition-colors">Today</button>
               <button onClick={() => navigate(1)} aria-label="Next" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">→</button>
             </div>
           </div>
@@ -459,13 +459,13 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
               <button onClick={() => onSelectDay(date)}
                 className={`group w-full h-[132px] sm:h-[124px] overflow-hidden px-2 pt-2 pb-2 border-b border-r border-outline-variant/30 text-left transition-colors flex flex-col gap-1
                   ${!isCurrentMonth ? 'opacity-30' : ''}
-                  hover:bg-violet-500/5`}
+                  hover:bg-primary-500/5`}
               >
                 {/* Date row */}
                 <div className={`flex items-center justify-between w-full shrink-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
                   <span className={`tabular-nums leading-none ${
                     isToday
-                      ? 'font-display text-[20px] font-bold text-violet-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
+                      ? 'font-display text-[20px] font-bold text-primary-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
                       : 'text-[16px] font-medium text-on-surface'
                   }`}>{dayNum}</span>
                   <div className="flex items-center gap-1.5">
@@ -563,7 +563,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         {task.title}
                       </div>
                       {task.time && (
-                        <div className="text-[10px] text-violet-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
+                        <div className="text-[10px] text-primary-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
                       )}
                     </div>
                   </div>
@@ -626,8 +626,8 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
             items.push(
               <div key="now-line" className="flex items-center gap-1 py-0.5 my-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary neon-pulse shrink-0" />
-                <div className="flex-1 h-px bg-violet-400/50" />
-                <span className="text-[9px] font-bold text-violet-400 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
+                <div className="flex-1 h-px bg-primary-400/50" />
+                <span className="text-[9px] font-bold text-primary-400 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
               </div>
             )
             nowInserted = true
@@ -660,25 +660,25 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
           items.push(
             <div key="now-line" className="flex items-center gap-1 py-0.5 my-0.5">
               <div className="w-1.5 h-1.5 rounded-full bg-primary neon-pulse shrink-0" />
-              <div className="flex-1 h-px bg-violet-400/50" />
-              <span className="text-[9px] font-bold text-violet-400 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
+              <div className="flex-1 h-px bg-primary-400/50" />
+              <span className="text-[9px] font-bold text-primary-400 shrink-0 tabular-nums">{formatTime(nowTime)}</span>
             </div>
           )
         }
 
         return (
           <div key={date} className={`glass rounded-xl border overflow-hidden transition-shadow ${
-            isToday ? 'ring-2 ring-violet-400/60 shadow-lg shadow-violet-500/15' : ''
+            isToday ? 'ring-2 ring-primary-400/60 shadow-lg shadow-primary-500/15' : ''
           }`}>
             <button onClick={() => onSelectDay(date)} className={`w-full p-2 text-center border-b flex flex-col items-center ${
               isToday
-                ? 'bg-gradient-to-b from-violet-500 to-violet-700 text-white border-violet-600'
+                ? 'bg-gradient-to-b from-primary-500 to-primary-700 text-white border-primary-600'
                 : 'bg-surface-container-high border-outline-variant/40 text-on-surface'
             }`}>
               <div className="text-[10px] font-semibold uppercase tracking-wide opacity-75">{WEEKDAYS[d.getDay()]}</div>
               <div className="text-lg font-bold leading-tight">{d.getDate()}</div>
               {score && !isFuture && (
-                <div className={`text-[10px] font-bold mt-0.5 ${isToday ? 'text-violet-200' : 'text-violet-400'}`}>{score.pct}%</div>
+                <div className={`text-[10px] font-bold mt-0.5 ${isToday ? 'text-primary-200' : 'text-primary-400'}`}>{score.pct}%</div>
               )}
             </button>
             <div className="p-1.5 space-y-0.5">
@@ -717,7 +717,7 @@ function DayDetail({ date, score, tasks, habits, isTaskDone, onToggleTask, onTog
           <div className="text-sm text-on-surface-variant font-medium">{WEEKDAYS[d.getDay()]}</div>
           <div className="text-2xl font-bold text-on-surface">
             {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
-            {isToday && <span className="ml-2 text-sm font-semibold text-violet-600 bg-violet-500/20 px-2 py-0.5 rounded-full">Today</span>}
+            {isToday && <span className="ml-2 text-sm font-semibold text-primary-600 bg-primary-500/20 px-2 py-0.5 rounded-full">Today</span>}
           </div>
         </div>
         {score && !isFuture ? (
@@ -766,11 +766,11 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
   const [kind, setKind] = useState<Kind | null>((task.kind as Kind | null) ?? null)
 
   return (
-    <div className="px-4 py-3 bg-violet-500/10 space-y-2.5">
+    <div className="px-4 py-3 bg-primary-500/10 space-y-2.5">
       <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Task name"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-primary-500" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-primary-500" />
       <div className="flex items-end gap-2 flex-wrap">
         <TimePickerInput value={startTime} onChange={setStartTime} label="Start" />
         <span className="text-on-surface-variant/30 text-xs pb-2.5">→</span>
@@ -783,7 +783,7 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
       <div className="flex gap-2">
         <button onClick={() => onSave({ title: title.trim(), description: description.trim() || null, time: startTime || null, endTime: endTime || null, kind })}
           disabled={!title.trim()}
-          className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors">
+          className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors">
           Save
         </button>
         <button onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
@@ -797,15 +797,15 @@ function DayHabitEditForm({ habit, onSave, onCancel }: { habit: Habit; onSave: (
   const [description, setDescription] = useState(habit.description ?? '')
 
   return (
-    <div className="px-4 py-3 bg-violet-50/60 space-y-2.5">
+    <div className="px-4 py-3 bg-primary-50/60 space-y-2.5">
       <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Habit name"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-primary-500" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optional)"
-        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-violet-500" />
+        className="w-full text-sm px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low text-on-surface outline-none focus:border-primary-500" />
       <div className="flex gap-2">
         <button onClick={() => onSave({ name: name.trim(), description: description.trim() || null })}
           disabled={!name.trim()}
-          className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors">
+          className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors">
           Save
         </button>
         <button onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">Cancel</button>
@@ -893,11 +893,11 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
               if (isEditing && editState.type === 'task') {
                 if (editState.scope === 'choose') {
                   return (
-                    <div key={task.id} className="px-4 py-3 space-y-2 bg-violet-50/60">
+                    <div key={task.id} className="px-4 py-3 space-y-2 bg-primary-50/60">
                       <p className="text-xs font-semibold text-on-surface-variant">This is a recurring task. What would you like to edit?</p>
                       <div className="flex gap-2 flex-wrap">
                         <button onClick={() => setEditState({ type: 'task', task, scope: 'all' })}
-                          className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+                          className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
                           All occurrences
                         </button>
                         <button onClick={() => setEditState({ type: 'task', task, scope: 'day' })}
@@ -922,7 +922,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
               return (
                 <div key={task.id} className={`flex items-start gap-3 px-4 py-3 group transition-colors ${skipped ? 'bg-amber-500/10' : 'hover:bg-surface-container-low'}`}>
                   <button onClick={() => { if (!skipped) { if (!done) triggerBurst(task.id); onToggleTask(task, date) } }} disabled={!!skipped}
-                    className={`relative mt-0.5 text-lg leading-none shrink-0 ${skipped ? 'text-amber-300 cursor-not-allowed' : done ? 'text-emerald-500' : 'text-on-surface-variant/30 hover:text-violet-400'}`}>
+                    className={`relative mt-0.5 text-lg leading-none shrink-0 ${skipped ? 'text-amber-300 cursor-not-allowed' : done ? 'text-emerald-500' : 'text-on-surface-variant/30 hover:text-primary-400'}`}>
                     {skipped ? '⏸' : done ? '✓' : '○'}
                     {burstIds.has(task.id) && (
                       <span className="burst-ring absolute inset-[-6px] rounded-full border-2 border-emerald-400" />
@@ -948,7 +948,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     </div>
                   </div>
                   <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                    <button onClick={() => startEditTask(task)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
+                    <button onClick={() => startEditTask(task)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipTask(task.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
                       className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
                     <button onClick={() => handleDeleteTask(task)} title="Delete task" className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
@@ -991,7 +991,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     {habit.description && !skipped && <div className="text-xs text-on-surface-variant mt-0.5">{habit.description}</div>}
                   </div>
                   <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
-                    <button onClick={() => startEditHabit(habit)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all">✏</button>
+                    <button onClick={() => startEditHabit(habit)} className="p-1.5 rounded-lg text-xs text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all">✏</button>
                     <button onClick={() => onSkipHabit(habit.id, date)} title={skipped ? 'Undo skip' : 'Skip today'}
                       className={`p-1.5 rounded-lg text-xs transition-all ${skipped ? 'text-amber-500 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
                     <button onClick={() => handleDeleteHabit(habit)} title="Delete habit" className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
@@ -1124,7 +1124,7 @@ function TimePickerInput({ value, onChange, label }: { value: string; onChange: 
     <div className="flex flex-col gap-1">
       <span className="text-[10px] font-semibold text-on-surface-variant text-center">{label}</span>
       <div className="flex items-center gap-1">
-        <div className="flex items-center px-1 rounded-xl border border-outline-variant bg-surface-container-lowest focus-within:border-violet-500 transition-colors">
+        <div className="flex items-center px-1 rounded-xl border border-outline-variant bg-surface-container-lowest focus-within:border-primary-500 transition-colors">
           <input ref={hourRef} type="text" inputMode="numeric" value={h} onChange={handleHour}
             placeholder="--" className={fieldCls} />
           <span className="text-on-surface-variant font-bold text-sm select-none">:</span>
@@ -1132,7 +1132,7 @@ function TimePickerInput({ value, onChange, label }: { value: string; onChange: 
             onKeyDown={handleMinKeyDown} placeholder="--" className={fieldCls} />
         </div>
         <button type="button" onClick={toggleAp}
-          className="text-[11px] font-bold px-1.5 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-violet-400 hover:bg-violet-500/10 transition-colors w-10 text-center">
+          className="text-[11px] font-bold px-1.5 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-primary-400 hover:bg-primary-500/10 transition-colors w-10 text-center">
           {ap}
         </button>
       </div>
@@ -1162,13 +1162,13 @@ function QuickAddTask({ date, onAdd }: { date: string; onAdd: (title: string, da
       </div>
       <div className="p-3 space-y-2">
         <input type="text" value={value} onChange={e => setValue(e.target.value)} placeholder="Task name..."
-          className="w-full text-sm px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface placeholder-white/70 outline-none focus:border-violet-500 transition-colors" />
+          className="w-full text-sm px-3 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface placeholder-white/70 outline-none focus:border-primary-500 transition-colors" />
         <div className="flex items-end gap-2">
           <TimePickerInput value={startTime} onChange={setStartTime} label="Start" />
           <span className="text-on-surface-variant/30 text-xs pb-2.5">→</span>
           <TimePickerInput value={endTime} onChange={setEndTime} label="End" />
           <button type="submit" disabled={!value.trim() || loading}
-            className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-semibold hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
+            className="px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0">
             {loading ? '…' : 'Add'}
           </button>
         </div>
@@ -1203,7 +1203,7 @@ function DayModal({ date, score, tasks, habits, isTaskDone, onClose, onToggleTas
             <div className="text-xs text-on-surface-variant font-medium uppercase tracking-wide">{WEEKDAYS[d.getDay()]}</div>
             <div className="font-bold text-on-surface">
               {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
-              {isToday && <span className="ml-2 text-xs font-semibold text-violet-600 bg-violet-500/20 px-2 py-0.5 rounded-full">Today</span>}
+              {isToday && <span className="ml-2 text-xs font-semibold text-primary-600 bg-primary-500/20 px-2 py-0.5 rounded-full">Today</span>}
             </div>
           </div>
           <div className="flex items-center gap-3">

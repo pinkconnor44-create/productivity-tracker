@@ -50,7 +50,7 @@ export default function PWASetup() {
   if (!banner) return null
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 z-50 flex items-center gap-3 bg-surface-container border border-violet-200 rounded-2xl shadow-xl px-4 py-3">
+    <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 z-50 flex items-center gap-3 bg-surface-container border border-primary-200 rounded-2xl shadow-xl px-4 py-3">
       <div className="text-2xl">📲</div>
       <div className="flex-1 min-w-0">
         <div className="text-sm font-semibold text-on-surface leading-tight">Install App</div>
@@ -69,7 +69,7 @@ export default function PWASetup() {
         <button
           onClick={installAndroid}
           className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold text-white"
-          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)' }}
+          style={{ background: 'linear-gradient(135deg, #8052ff, #4f46e5)' }}
         >
           Install
         </button>

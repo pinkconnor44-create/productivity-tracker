@@ -290,7 +290,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
     <>
       {/* Desktop sidebar */}
       <aside
-        className="hidden md:flex flex-col gap-5 sticky top-0 h-screen w-[240px] shrink-0 px-3.5 py-5 z-30 bg-surface/65 backdrop-blur-xl border-r border-violet-500/12"
+        className="hidden md:flex flex-col gap-5 sticky top-0 h-screen w-[240px] shrink-0 px-3.5 py-5 z-30 bg-surface/65 backdrop-blur-xl border-r border-primary-500/12"
       >
         {sidebarBody}
       </aside>
@@ -337,7 +337,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
             while reordering also switches tabs. */}
         <aside
           data-no-swipe
-          className={`absolute top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-surface flex flex-col gap-5 px-3.5 py-5 border-r border-violet-500/20 shadow-2xl transition-transform duration-200 ${
+          className={`absolute top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-surface flex flex-col gap-5 px-3.5 py-5 border-r border-primary-500/20 shadow-2xl transition-transform duration-200 ${
             drawerOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -572,19 +572,19 @@ function NavItem({ id, icon, label, active, isDragOver, isDragging, onTap, onDra
       className={[
         'group relative flex items-center gap-3 w-full px-3.5 py-2.5 rounded-lg text-left font-medium transition-all select-none',
         isDragging
-          ? 'scale-[1.04] shadow-2xl ring-2 ring-violet-400/80 z-10 bg-violet-500/20 cursor-grabbing'
+          ? 'scale-[1.04] shadow-2xl ring-2 ring-primary-400/80 z-10 bg-primary-500/20 cursor-grabbing'
           : pressed
             ? 'scale-[0.99] cursor-grabbing'
             : 'cursor-pointer',
-        isDragOver && !isDragging ? 'ring-2 ring-violet-400/70' : '',
+        isDragOver && !isDragging ? 'ring-2 ring-primary-400/70' : '',
         active && !isDragging
-          ? 'bg-violet-500/16 border border-violet-400/30 text-on-surface font-semibold'
+          ? 'bg-primary-500/16 border border-primary-400/30 text-on-surface font-semibold'
           : !isDragging
             ? 'border border-transparent text-on-surface-variant/70 active:bg-surface-container-low md:hover:text-on-surface md:hover:bg-surface-container-low/50'
             : 'border border-transparent text-on-surface',
       ].join(' ')}
     >
-      <span className={`w-4 h-4 inline-flex items-center justify-center shrink-0 ${active ? 'text-violet-300' : ''}`}>
+      <span className={`w-4 h-4 inline-flex items-center justify-center shrink-0 ${active ? 'text-primary-300' : ''}`}>
         {icon}
       </span>
       <span className="text-[13px] tracking-[-0.005em] flex-1">{label}</span>
@@ -602,7 +602,7 @@ function FooterRow({ active, onSettings }: { active: boolean; onSettings: () => 
         className={[
           'flex-1 flex items-center justify-center gap-2 h-10 rounded-xl text-[12px] font-semibold transition-colors',
           active
-            ? 'bg-violet-500/16 border border-violet-400/30 text-violet-300'
+            ? 'bg-primary-500/16 border border-primary-400/30 text-primary-300'
             : 'border border-outline-variant/40 text-on-surface-variant/70 hover:text-on-surface hover:bg-surface-container-low',
         ].join(' ')}
       >

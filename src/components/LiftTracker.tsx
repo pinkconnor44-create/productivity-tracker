@@ -154,7 +154,7 @@ export default function LiftTracker() {
 
   if (!loaded) return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -166,7 +166,7 @@ export default function LiftTracker() {
         {/* Header */}
         <div className="flex items-center gap-2">
           <button onClick={() => setActiveGroupId(null)}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
+            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-primary-400 rounded-xl hover:bg-primary-500/10 transition-all">
             ‹ Back
           </button>
           <h2 className="text-base font-bold text-on-surface flex-1">{currentGroup.name}</h2>
@@ -205,7 +205,7 @@ export default function LiftTracker() {
                             {sessions.length} session{sessions.length !== 1 ? 's' : ''} · max {maxWeight} lbs · last {formatDate(sessions[0].date)}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-violet-400 mt-0.5">No sessions yet — tap to log</div>
+                          <div className="text-[11px] text-primary-400 mt-0.5">No sessions yet — tap to log</div>
                         )}
                       </div>
                       <span className="text-on-surface-variant/30 shrink-0">›</span>
@@ -242,7 +242,7 @@ export default function LiftTracker() {
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <button onClick={() => setActiveGroupId(null)}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-violet-400 rounded-xl hover:bg-violet-500/10 transition-all">
+            className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-on-surface-variant/70 hover:text-primary-400 rounded-xl hover:bg-primary-500/10 transition-all">
             ‹ Back
           </button>
           <h2 className="text-base font-bold text-on-surface">Ungrouped</h2>
@@ -324,10 +324,10 @@ export default function LiftTracker() {
             }}
             onBlur={() => { if (!newGroupName.trim()) { setShowNewGroupInput(false); setNewGroupName('') } }}
             placeholder="Day name (e.g. Push)"
-            className="w-44 px-3 py-1.5 text-sm rounded-xl border border-violet-500 outline-none bg-surface-container text-on-surface placeholder-on-surface-variant/40" />
+            className="w-44 px-3 py-1.5 text-sm rounded-xl border border-primary-500 outline-none bg-surface-container text-on-surface placeholder-on-surface-variant/40" />
         ) : (
           <button onClick={() => setShowNewGroupInput(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-primary-400 hover:text-primary-500 transition-colors">
             + New Day
           </button>
         )}
@@ -348,7 +348,7 @@ export default function LiftTracker() {
         const hasToday = loggedInGroup.some(n => byExercise[n]?.some(e => e.date === t))
         return (
           <button key={g.id} onClick={() => setActiveGroupId(g.id)}
-            className="w-full text-left bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm p-4 hover:border-violet-300 hover:shadow-md transition-all group">
+            className="w-full text-left bg-surface-container rounded-2xl border border-outline-variant/40 shadow-sm p-4 hover:border-primary-300 hover:shadow-md transition-all group">
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -362,7 +362,7 @@ export default function LiftTracker() {
                   {lastDate && ` · last ${formatDate(lastDate)}`}
                 </div>
               </div>
-              <span className="text-on-surface-variant/30 group-hover:text-violet-400 transition-colors text-lg leading-none">›</span>
+              <span className="text-on-surface-variant/30 group-hover:text-primary-400 transition-colors text-lg leading-none">›</span>
             </div>
           </button>
         )
@@ -371,7 +371,7 @@ export default function LiftTracker() {
       {/* Ungrouped card */}
       {ungroupedExerciseNames.length > 0 && (
         <button onClick={() => setActiveGroupId('ungrouped')}
-          className="w-full text-left bg-surface-container rounded-2xl border border-dashed border-outline-variant/60 p-4 hover:border-violet-300 transition-all group">
+          className="w-full text-left bg-surface-container rounded-2xl border border-dashed border-outline-variant/60 p-4 hover:border-primary-300 transition-all group">
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-on-surface-variant/70 mb-0.5">Ungrouped</div>
@@ -379,7 +379,7 @@ export default function LiftTracker() {
                 {ungroupedExerciseNames.length} exercise{ungroupedExerciseNames.length !== 1 ? 's' : ''} not assigned to a day
               </div>
             </div>
-            <span className="text-on-surface-variant/30 group-hover:text-violet-400 transition-colors text-lg leading-none">›</span>
+            <span className="text-on-surface-variant/30 group-hover:text-primary-400 transition-colors text-lg leading-none">›</span>
           </div>
         </button>
       )}
@@ -425,18 +425,18 @@ function AddExerciseToGroup({ suggestions, onAdd }: {
             onBlur={() => setTimeout(() => setShowSugg(false), 150)}
             onKeyDown={e => { if (e.key === 'Enter') submit() }}
             placeholder="Add exercise (e.g. Bench Press)"
-            className="w-full px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 transition-colors" />
+            className="w-full px-3 py-2 text-sm rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-primary-500 transition-colors" />
           {showSugg && filtered.length > 0 && (
             <div className="absolute left-0 right-0 top-full mt-1 z-20 rounded-xl border border-outline-variant/60 bg-surface-container shadow-xl overflow-hidden">
               {filtered.slice(0, 5).map(s => (
                 <button key={s} onMouseDown={() => { setValue(s); setShowSugg(false) }}
-                  className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-violet-500/10 transition-colors">{s}</button>
+                  className="w-full text-left px-3 py-2 text-sm text-on-surface hover:bg-primary-500/10 transition-colors">{s}</button>
               ))}
             </div>
           )}
         </div>
         <button onClick={submit} disabled={adding || !value.trim()}
-          className="px-4 py-2 text-xs font-semibold rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
+          className="px-4 py-2 text-xs font-semibold rounded-xl bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
           {adding ? '…' : 'Add'}
         </button>
       </div>
@@ -731,7 +731,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
   if (!open) return (
     <div className="px-4 py-2 border-t border-outline-variant/40">
       <button onClick={() => setOpen(true)}
-        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-violet-400 hover:text-violet-500 transition-colors">
+        className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/50 hover:border-primary-400 hover:text-primary-500 transition-colors">
         + Log new session{hasDraft && <span className="ml-1 text-amber-400">· draft saved</span>}
       </button>
     </div>
@@ -740,7 +740,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
   return (
     <div className="px-4 py-3 border-t border-outline-variant/40 bg-surface-container-lowest/50 space-y-2.5">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-xs font-semibold text-violet-400">New session — {exName}</span>
+        <span className="text-xs font-semibold text-primary-400">New session — {exName}</span>
         {hasDraft && (
           <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">draft</span>
         )}
@@ -765,7 +765,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
               placeholder="lbs"
               min={0}
               inputMode="decimal"
-              className="w-full px-2.5 py-2 text-base sm:text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
+              className="w-full px-2.5 py-2 text-base sm:text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-primary-500 tabular-nums transition-colors"
             />
             <input
               type="number"
@@ -775,7 +775,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
               placeholder="reps"
               min={0}
               inputMode="numeric"
-              className="w-full px-2.5 py-2 text-base sm:text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-violet-500 tabular-nums transition-colors"
+              className="w-full px-2.5 py-2 text-base sm:text-sm rounded-lg border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none focus:border-primary-500 tabular-nums transition-colors"
             />
             <button
               onClick={() => removeRow(i)}
@@ -789,7 +789,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
 
       <div className="flex gap-2">
         <button onClick={addRow}
-          className="flex-1 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/70 hover:border-violet-400 hover:text-violet-300 transition-colors">
+          className="flex-1 py-2 text-xs font-semibold rounded-xl border border-dashed border-outline-variant/60 text-on-surface-variant/70 hover:border-primary-400 hover:text-primary-300 transition-colors">
           + Add set
         </button>
         {hasDraft && (
@@ -804,16 +804,16 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
         <div className="flex items-center gap-3 px-1 text-[11px]">
           <span className="text-on-surface-variant/60">{filledRows.length} set{filledRows.length === 1 ? '' : 's'}</span>
           <span className="text-on-surface-variant/30">·</span>
-          <span className="text-violet-300 font-bold">{totalReps} reps</span>
+          <span className="text-primary-300 font-bold">{totalReps} reps</span>
           <span className="text-on-surface-variant/30">·</span>
-          <span className="text-violet-300 font-bold tabular-nums">{totalVolume.toLocaleString()} vol</span>
+          <span className="text-primary-300 font-bold tabular-nums">{totalVolume.toLocaleString()} vol</span>
         </div>
       )}
 
       <button
         onClick={submit}
         disabled={saving || filledRows.length === 0}
-        className="w-full py-2.5 text-sm font-bold rounded-xl bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
+        className="w-full py-2.5 text-sm font-bold rounded-xl bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm">
         {saving ? 'Saving…' : `Finish session${filledRows.length > 0 ? ` · ${filledRows.length} set${filledRows.length === 1 ? '' : 's'}` : ''}`}
       </button>
     </div>
@@ -844,11 +844,11 @@ function SessionRow({ entry, onDelete }: { entry: LiftEntry; onDelete: (id: numb
           <span className="text-[10px] text-on-surface-variant/50">·</span>
           <span className="text-[10px] font-bold text-on-surface-variant/70">{entry.totalReps} reps</span>
           <span className="text-[10px] text-on-surface-variant/50">·</span>
-          <span className="text-[10px] font-semibold text-violet-400">{volume.toLocaleString()} vol</span>
+          <span className="text-[10px] font-semibold text-primary-400">{volume.toLocaleString()} vol</span>
         </div>
         <div className="flex items-center gap-1 flex-wrap">
           {sets.map((r, i) => (
-            <span key={i} className="px-1.5 py-0.5 text-[10px] font-semibold bg-violet-500/15 text-violet-400 rounded-md">
+            <span key={i} className="px-1.5 py-0.5 text-[10px] font-semibold bg-primary-500/15 text-primary-400 rounded-md">
               {r}
             </span>
           ))}

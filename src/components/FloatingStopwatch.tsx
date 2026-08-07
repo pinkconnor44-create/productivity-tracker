@@ -107,7 +107,7 @@ export default function FloatingStopwatch() {
       ref={elRef}
       data-no-swipe
       style={style}
-      className="fixed z-[55] w-[260px] rounded-2xl bg-surface-container-high/95 border border-violet-400/40 shadow-2xl backdrop-blur-md overflow-hidden select-none"
+      className="fixed z-[55] w-[260px] rounded-2xl bg-surface-container-high/95 border border-primary-400/40 shadow-2xl backdrop-blur-md overflow-hidden select-none"
     >
       <div
         className="flex items-center gap-2 px-4 pt-3 cursor-grab active:cursor-grabbing"
@@ -130,12 +130,12 @@ export default function FloatingStopwatch() {
         </button>
       </div>
       <div className="px-4 pt-1 pb-3 flex flex-col items-center gap-3">
-        <span className={`text-3xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/40'}`}>
+        <span className={`text-3xl font-mono font-bold tabular-nums tracking-tight ${running ? 'text-primary-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/40'}`}>
           {display}
         </span>
         <div className="flex gap-2 w-full">
           {!running ? (
-            <button onClick={start} className="flex-1 py-2 text-sm font-bold rounded-xl bg-violet-600 text-white hover:bg-violet-700 active:bg-violet-800 transition-colors">
+            <button onClick={start} className="flex-1 py-2 text-sm font-bold rounded-xl bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-colors">
               {ms > 0 ? 'Resume' : 'Start'}
             </button>
           ) : (

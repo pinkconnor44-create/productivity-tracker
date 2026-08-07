@@ -10,7 +10,7 @@ const ICONS: Record<string, string> = {
 }
 const COLORS: Record<string, string> = {
   success: 'bg-emerald-500',
-  info: 'bg-violet-500',
+  info: 'bg-primary-500',
   warning: 'bg-amber-500',
 }
 

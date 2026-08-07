@@ -217,7 +217,7 @@ export default function TasksView() {
 
   const groupConfig = [
     { key:'overdue',   label:'Overdue',    color:'text-rose-500',   dot:'bg-rose-400' },
-    { key:'today',     label:'Today',      color:'text-violet-400', dot:'bg-violet-500' },
+    { key:'today',     label:'Today',      color:'text-primary-400', dot:'bg-primary-500' },
     { key:'thisWeek',  label:'This Week',  color:'text-blue-400',    dot:'bg-blue-400' },
     { key:'later',     label:'Later',      color:'text-on-surface-variant/70',  dot:'bg-on-surface-variant/30' },
     { key:'noDueDate', label:'Someday',    color:'text-on-surface-variant/60',  dot:'bg-surface-container-high' },
@@ -225,7 +225,7 @@ export default function TasksView() {
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -242,8 +242,8 @@ export default function TasksView() {
       {/* Add task */}
       {!showForm ? (
         <button onClick={() => setShowForm(true)}
-          className="w-full flex items-center gap-2.5 px-4 py-3.5 glass border border-dashed rounded-2xl text-on-surface-variant/60 hover:text-violet-400 hover:border-violet-300/50 transition-all text-sm font-medium group">
-          <span className="w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-on-surface-variant/30 group-hover:border-violet-400 group-hover:text-violet-400 transition-colors text-xs font-bold">+</span>
+          className="w-full flex items-center gap-2.5 px-4 py-3.5 glass border border-dashed rounded-2xl text-on-surface-variant/60 hover:text-primary-400 hover:border-primary-300/50 transition-all text-sm font-medium group">
+          <span className="w-5 h-5 rounded-md border-2 border-outline-variant flex items-center justify-center text-on-surface-variant/30 group-hover:border-primary-400 group-hover:text-primary-400 transition-colors text-xs font-bold">+</span>
           New task
         </button>
       ) : (
@@ -252,7 +252,7 @@ export default function TasksView() {
 
       {/* Recurring today */}
       {activeRecurringToday.length > 0 && (
-        <Section label="Recurring · Today" dot="bg-violet-500" color="text-violet-400" count={activeRecurringToday.filter(t => t.completions.some(c=>c.date===todayStr)).length} total={activeRecurringToday.length}>
+        <Section label="Recurring · Today" dot="bg-primary-500" color="text-primary-400" count={activeRecurringToday.filter(t => t.completions.some(c=>c.date===todayStr)).length} total={activeRecurringToday.length}>
           <div className={card}>
             <div className="divide-y divide-outline-variant/40">
               {activeRecurringToday.map(task => {
@@ -266,7 +266,7 @@ export default function TasksView() {
                       className={`ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                         skipped ? 'border-amber-500/30 bg-amber-500/15 cursor-not-allowed'
                         : done ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
+                        : 'border-outline-variant hover:border-primary-400 hover:bg-primary-500/10'
                       }`}>
                       {!skipped && done && <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </button>
@@ -276,7 +276,7 @@ export default function TasksView() {
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {skipped
                           ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
-                          : <span className="text-[10px] text-violet-500 font-medium bg-violet-500/15 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
+                          : <span className="text-[10px] text-primary-500 font-medium bg-primary-500/15 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
                         }
                         {!skipped && <KindChip kind={task.kind} size="sm" />}
                         {task.time && <span className="text-[10px] text-on-surface-variant">⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
@@ -417,7 +417,7 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
         className={`ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
           skipped ? 'border-amber-500/30 bg-amber-500/15 cursor-not-allowed'
           : task.completed ? 'bg-emerald-500 border-emerald-500 text-white'
-          : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
+          : 'border-outline-variant hover:border-primary-400 hover:bg-primary-500/10'
         }`}>
         {!skipped && task.completed && <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
       </button>
@@ -433,7 +433,7 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
                   <span className={`text-[11px] font-medium ${
                     task.completed ? 'text-on-surface-variant/30'
                     : isOverdue ? 'text-rose-500'
-                    : task.dueDate === t ? 'text-violet-400'
+                    : task.dueDate === t ? 'text-primary-400'
                     : 'text-on-surface-variant'
                   }`}>{isOverdue ? '⚠ ' : ''}{formatDueDate(task.dueDate)}{isOverdue ? ' · overdue' : ''}</span>
                 )}
@@ -448,7 +448,7 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
           <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
             className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
         )}
-        <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
+        <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all text-xs">✏</button>
         <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
       </div>
     </div>
@@ -470,7 +470,7 @@ function RecurringRowActions({ taskTitle, skipped, onSkip, onEdit, onDelete }: {
     <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
       <button onClick={onSkip} title={skipped ? 'Undo excuse' : 'Excuse for today'}
         className={`p-1.5 rounded-lg transition-all text-xs ${skipped ? 'text-amber-500 bg-amber-500/15 opacity-100' : 'text-on-surface-variant/30 hover:text-amber-500 hover:bg-amber-500/15'}`}>⏸</button>
-      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
+      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all text-xs">✏</button>
       <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
     </div>
   )
@@ -487,7 +487,7 @@ function SimpleRowActions({ taskTitle, onEdit, onDelete }: { taskTitle: string; 
   }
   return (
     <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-violet-500 hover:bg-violet-500/10 transition-all text-xs">✏</button>
+      <button onClick={onEdit} className="p-1.5 rounded-lg text-on-surface-variant/30 hover:text-primary-500 hover:bg-primary-500/10 transition-all text-xs">✏</button>
       <button onClick={handleDelete} className="w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 transition-all">✕</button>
     </div>
   )
@@ -528,12 +528,12 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
   }
 
   return (
-    <div className="px-4 py-3 space-y-3 bg-violet-500/10 border-l-[3px] border-l-violet-400">
+    <div className="px-4 py-3 space-y-3 bg-primary-500/10 border-l-[3px] border-l-primary-400">
       <input autoFocus type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Task title"
         className="w-full text-sm font-medium bg-transparent border-0 outline-none text-on-surface placeholder-white/70 p-0" />
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description"
         className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
-      <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-violet-500/30">
+      <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-primary-500/30">
         <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
           📅 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none" />
         </label>
@@ -545,14 +545,14 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
         </label>
         <WeightPicker value={weight} onChange={setWeight} />
       </div>
-      <div className="border-t border-violet-500/30 pt-2">
+      <div className="border-t border-primary-500/30 pt-2">
         <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
         <KindPicker value={kind} onChange={setKind} size="sm" />
       </div>
-      <div className="border-t border-violet-500/30 pt-2 space-y-2">
+      <div className="border-t border-primary-500/30 pt-2 space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
           <div onClick={() => setIsRecurring(!isRecurring)}
-            className={`w-8 h-4 rounded-full transition-colors relative ${isRecurring ? 'bg-violet-600' : 'bg-on-surface-variant/20'}`}>
+            className={`w-8 h-4 rounded-full transition-colors relative ${isRecurring ? 'bg-primary-600' : 'bg-on-surface-variant/20'}`}>
             <div className={`absolute top-0.5 w-3 h-3 bg-surface-container rounded-full shadow transition-transform ${isRecurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
           </div>
           <span className="text-xs font-medium text-on-surface-variant">Repeat</span>
@@ -562,7 +562,7 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
             <div className="flex flex-wrap gap-1">
               {RECURRING_TYPES.map(rt => (
                 <button key={rt.value} type="button" onClick={() => setRecurringType(rt.value)}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${recurringType===rt.value ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${recurringType===rt.value ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                   {rt.label}
                 </button>
               ))}
@@ -571,7 +571,7 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
               <div className="flex gap-1">
                 {DAY_NAMES.map((d,i) => (
                   <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${recurringDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${recurringDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                     {d[0]}
                   </button>
                 ))}
@@ -584,9 +584,9 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
           </div>
         )}
       </div>
-      <div className="flex gap-2 justify-end border-t border-violet-500/30 pt-2">
+      <div className="flex gap-2 justify-end border-t border-primary-500/30 pt-2">
         <button onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
-        <button onClick={handleSave} disabled={!title.trim()} className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>
+        <button onClick={handleSave} disabled={!title.trim()} className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>
       </div>
     </div>
   )
@@ -626,7 +626,7 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
       <div className="border-t border-outline-variant/40 pt-2 space-y-2">
         <label className="flex items-center gap-2 cursor-pointer">
           <div onClick={() => setField('isRecurring',!form.isRecurring)}
-            className={`w-8 h-4 rounded-full transition-colors relative ${form.isRecurring ? 'bg-violet-600' : 'bg-on-surface-variant/20'}`}>
+            className={`w-8 h-4 rounded-full transition-colors relative ${form.isRecurring ? 'bg-primary-600' : 'bg-on-surface-variant/20'}`}>
             <div className={`absolute top-0.5 w-3 h-3 bg-surface-container rounded-full shadow transition-transform ${form.isRecurring ? 'translate-x-4' : 'translate-x-0.5'}`} />
           </div>
           <span className="text-xs font-medium text-on-surface-variant">Repeat</span>
@@ -636,7 +636,7 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
             <div className="flex flex-wrap gap-1">
               {RECURRING_TYPES.map(rt => (
                 <button key={rt.value} type="button" onClick={() => setField('recurringType',rt.value)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${form.recurringType===rt.value ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${form.recurringType===rt.value ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                   {rt.label}
                 </button>
               ))}
@@ -645,7 +645,7 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
               <div className="flex gap-1">
                 {DAY_NAMES.map((d,i) => (
                   <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.recurringDays.includes(i) ? 'bg-violet-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.recurringDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                     {d[0]}
                   </button>
                 ))}
@@ -661,7 +661,7 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
       <div className="flex gap-2 justify-end border-t border-outline-variant/40 pt-2">
         <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
         <button type="submit" disabled={!form.title.trim()||submitting||(form.isRecurring&&form.recurringType==='weekly'&&form.recurringDays.length===0)}
-          className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">Add Task</button>
+          className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors shadow-sm">Add Task</button>
       </div>
     </form>
   )

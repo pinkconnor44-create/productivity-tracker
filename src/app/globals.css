@@ -11,81 +11,61 @@ body {
   height: 100%;
 }
 
-/* ── Lumina design tokens ── */
-:root {
-  /* Accent (default: violet) */
-  --c-p:      139, 92, 246;
-  --c-p-hex:  #7c3aed;
-  --c-p-lt:   #a78bfa;
-  --c-p-dk:   #6d28d9;
-  --c-glow:   109, 40, 217;
-  --c-g-mid:  #06b6d4;
-  --c-g-end:  #adc6ff;
+/* ── Design tokens — void black + Electric Iris ──────────────────────────
+   The five-accent [data-theme] switcher is gone. A curated palette and a
+   colour picker are mutually exclusive, and the switcher was already only
+   ~75% effective: it intercepted bare violet classes only, so every
+   `bg-violet-500/10`, `/15`, `border-violet-500/30` etc. stayed violet on
+   the other four themes.
 
-  /* Lumina M3 surface ladder */
-  --surface: #0b1326;
-  --surface-dim: #0b1326;
-  --surface-bright: #31394d;
-  --surface-container-lowest: #060e20;
-  --surface-container-low: #131b2e;
-  --surface-container: #171f33;
-  --surface-container-high: #222a3d;
-  --surface-container-highest: #2d3449;
-  --on-surface: #dae2fd;
-  --on-surface-variant: #cbc3d7;
-  --outline: color-mix(in srgb, var(--c-p-hex) 55%, #0b1326);
-  --outline-variant: color-mix(in srgb, var(--c-p-hex) 32%, #0b1326);
-  /* RGB tuples for Tailwind alpha modifier (border-outline-variant/40 etc.) */
-  --outline-rgb:         76, 53, 145;   /* dark violet */
-  --outline-variant-rgb: 56, 39, 110;   /* darker violet */
-  --secondary: #adc6ff;
-  --secondary-container: #0566d9;
+   The metric hues are not decoration bolted onto a brand. Electric Iris is
+   both the primary action colour and Sleep; Saffron Spark is both the second
+   accent and Strain. */
+:root {
+  /* Electric Iris */
+  --c-p:      128, 82, 255;
+  --c-p-hex:  #8052ff;
+  --c-p-lt:   #b096ff;
+  --c-p-dk:   #6d3ae8;
+  --c-glow:   128, 82, 255;
+  --c-g-mid:  #9873ff;
+  --c-g-end:  #ffb829;   /* Saffron — violet-to-amber is the brand gradient */
+
+  /* Saffron Spark */
+  --c-a:      255, 184, 41;
+  --c-a-hex:  #ffb829;
+
+  /* Void surface ladder. Pure black canvas so the glow bloom has something
+     to bloom against; panels are near-black and translucent via .glass. */
+  --surface: #000000;
+  --surface-dim: #000000;
+  --surface-bright: #26262e;
+  --surface-container-lowest: #030304;
+  --surface-container-low: #08080b;
+  --surface-container: #0d0d11;
+  --surface-container-high: #15151b;
+  --surface-container-highest: #1d1d25;
+  --on-surface: #ffffff;
+  --on-surface-variant: #9a9a9a;   /* Dala ash gray */
+  --outline: rgb(120 112 150);
+  --outline-variant: rgb(84 80 108);
+  /* Tuned so the workhorse `border-outline-variant/40` (107 call sites)
+     reads as a hairline on black rather than a violet line. These tuples had
+     never actually rendered: a since-deleted !important block forced every
+     one of those borders to the accent regardless. */
+  /* Space-separated: Tailwind emits rgb(var(--x) / <alpha>), and mixing
+     commas with the slash is invalid CSS. The old comma tuples never showed
+     this because the deleted !important block overrode every use of them. */
+  --outline-rgb:         120 112 150;
+  --outline-variant-rgb:  84 80 108;
+  --secondary: #b096ff;
+  --secondary-container: #47219c;
 
   /* Status */
-  --success: 16, 185, 129;
-  --warn:    245, 158, 11;
+  --success: 74, 222, 128;
+  --warn:    255, 184, 41;
   --danger:  244, 63, 94;
   --info:    59, 130, 246;
-}
-[data-theme="green"] {
-  --c-p:     16, 185, 129;
-  --c-p-hex: #10b981;
-  --c-p-lt:  #34d399;
-  --c-glow:  5, 150, 105;
-  --c-g-mid: #06b6d4;
-  --c-g-end: #a78bfa;
-  --outline-rgb:          14, 102, 78;
-  --outline-variant-rgb:  10, 71,  55;
-}
-[data-theme="red"] {
-  --c-p:     244, 63, 94;
-  --c-p-hex: #f43f5e;
-  --c-p-lt:  #fb7185;
-  --c-glow:  225, 29, 72;
-  --c-g-mid: #fb923c;
-  --c-g-end: #e879f9;
-  --outline-rgb:          133, 38, 56;
-  --outline-variant-rgb:   92, 27, 40;
-}
-[data-theme="pink"] {
-  --c-p:     236, 72, 153;
-  --c-p-hex: #ec4899;
-  --c-p-lt:  #f472b6;
-  --c-glow:  219, 39, 119;
-  --c-g-mid: #a78bfa;
-  --c-g-end: #06b6d4;
-  --outline-rgb:          129, 41, 88;
-  --outline-variant-rgb:   90, 28, 62;
-}
-[data-theme="cyan"] {
-  --c-p:     6, 182, 212;
-  --c-p-hex: #06b6d4;
-  --c-p-lt:  #22d3ee;
-  --c-glow:  8, 145, 178;
-  --c-g-mid: #a78bfa;
-  --c-g-end: #adc6ff;
-  --outline-rgb:           7, 100, 117;
-  --outline-variant-rgb:   5,  70,  82;
 }
 
 /* Smooth transitions for interactive elements.
@@ -95,16 +75,6 @@ button, input, textarea, select {
   transition-property: background-color, border-color, color, box-shadow, opacity, transform;
   transition-duration: 0.15s;
   transition-timing-function: ease;
-}
-
-/* ── Force outline borders to dark-accent shade of active theme ── */
-.border-outline-variant       { border-color: rgba(var(--c-p), 0.55) !important; }
-.border-outline-variant\/40   { border-color: rgba(var(--c-p), 0.30) !important; }
-.border-outline-variant\/60   { border-color: rgba(var(--c-p), 0.45) !important; }
-.border-l-outline-variant\/60 { border-left-color: rgba(var(--c-p), 0.45) !important; }
-.border-outline               { border-color: rgba(var(--c-p), 0.65) !important; }
-.divide-outline-variant\/40 > :not([hidden]) ~ :not([hidden]) {
-  border-color: rgba(var(--c-p), 0.30) !important;
 }
 
 /* ── Scrollbar ── */
@@ -119,37 +89,40 @@ button, input, textarea, select {
    dropped, which halves the number of animatable objects for no visual loss. */
 * { transition-property: background-color, border-color, color; transition-duration: 150ms; }
 
-/* ── Aurora orbs ── */
-@keyframes aurora-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%       { transform: translate(40px, -30px) scale(1.06); }
-  66%       { transform: translate(-25px, 35px) scale(0.94); }
-}
+/* ── Ambient glow bloom ───────────────────────────────────────────────
+   Replaces three fixed blur(90px) layers with plain radial-gradients: no
+   filter pass, so the largest continuous compositing cost in the app goes
+   away entirely.
+
+   STATIC ON PURPOSE. `.glass` uses backdrop-filter, which makes the
+   compositor re-blur its backdrop on every frame the backdrop changes. With
+   these drifting and the dot-grid breathing, that was two full-viewport
+   layers animating forever behind every blurred panel — enough to wedge the
+   renderer on desktop, never mind a phone. A still bloom reads as depth
+   anyway; the motion was never the point. */
 .aurora-orb {
   position: fixed;
-  border-radius: 50%;
-  filter: blur(90px);
   pointer-events: none;
   z-index: 0;
-  will-change: transform;
+  border-radius: 50%;
 }
 .aurora-orb-1 {
-  width: 700px; height: 700px;
-  top: -250px; left: -150px;
-  background: radial-gradient(circle, rgba(var(--c-p), 0.35) 0%, transparent 70%);
-  animation: aurora-drift 22s ease-in-out infinite;
+  width: 900px; height: 900px;
+  top: -380px; left: 50%; margin-left: -450px;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--c-p), 0.30) 0%, rgba(var(--c-p), 0.10) 45%, transparent 100%);
 }
 .aurora-orb-2 {
-  width: 600px; height: 600px;
-  top: 35%; right: -200px;
-  background: radial-gradient(circle, rgba(173, 198, 255, 0.22) 0%, transparent 70%);
-  animation: aurora-drift 28s ease-in-out infinite reverse;
+  width: 700px; height: 700px;
+  top: 45%; right: -280px;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--c-p), 0.16) 0%, transparent 100%);
 }
 .aurora-orb-3 {
-  width: 500px; height: 500px;
-  bottom: -100px; left: 25%;
-  background: radial-gradient(circle, rgba(5, 102, 217, 0.2) 0%, transparent 70%);
-  animation: aurora-drift 34s ease-in-out infinite;
+  width: 620px; height: 620px;
+  bottom: -260px; left: -160px;
+  background: radial-gradient(circle closest-side,
+    rgba(var(--c-a), 0.10) 0%, transparent 100%);
 }
 
 /* ── Card hover lift ── */
@@ -215,18 +188,14 @@ button, input, textarea, select {
 .toast-exit  { animation: toast-out 0.18s ease forwards; }
 
 /* ── Dot-grid background ── */
-@keyframes grid-breathe {
-  0%, 100% { opacity: 0.45; }
-  50%       { opacity: 0.95; }
-}
 .dot-grid {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: radial-gradient(circle, rgba(var(--c-p), 0.14) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(var(--c-p), 0.10) 1px, transparent 1px);
   background-size: 28px 28px;
-  animation: grid-breathe 9s ease-in-out infinite;
+  opacity: 0.6;
 }
 
 /* ── Gradient shimmer text ── */
@@ -244,15 +213,25 @@ button, input, textarea, select {
   animation: gradient-shift 5s ease infinite;
 }
 
-/* ── Glassmorphism card ── */
+/* ── Glass ────────────────────────────────────────────────────────────
+   Actually translucent now. This was rgba(23,31,51,0.92) — 92% opaque, so
+   it paid for a 20px blur that showed essentially nothing.
+
+   No !important on the border, deliberately: 13 of the 15 .glass call sites
+   carry a bare `border` utility with no colour, and Tailwind's preflight
+   would otherwise paint them #e5e7eb. `.glass` (0,1,0) outranks preflight's
+   `*` (0,0,0), so the colour below wins without needing the hammer. */
 .glass {
-  background: rgba(23, 31, 51, 0.92) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(var(--c-p), 0.35) !important;
+  background: rgba(13, 13, 17, 0.62);
+  /* Prefixed FIRST, standard last. Declared the other way round, the CSS
+     optimiser kept only the -webkit- form and dropped the standard property
+     entirely — Chrome still blurred via the alias, but nothing else would. */
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow:
-    inset 0 1px 0 0 rgba(var(--c-p), 0.18),
-    0 8px 32px rgba(0, 0, 0, 0.55) !important;
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* ── Neon card hover glow ── */
@@ -363,125 +342,4 @@ button, input, textarea, select {
 }
 .neon-pulse {
   animation: neon-pulse 1.6s ease-in-out infinite;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   THEME OVERRIDES — dark-only, swap violet utilities per accent
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* ── GREEN theme ── */
-[data-theme="green"] .text-violet-600,
-[data-theme="green"] .text-violet-500,
-[data-theme="green"] .text-violet-400,
-[data-theme="green"] .text-violet-300 { color: #34d399 !important; }
-[data-theme="green"] .text-violet-200 { color: #a7f3d0 !important; }
-[data-theme="green"] .bg-violet-600 { background-color: #059669 !important; }
-[data-theme="green"] .bg-violet-500 { background-color: #10b981 !important; }
-[data-theme="green"] .bg-violet-400 { background-color: #34d399 !important; }
-[data-theme="green"] .border-violet-700 { border-color: #047857 !important; }
-[data-theme="green"] .border-violet-600 { border-color: #059669 !important; }
-[data-theme="green"] .border-violet-500 { border-color: #10b981 !important; }
-[data-theme="green"] .ring-violet-500 { --tw-ring-color: #10b981 !important; }
-[data-theme="green"] .ring-violet-400\/60 { --tw-ring-color: rgba(52,211,153,0.60) !important; }
-[data-theme="green"] .from-violet-500 { --tw-gradient-from: #10b981 !important; }
-[data-theme="green"] .to-violet-700   { --tw-gradient-to:   #047857 !important; }
-[data-theme="green"] .to-violet-600   { --tw-gradient-to:   #059669 !important; }
-
-/* ── RED theme ── */
-[data-theme="red"] .text-violet-600,
-[data-theme="red"] .text-violet-500,
-[data-theme="red"] .text-violet-400,
-[data-theme="red"] .text-violet-300 { color: #fb7185 !important; }
-[data-theme="red"] .text-violet-200 { color: #fecdd3 !important; }
-[data-theme="red"] .bg-violet-600 { background-color: #e11d48 !important; }
-[data-theme="red"] .bg-violet-500 { background-color: #f43f5e !important; }
-[data-theme="red"] .bg-violet-400 { background-color: #fb7185 !important; }
-[data-theme="red"] .border-violet-700 { border-color: #be123c !important; }
-[data-theme="red"] .border-violet-600 { border-color: #e11d48 !important; }
-[data-theme="red"] .border-violet-500 { border-color: #f43f5e !important; }
-[data-theme="red"] .ring-violet-500 { --tw-ring-color: #f43f5e !important; }
-[data-theme="red"] .ring-violet-400\/60 { --tw-ring-color: rgba(251,113,133,0.60) !important; }
-[data-theme="red"] .from-violet-500 { --tw-gradient-from: #f43f5e !important; }
-[data-theme="red"] .to-violet-700   { --tw-gradient-to:   #be123c !important; }
-[data-theme="red"] .to-violet-600   { --tw-gradient-to:   #e11d48 !important; }
-
-/* ── PINK theme ── */
-[data-theme="pink"] .text-violet-600,
-[data-theme="pink"] .text-violet-500,
-[data-theme="pink"] .text-violet-400,
-[data-theme="pink"] .text-violet-300 { color: #f472b6 !important; }
-[data-theme="pink"] .text-violet-200 { color: #fbcfe8 !important; }
-[data-theme="pink"] .bg-violet-600 { background-color: #db2777 !important; }
-[data-theme="pink"] .bg-violet-500 { background-color: #ec4899 !important; }
-[data-theme="pink"] .bg-violet-400 { background-color: #f472b6 !important; }
-[data-theme="pink"] .border-violet-700 { border-color: #be185d !important; }
-[data-theme="pink"] .border-violet-600 { border-color: #db2777 !important; }
-[data-theme="pink"] .border-violet-500 { border-color: #ec4899 !important; }
-[data-theme="pink"] .ring-violet-500 { --tw-ring-color: #ec4899 !important; }
-[data-theme="pink"] .ring-violet-400\/60 { --tw-ring-color: rgba(244,114,182,0.60) !important; }
-[data-theme="pink"] .from-violet-500 { --tw-gradient-from: #ec4899 !important; }
-[data-theme="pink"] .to-violet-700   { --tw-gradient-to:   #be185d !important; }
-[data-theme="pink"] .to-violet-600   { --tw-gradient-to:   #db2777 !important; }
-
-/* ── CYAN theme ── */
-[data-theme="cyan"] .text-violet-600,
-[data-theme="cyan"] .text-violet-500,
-[data-theme="cyan"] .text-violet-400,
-[data-theme="cyan"] .text-violet-300 { color: #22d3ee !important; }
-[data-theme="cyan"] .text-violet-200 { color: #a5f3fc !important; }
-[data-theme="cyan"] .bg-violet-600 { background-color: #0891b2 !important; }
-[data-theme="cyan"] .bg-violet-500 { background-color: #06b6d4 !important; }
-[data-theme="cyan"] .bg-violet-400 { background-color: #22d3ee !important; }
-[data-theme="cyan"] .border-violet-700 { border-color: #0e7490 !important; }
-[data-theme="cyan"] .border-violet-600 { border-color: #0891b2 !important; }
-[data-theme="cyan"] .border-violet-500 { border-color: #06b6d4 !important; }
-[data-theme="cyan"] .ring-violet-500 { --tw-ring-color: #06b6d4 !important; }
-[data-theme="cyan"] .ring-violet-400\/60 { --tw-ring-color: rgba(34,211,238,0.60) !important; }
-[data-theme="cyan"] .from-violet-500 { --tw-gradient-from: #06b6d4 !important; }
-[data-theme="cyan"] .to-violet-700   { --tw-gradient-to:   #0e7490 !important; }
-[data-theme="cyan"] .to-violet-600   { --tw-gradient-to:   #0891b2 !important; }
-
-/* ──────────────────────────────────────────────────────────────────────────
-   REDUCED MOTION
-   The app runs five permanently-looping animations — three blur(90px) fixed
-   aurora orbs, a breathing full-viewport dot grid, a streak glow, a neon
-   pulse and a text gradient shimmer — and until now honoured no motion
-   preference at all.
-
-   Blanket rule first (catches one-shot animations too: tab-fade, toasts,
-   calendar slide, completion burst — all collapse to their end state), then
-   explicit resting values for the few whose *appearance* is defined by the
-   animation rather than by their base rule.
-   ────────────────────────────────────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-
-  /* Ambient background: hold still rather than snapping to a keyframe end. */
-  .aurora-orb { animation: none !important; }
-  .dot-grid   { animation: none !important; opacity: 0.6; }
-
-  /* grid-breathe and gradient-shift define their own visible state, so a
-     frozen frame has to be pinned explicitly or they render wrong. */
-  .gradient-text { animation: none !important; background-position: 0% 50%; }
-
-  /* neon-pulse IS the "happening now" indicator — without it the dot is
-     indistinguishable from any other. Keep a static glow. */
-  .neon-pulse {
-    animation: none !important;
-    transform: none;
-    box-shadow: 0 0 6px rgba(var(--c-p), 0.9), 0 0 12px rgba(var(--c-p), 0.5);
-  }
-
-  .streak-glow {
-    animation: none !important;
-    filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.75));
-  }
-
-  /* Hover lift is motion for its own sake; keep the shadow, drop the travel. */
-  .card-lift:hover, .neon-card:hover { transform: none !important; }
 }

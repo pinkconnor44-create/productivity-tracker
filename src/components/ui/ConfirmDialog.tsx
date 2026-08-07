@@ -89,7 +89,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             autoFocus
             className={
               opts.danger === false
-                ? 'flex-1 py-2.5 rounded-xl text-sm font-semibold bg-violet-600 text-white hover:bg-violet-700 active:bg-violet-800 transition-colors'
+                ? 'flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 transition-colors'
                 : 'flex-1 py-2.5 rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 transition-colors'
             }
           >

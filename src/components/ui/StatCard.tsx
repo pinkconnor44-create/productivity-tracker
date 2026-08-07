@@ -6,7 +6,7 @@ type Props = {
   suffix?: ReactNode
   sub?: ReactNode
   // CSS color string (hex). When provided, used for the value text + bar fill.
-  // When omitted, uses on-surface for value and accent (violet-400) for bar.
+  // When omitted, uses on-surface for value and accent (primary-400) for bar.
   color?: string
   barPct?: number    // 0..100; if provided, renders a 3px progress bar
   className?: string
@@ -49,7 +49,7 @@ export function StatCard({ label, value, suffix, sub, color, barPct, className =
       {barPct != null && (
         <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full ${color ? '' : 'bg-violet-400'}`}
+            className={`h-full rounded-full ${color ? '' : 'bg-primary-400'}`}
             style={{ width: `${Math.max(0, Math.min(100, barPct))}%`, ...barStyle }}
           />
         </div>

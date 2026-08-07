@@ -4,8 +4,8 @@
   "description": "Track your tasks, habits, and daily score",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0d0d12",
-  "theme_color": "#7c3aed",
+  "background_color": "#000000",
+  "theme_color": "#8052ff",
   "orientation": "any",
   "icons": [
     {

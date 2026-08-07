@@ -1,5 +1,6 @@
 // Task kind palette — independent of accent theme.
-// Uses non-violet Tailwind colors so the [data-theme] overrides in globals.css don't recolor kind tags.
+// Deliberately off-palette (indigo/cyan/pink/amber/slate) so task kinds stay
+// visually distinct from the Electric Iris accent and the Bevel metric triad.
 // Each kind has: label, dot/ring hex (for SVG/inline use), and Tailwind utility classes.
 
 export type Kind = 'meeting' | 'focus' | 'personal' | 'admin' | 'planning'

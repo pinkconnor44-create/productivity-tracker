@@ -14,12 +14,12 @@ export default function DockedStopwatch() {
   const mStr = String(m).padStart(2, '0')
   const sStr = String(s).padStart(2, '0')
 
-  const timeColor = running ? 'text-violet-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/60'
+  const timeColor = running ? 'text-primary-300' : ms > 0 ? 'text-on-surface' : 'text-on-surface-variant/60'
 
   return (
     <div
       data-no-swipe
-      className="fixed z-[55] right-1.5 top-1/2 -translate-y-1/2 flex flex-col items-stretch gap-1.5 px-1.5 py-2 rounded-2xl bg-surface-container-high/95 border border-violet-400/40 shadow-2xl backdrop-blur-md select-none"
+      className="fixed z-[55] right-1.5 top-1/2 -translate-y-1/2 flex flex-col items-stretch gap-1.5 px-1.5 py-2 rounded-2xl bg-surface-container-high/95 border border-primary-400/40 shadow-2xl backdrop-blur-md select-none"
     >
       <button
         onClick={() => setMode('float')}
@@ -33,10 +33,10 @@ export default function DockedStopwatch() {
         <span className={`font-mono font-bold tabular-nums text-[13px] ${timeColor}`}>{mStr}</span>
         <span className="text-[8px] text-on-surface-variant/40 -my-0.5">:</span>
         <span className={`font-mono font-bold tabular-nums text-[13px] ${timeColor}`}>{sStr}</span>
-        {running && <span className="mt-1 w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />}
+        {running && <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse" />}
       </div>
       {!running ? (
-        <button onClick={start} className="w-7 h-7 flex items-center justify-center rounded-md bg-violet-600 text-white hover:bg-violet-700 text-[10px]" aria-label="Start">
+        <button onClick={start} className="w-7 h-7 flex items-center justify-center rounded-md bg-primary-600 text-white hover:bg-primary-700 text-[10px]" aria-label="Start">
           ▶
         </button>
       ) : (

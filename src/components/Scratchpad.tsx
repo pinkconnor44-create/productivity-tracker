@@ -183,14 +183,14 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
 
   if (!loaded) return (
     <div className="flex items-center justify-center py-8">
-      <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+      <div className="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
   return (
     <div>
       {embedded ? (
-        <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-violet-400 mb-3">
+        <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary-400 mb-3">
           Scratchpad
         </div>
       ) : (
@@ -249,7 +249,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
                   draggingIndex === index
                     ? 'opacity-40 scale-[0.98] bg-surface-container-lowest'
                     : dragOver === index && dragIndex.current !== index
-                      ? 'bg-violet-500/15 border-t-2 border-violet-400'
+                      ? 'bg-primary-500/15 border-t-2 border-primary-400'
                       : 'hover:bg-surface-container-low'
                 }`}
               >
@@ -261,7 +261,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
                   className={`mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                     item.done
                       ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
+                      : 'border-outline-variant hover:border-primary-400 hover:bg-primary-500/10'
                   }`}>
                   {item.done && (
                     <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
@@ -277,7 +277,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
                     onChange={e => setEditText(e.target.value)}
                     onBlur={() => commitEdit(item.id)}
                     onKeyDown={e => handleEditKeyDown(e, item.id)}
-                    className="flex-1 text-sm bg-transparent border-0 border-b border-violet-400 outline-none text-on-surface pb-0.5"
+                    className="flex-1 text-sm bg-transparent border-0 border-b border-primary-400 outline-none text-on-surface pb-0.5"
                   />
                 ) : (
                   <span
@@ -293,7 +293,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
                   <>
                     {!item.done && (
                       <button onClick={() => startEdit(item)}
-                        className="shrink-0 mt-0.5 p-1 rounded-lg text-on-surface hover:text-violet-400 hover:bg-violet-500/10 opacity-0 group-hover:opacity-100 transition-all text-xs">
+                        className="shrink-0 mt-0.5 p-1 rounded-lg text-on-surface hover:text-primary-400 hover:bg-primary-500/10 opacity-0 group-hover:opacity-100 transition-all text-xs">
                         ✏
                       </button>
                     )}
@@ -324,7 +324,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
           />
           {newItem.trim() && (
             <button onClick={addItem}
-              className="shrink-0 px-2.5 py-1 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm">
+              className="shrink-0 px-2.5 py-1 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
               Add
             </button>
           )}

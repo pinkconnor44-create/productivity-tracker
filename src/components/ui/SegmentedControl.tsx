@@ -39,7 +39,7 @@ export function SegmentedControl<T extends string>({
           onClick={() => onChange(o.value)}
           className={`shrink-0 px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${
             value === o.value
-              ? 'bg-violet-500/16 text-violet-300 border border-violet-400/30'
+              ? 'bg-primary-500/16 text-primary-300 border border-primary-400/30'
               : 'text-on-surface-variant/70 hover:text-on-surface'
           }`}
         >

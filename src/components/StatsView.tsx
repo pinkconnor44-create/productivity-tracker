@@ -104,7 +104,7 @@ function YearHeatmap({ scores, todayStr, onHover }: {
     const p = score.pct
     if (p === 100) return 'bg-emerald-400'
     if (p >= 75)  return 'bg-emerald-500/70'
-    if (p >= 50)  return 'bg-violet-500/70'
+    if (p >= 50)  return 'bg-primary-500/70'
     if (p >= 25)  return 'bg-amber-500/65'
     return 'bg-rose-500/70'
   }
@@ -144,7 +144,7 @@ function YearHeatmap({ scores, todayStr, onHover }: {
                     key={date}
                     className={`w-[14px] h-[14px] rounded-sm transition-all duration-150 ${bg}
                       ${interactive ? 'hover:brightness-110 hover:scale-125' : ''}
-                      ${isToday ? 'ring-2 ring-violet-500 ring-offset-1 ring-offset-surface' : ''}
+                      ${isToday ? 'ring-2 ring-primary-500 ring-offset-1 ring-offset-surface' : ''}
                       ${score?.pct === 100 ? 'shadow-sm shadow-emerald-400/40' : ''}
                     `}
                     onMouseMove={e => { if (interactive) onHover({ date, x: e.clientX, y: e.clientY }) }}
@@ -222,7 +222,7 @@ export default function StatsView() {
     <div className="space-y-5">
       <PageHeader
         eyebrow="Stats"
-        title={<>You&apos;re at <span className="text-violet-400">{avg7}%</span> this week</>}
+        title={<>You&apos;re at <span className="text-primary-400">{avg7}%</span> this week</>}
         right={
           <SegmentedControl
             ariaLabel="Time range"
@@ -305,14 +305,14 @@ export default function StatsView() {
       </div>
 
       {/* 365-day heatmap */}
-      <Section label="365-day Activity" color="#a78bfa" dotColor="#a78bfa">
+      <Section label="365-day Activity" color="#b096ff" dotColor="#b096ff">
         <Card padding={20}>
           {loading
             ? <div className="h-28 flex items-center justify-center text-on-surface-variant text-sm">Loading…</div>
             : <YearHeatmap scores={scores365} todayStr={t} onHover={setHeatTip} />}
           <div className="flex items-center gap-2 mt-4">
             <span className="text-[10px] text-on-surface-variant/60">Less</span>
-            {['bg-surface-container-low', 'bg-rose-500/70', 'bg-amber-500/65', 'bg-violet-500/70', 'bg-emerald-500/70', 'bg-emerald-400']
+            {['bg-surface-container-low', 'bg-rose-500/70', 'bg-amber-500/65', 'bg-primary-500/70', 'bg-emerald-500/70', 'bg-emerald-400']
               .map((c, i) => <div key={i} className={`w-[14px] h-[14px] rounded-sm ${c}`} />)}
             <span className="text-[10px] text-on-surface-variant/60">More</span>
           </div>
@@ -346,7 +346,7 @@ export default function StatsView() {
               <div className="text-on-surface-variant/70">No tracked items</div>
             )}
             {heatTip.date === t && (
-              <div className="text-violet-400 font-semibold mt-0.5">Today</div>
+              <div className="text-primary-400 font-semibold mt-0.5">Today</div>
             )}
           </div>
         </div>

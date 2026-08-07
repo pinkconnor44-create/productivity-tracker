@@ -261,7 +261,7 @@ export default function ProjectsView() {
 
   if (!loaded) return (
     <div className="flex items-center justify-center py-20">
-      <div className="w-6 h-6 border-2 border-violet-600 border-t-transparent rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -286,7 +286,7 @@ export default function ProjectsView() {
           className="flex-1 text-sm bg-transparent border-0 outline-none text-on-surface placeholder-white/50 px-1"
         />
         <button type="submit" disabled={!newTitle.trim() || adding}
-          className="px-3 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-40 transition-colors shadow-sm">
+          className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors shadow-sm">
           Add
         </button>
       </form>
@@ -342,7 +342,7 @@ export default function ProjectsView() {
                       if (e.key === 'Enter') { e.preventDefault(); commitTitle() }
                       if (e.key === 'Escape') setEditingTitle(false)
                     }}
-                    className="flex-1 text-base font-semibold bg-transparent border-0 border-b border-violet-400 outline-none text-on-surface pb-0.5"
+                    className="flex-1 text-base font-semibold bg-transparent border-0 border-b border-primary-400 outline-none text-on-surface pb-0.5"
                   />
                 ) : (
                   <h3 onDoubleClick={startEditTitle}
@@ -352,7 +352,7 @@ export default function ProjectsView() {
                 )}
                 {!editingTitle && (
                   <button onClick={startEditTitle} title="Rename"
-                    className="p-1.5 rounded-lg text-xs text-on-surface-variant/40 hover:text-violet-400 hover:bg-violet-500/10 transition-all">
+                    className="p-1.5 rounded-lg text-xs text-on-surface-variant/40 hover:text-primary-400 hover:bg-primary-500/10 transition-all">
                     ✏
                   </button>
                 )}
@@ -407,7 +407,7 @@ export default function ProjectsView() {
                         className={`mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                           item.done
                             ? 'bg-emerald-500 border-emerald-500 text-white'
-                            : 'border-outline-variant hover:border-violet-400 hover:bg-violet-500/10'
+                            : 'border-outline-variant hover:border-primary-400 hover:bg-primary-500/10'
                         }`}>
                         {item.done && (
                           <svg className="w-3 h-3" viewBox="0 0 12 12" fill="none">
@@ -443,7 +443,7 @@ export default function ProjectsView() {
                 />
                 {newItem.trim() && (
                   <button onClick={addItem}
-                    className="shrink-0 px-2.5 py-1 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors shadow-sm">
+                    className="shrink-0 px-2.5 py-1 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
                     Add
                   </button>
                 )}

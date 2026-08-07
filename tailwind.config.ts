@@ -27,9 +27,11 @@ const config: Config = {
         // `violet-N` -> `primary-N` sweep is a 1:1 rename that preserves all 7
         // shades in use and the 20 base/hover pairs that differ only by shade.
         // Collapsing these to one colour would silently kill every button hover.
-        // DEFAULT stays var-driven — `bg-primary` is already in use.
+        // DEFAULT is a plain hex, not rgb(var(--c-p) / <alpha>): --c-p is
+        // comma-separated (rgba() needs that) and mixing commas with the slash
+        // is invalid CSS. There is no theming left to justify the indirection.
         primary: {
-          DEFAULT: 'rgb(var(--c-p) / <alpha-value>)',
+          DEFAULT: '#8052ff',
           50: '#f2eeff',
           100: '#e6ddff',
           200: '#cdbaff',

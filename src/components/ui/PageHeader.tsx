@@ -15,7 +15,7 @@ export function PageHeader({ eyebrow, title, sub, right, className = '' }: Props
     <div className={`flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6 ${className}`}>
       <div className="min-w-0">
         {eyebrow && (
-          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-violet-400 mb-1.5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary-400 mb-1.5">
             {eyebrow}
           </div>
         )}

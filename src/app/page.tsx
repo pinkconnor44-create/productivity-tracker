@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Shell, { Tab } from '@/components/Shell'
 import CalendarView from '@/components/CalendarView'
 import TasksView from '@/components/TasksView'
 import HabitsView from '@/components/HabitsView'
 import StatsView from '@/components/StatsView'
-import SettingsView, { applyTheme, readAccentTheme } from '@/components/SettingsView'
+import SettingsView from '@/components/SettingsView'
 import LiftTracker from '@/components/LiftTracker'
 import ProjectsView from '@/components/ProjectsView'
 import ToastContainer from '@/components/ToastContainer'
@@ -13,11 +13,6 @@ import { StopwatchProvider } from '@/lib/stopwatch'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
-
-  useEffect(() => {
-    const accent = readAccentTheme()
-    if (accent !== 'violet') applyTheme(accent)
-  }, [])
 
   // Views are constructed once. Shell handles lazy-mount + keep-mounted via its
   // internal `mounted` set; views passed here don't execute until Shell mounts them.
@@ -41,16 +36,16 @@ export default function Home() {
       <svg width="0" height="0" className="absolute">
         <defs>
           <linearGradient id="wGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="100%" stopColor="#06b6d4" />
+            <stop offset="0%" stopColor="#4ade80" />
+            <stop offset="100%" stopColor="#22c55e" />
           </linearGradient>
           <linearGradient id="wYellow" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f59e0b" />
-            <stop offset="100%" stopColor="#fb923c" />
+            <stop offset="0%" stopColor="#ffb829" />
+            <stop offset="100%" stopColor="#f5a300" />
           </linearGradient>
           <linearGradient id="wRed" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#f43f5e" />
-            <stop offset="100%" stopColor="#fb923c" />
+            <stop offset="100%" stopColor="#f5a300" />
           </linearGradient>
         </defs>
       </svg>
