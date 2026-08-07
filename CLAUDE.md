@@ -18,7 +18,7 @@ Analytical, concise, no nonsense.
 - Next.js 16 App Router · React 19 · TypeScript · Prisma + libSQL/SQLite (Turso) · Tailwind CSS
 - No UI component libraries; SVG charts only (no chart libraries)
 - PWA (`public/manifest.json` + `public/sw.js`)
-- **Dark-only** Lumina design system — `dark` class hard-coded on `<html>`. Do **not** add `dark:` Tailwind prefixes.
+- **Dark-only** — `dark` class hard-coded on `<html>`. Do **not** add `dark:` Tailwind prefixes. No accent-theme switcher: one curated palette.
 - Fonts via `next/font/google` in `layout.tsx`: Space Grotesk (display, `--font-display`) + Manrope (body, `--font-body`)
 
 ## Features
@@ -29,7 +29,8 @@ Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, 
 - `src/app/api/` — route handlers: tasks, habits, lifts, lift-groups, projects, scratchpad, notes, scores, weekly-review, gmail-import, pwa-icon, shutdown, plus completion/skip endpoints
 - `src/components/` — view components (CalendarView, TasksView, HabitsView, LiftTracker, ProjectsView, StatsView, WeeklyReview, SettingsView, Scratchpad, ToastContainer, PWASetup) + `Shell.tsx` (sidebar/drawer chrome)
 - `src/components/ui/` — shared design primitives. Use these instead of building local copies — they route through the Lumina semantic ladder so accent themes flow through automatically:
-  `PageHeader`, `StatCard`, `Card`, `Section`, `KindChip`, `KindPicker`, `WeightChip`, `Checkbox`, `Eyebrow`, `Hairline`, `kindColors`, `scoreColor`, `ConfirmProvider` + `useConfirm`
+  `PageHeader`, `StatCard`, `Card`, `Section`, `KindChip`, `KindPicker`, `Ring`, `TrendChart`, `SegmentedControl`, `kindColors`, `metricColors` (`metricColor`/`statusFor`), `scoreColor`, `ConfirmProvider` + `useConfirm`.
+  (`WeightChip`, `Checkbox`, `Eyebrow`, `Hairline` were documented for a long time but never existed.)
 - `src/lib/` — `prisma.ts` (singleton client), `recurring.ts` (date-pattern helpers), `toast.ts` (window-event toast dispatcher)
 - `prisma/schema.prisma` — single source of truth. After editing, run `npm run db:push` to apply the schema to Turso (regenerates `prisma/schema.sql` and pushes via `scripts/push-schema.mjs`). The Vercel build no longer auto-pushes — push manually before deploy.
 - `docs/DESIGN.md` — design system spec
@@ -56,14 +57,19 @@ All data via `/api/*` route handlers (Prisma). Scores: `/api/scores`. Gmail impo
 - Env vars in `.env` (never commit) + Vercel dashboard. Required: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `DATABASE_URL=file:./prisma/dev.db` (typegen-only, not used at runtime).
 - Prod URL: `productivity-tracker-murex.vercel.app`
 
-## Design tokens (Lumina, M3-style)
+## Design tokens (Void / Electric Iris)
 Defined in `src/app/globals.css`, surfaced as Tailwind classes via `tailwind.config.ts`.
-- **Surfaces**: `bg-surface` (#0b1326 navy), `bg-surface-container-{lowest,low,'',high,highest}` (M3 elevation)
-- **Text**: `text-on-surface` (primary), `text-on-surface-variant` (secondary)
-- **Borders**: `border-outline-variant` (default), `border-outline`. **Forced to dark-accent shade** via `!important` rules in `globals.css` using `rgba(var(--c-p), <alpha>)`. Tailwind alpha modifiers (`/40`, `/60`) are bypassed for these — alpha is hardcoded per class. Add new alpha variants by appending to the override block.
-- **Accent themes** (5): violet (default), green, red, pink, cyan. Switched via `[data-theme="X"]` on `<html>`; persisted to `localStorage('accent-theme')`. CSS custom properties `--c-p` (rgb triplet), `--c-p-hex`, `--c-g-mid`, `--c-g-end` drive everything. Violet utilities (`text-violet-400`, `bg-violet-500/15`, etc.) are intercepted by `[data-theme]` overrides to swap accent — so use violet utilities for accent-colored UI, not raw hex.
-- **Status tints**: use semantic alpha (`bg-{emerald,amber,rose,blue}-500/{10,15,20}`) — never `bg-emerald-50` or `bg-emerald-900/20`.
-- **Utility classes**: `.glass` (92% opaque slate + 20px backdrop-blur + inner top-edge highlight), `.neon-card` (hover bloom + lift), `.btn-primary` (gradient + outer bloom), `.btn-ghost`, `.input-glass`, `.neon-pulse` (keyframe for "now" indicators)
+- **Surfaces**: `bg-surface` (#000000 — pure black canvas), `bg-surface-container-{lowest,low,'',high,highest}` (#030304 → #1d1d25)
+- **Text**: `text-on-surface` (#fff), `text-on-surface-variant` (#9a9a9a)
+- **Borders**: `border-outline-variant/40` is the workhorse hairline. The rgb tuples MUST stay space-separated — Tailwind emits `rgb(var(--x) / <alpha>)`, and mixing commas with the slash is invalid CSS and silently falls back to white.
+- **Accent**: single curated palette, **no theme switcher**. `primary-50…950` is Electric Iris (`#8052ff` at 500); `accent-*` is Saffron Spark (`#ffb829`). The ramp is shaped like Tailwind's violet scale so shade-for-shade hover pairs work. Use `primary-*`, never `violet-*`.
+- **Metric triad** (`ui/metricColors.ts`): Sleep = Electric Iris, Strain = Saffron, Recovery = green. These are the brand colours, not decoration.
+- **Type scale**: semantic, in `tailwind.config.ts` — `micro`(10) `tiny`(11) `caption`(12) `body`(14) `body-lg`(16) `title`(20) `headline`(24) `display-sm`(30) `display`(36) `metric`(48) `metric-lg`(64). Prefer these over arbitrary `text-[Npx]`.
+- **Radius ladder**: sm 4 / DEFAULT 6 / md 8 / lg 12 / xl 16 / 2xl 24 / 3xl 32. Cards use `2xl`, StatCards `xl`. (This was inverted for a long time — `2xl` was undeclared and fell to stock 16px while `xl` was 24px.)
+- **Status tints**: semantic alpha (`bg-{emerald,amber,rose,blue}-500/{10,15,20}`).
+- **Utilities**: `.glass` (62% opaque + 24px backdrop blur + white top-edge highlight — real translucency, the bloom reads through it), `.neon-card`, `.no-scrollbar`, `.neon-pulse`. `.btn-primary`/`.btn-ghost`/`.input-glass` exist in CSS but have **zero usages** — every button is hand-rolled Tailwind.
+- **Background**: three static radial-gradient blooms (`.aurora-orb-*`) + `.dot-grid`. Static on purpose — animating full-viewport layers behind `backdrop-filter` forces a per-frame re-blur.
+- **Reduced motion**: `@media (prefers-reduced-motion: reduce)` block at the end of globals.css.
 
 ## Conventions
 
