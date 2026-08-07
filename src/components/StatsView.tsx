@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { PageHeader, StatCard, Card, Section, scoreColor } from '@/components/ui'
+import { PageHeader, StatCard, Card, Section, scoreColor, SegmentedControl, TrendChart } from '@/components/ui'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -46,85 +46,6 @@ function calcLongestStreak(scores: ScoreData): number {
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 type Range = '30' | '90' | '365'
-
-// 90-day score line chart with 7-day moving avg overlay (Variation A's main chart pattern).
-function TrendChart({ data, onHover }: { data: { date: string; pct: number }[]; onHover: (tip: { x: number; y: number; text: string } | null) => void }) {
-  if (data.length === 0) return (
-    <div className="flex flex-col items-center justify-center h-40 gap-2">
-      <span className="text-2xl">📊</span>
-      <p className="text-sm text-on-surface-variant">No data yet</p>
-      <p className="text-xs text-on-surface-variant/30 text-center max-w-[220px]">Complete tasks and habits to start seeing your trend here.</p>
-    </div>
-  )
-
-  const W = 1000, H = 200
-  const PL = 36, PR = 16, PT = 16, PB = 28
-  const cw = W - PL - PR, ch = H - PT - PB
-  const n = data.length
-  const xOf = (i: number) => PL + (n === 1 ? cw/2 : (i / (n-1)) * cw)
-  const yOf = (pct: number) => PT + ch - (pct / 100) * ch
-
-  const points = data.map((d,i) => ({ x: xOf(i), y: yOf(d.pct), pct: d.pct, date: d.date }))
-  const linePath = points.map((p,i) => `${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  const areaPath = [
-    `M${points[0].x.toFixed(1)},${(PT+ch).toFixed(1)}`,
-    ...points.map(p => `L${p.x.toFixed(1)},${p.y.toFixed(1)}`),
-    `L${points[points.length-1].x.toFixed(1)},${(PT+ch).toFixed(1)}Z`,
-  ].join(' ')
-
-  // 7-day moving average
-  const avg = data.map((_, i) => {
-    const slice = data.slice(Math.max(0, i - 6), i + 1)
-    return slice.reduce((s, d) => s + d.pct, 0) / slice.length
-  })
-  const avgPath = avg.map((v, i) => `${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(' ')
-
-  // X-axis: month tick marks
-  const monthTicks: { i: number; label: string }[] = []
-  let lastMonth: string | null = null
-  for (let i = 0; i < n; i++) {
-    const m = data[i].date.slice(5, 7)
-    if (m !== lastMonth) { monthTicks.push({ i, label: MONTHS[Number(m)-1] }); lastMonth = m }
-  }
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-      <defs>
-        <linearGradient id="statsScoreFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--c-p-hex)" stopOpacity="0.30" />
-          <stop offset="100%" stopColor="var(--c-p-hex)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {[0,25,50,75,100].map(pct => {
-        const y = yOf(pct)
-        return (
-          <g key={pct}>
-            <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="rgba(var(--c-p),0.10)" strokeWidth="1" strokeDasharray={pct === 0 || pct === 100 ? '' : '2,4'} />
-            <text x={PL-6} y={y+4} textAnchor="end" fontSize="10" fill="#6b7088" fontWeight="600">{pct}</text>
-          </g>
-        )
-      })}
-      {monthTicks.map(t => (
-        <text key={t.i} x={xOf(t.i)} y={H-8} textAnchor="start" fontSize="10" fill="#8b8da3" fontWeight="700" letterSpacing="0.08em">{t.label.toUpperCase()}</text>
-      ))}
-      <path d={areaPath} fill="url(#statsScoreFill)" />
-      <path d={linePath} fill="none" stroke="var(--c-p-hex)" strokeOpacity="0.55" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d={avgPath} fill="none" stroke="var(--c-p-hex)" strokeWidth="2.5" strokeLinejoin="round" />
-      {points.map((p,i) => {
-        const isToday = p.date === today()
-        return (
-          <g key={i}
-            onMouseEnter={e => onHover({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
-            onMouseMove={e => onHover({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${p.pct}%` })}
-            onMouseLeave={() => onHover(null)}>
-            <circle cx={p.x} cy={p.y} r="6" fill="transparent" />
-            {isToday && <circle cx={p.x} cy={p.y} r="4" fill="var(--c-p-hex)" stroke="#0b1326" strokeWidth="2" />}
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
 
 // Day-of-week breakdown bars (90d avg score by weekday)
 function WeekdayBars({ data }: { data: { date: string; pct: number }[] }) {
@@ -303,14 +224,12 @@ export default function StatsView() {
         eyebrow="Stats"
         title={<>You&apos;re at <span className="text-violet-400">{avg7}%</span> this week</>}
         right={
-          <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
-            {(['30','90','365'] as Range[]).map(r => (
-              <button key={r} onClick={() => setRange(r)}
-                className={`px-3 py-1.5 rounded-md text-[12px] font-semibold transition-colors ${
-                  range===r ? 'bg-violet-500/16 text-violet-300 border border-violet-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
-                }`}>{r}d</button>
-            ))}
-          </div>
+          <SegmentedControl
+            ariaLabel="Time range"
+            options={(['30','90','365'] as Range[]).map(r => ({ value: r, label: `${r}d` }))}
+            value={range}
+            onChange={setRange}
+          />
         }
       />
 
@@ -339,7 +258,7 @@ export default function StatsView() {
         <Card padding={20}>
           {loading
             ? <div className="flex items-center justify-center h-40 text-on-surface-variant text-sm">Loading…</div>
-            : <TrendChart data={chartData} onHover={setChartTip} />}
+            : <TrendChart data={chartData.map(d => ({ date: d.date, value: d.pct }))} onHover={setChartTip} domain={[0, 100]} gridValues={[0, 25, 50, 75, 100]} />}
         </Card>
       </Section>
 
