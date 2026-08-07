@@ -106,6 +106,19 @@ function str(v: unknown): string | null {
   return typeof v === 'string' && v.trim() !== '' ? v : null
 }
 
+/** First candidate that is a real, positive number.
+ *
+ *  Needed because HAE emits `"asleep": 0` alongside a populated `totalSleep`
+ *  on most nights — 58 of 62 in the first real 90-day export. A plain
+ *  first-non-null pick returns that 0, which is indistinguishable from "slept
+ *  zero hours" and silently destroys the night. Zero is not a measurement
+ *  here; it is HAE's way of saying "this field is not the one carrying the
+ *  value". */
+function firstPositive(...vals: (number | null | undefined)[]): number | null {
+  for (const v of vals) if (v != null && Number.isFinite(v) && v > 0) return v
+  return null
+}
+
 /** Canonical snake_case metric key. Unknown metrics keep their normalised
  *  name and are still stored — nothing is dropped for being unrecognised. */
 export function normaliseMetricName(name: string): string {
@@ -205,16 +218,23 @@ function parseSleepPoint(pt: Record<string, unknown>, units: string | null): Sle
   const date = toLocalDay(end) ?? toLocalDay(pick(pt, 'date')) ?? toLocalDay(start)
   if (!date) return null
 
-  const asleep = sleepToMinutes(pick(pt, 'asleep', 'totalSleep', 'asleepUnspecified'), units)
   const core = sleepToMinutes(pick(pt, 'core', 'light'), units)
   const deep = sleepToMinutes(pick(pt, 'deep'), units)
   const rem = sleepToMinutes(pick(pt, 'rem'), units)
   const awake = sleepToMinutes(pick(pt, 'awake'), units)
-  const inBed = sleepToMinutes(pick(pt, 'inBed', 'in_bed'), units)
+  const inBed = firstPositive(sleepToMinutes(pick(pt, 'inBed', 'in_bed'), units))
 
-  // Older HAE builds report only inBed + stages and no `asleep` total.
-  const stageSum = [core, deep, rem].filter((x): x is number => x != null).reduce((s, x) => s + x, 0)
-  const asleepFinal = asleep ?? (stageSum > 0 ? stageSum : null)
+  // In the real export, `asleep` is not the total — it is the *unspecified
+  // stage* component, and totalSleep = core + deep + rem + asleep. So
+  // totalSleep is preferred, and the fallback sums all four rather than only
+  // the three named stages. Older HAE builds that emit no total at all still
+  // work via that sum.
+  const unspecified = sleepToMinutes(pick(pt, 'asleep', 'asleepUnspecified'), units)
+  const total = sleepToMinutes(pick(pt, 'totalSleep'), units)
+  const stageSum = [core, deep, rem, unspecified]
+    .filter((x): x is number => x != null && Number.isFinite(x))
+    .reduce((s, x) => s + x, 0)
+  const asleepFinal = firstPositive(total, stageSum, unspecified)
 
   if (asleepFinal == null && inBed == null) return null
   return {
@@ -267,8 +287,21 @@ function parseWorkout(w: Record<string, unknown>): WorkoutRow | null {
     avgHr: num(pick(w, 'avgHeartRate', 'heartRateAvg', 'averageHeartRate')),
     maxHr: num(pick(w, 'maxHeartRate', 'heartRateMax')),
     distanceKm: kmFrom(distRaw, distUnits),
-    raw: JSON.stringify(w),
+    raw: JSON.stringify(scalarsOnly(w)),
   }
+}
+
+/** Workout minus its per-minute sample arrays.
+ *
+ *  A real workout carries heartRateData / activeEnergy / basalEnergy /
+ *  stepCount arrays and weighs 8–25KB; the scalars we might ever want to
+ *  reprocess are a few hundred bytes. `raw` exists so a parser fix can
+ *  reprocess history without a re-export — it is not a sample archive, and
+ *  storing one in a row we read on every page load is pure cost. */
+function scalarsOnly(w: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(w)) if (!Array.isArray(v)) out[k] = v
+  return out
 }
 
 function spanMinutes(start: string | null, end: string | null): number | null {

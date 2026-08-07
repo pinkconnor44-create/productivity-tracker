@@ -41,7 +41,7 @@ check('wrong key → 401', bad.status === 401, `got ${bad.status}`)
 // 2 — valid import returns counts and skips the two malformed points
 const first = await post(payload)
 check('valid import → 200', first.status === 200, `got ${first.status}`)
-check('metrics written', first.json?.metrics === 11, `got ${first.json?.metrics}`)
+check('metrics written', first.json?.metrics === 13, `got ${first.json?.metrics}`)
 check('sleep nights written', first.json?.sleep === 2, `got ${first.json?.sleep}`)
 check('workouts written', first.json?.workouts === 2, `got ${first.json?.workouts}`)
 check('malformed points skipped, not fatal', first.json?.skipped === 2, `got ${first.json?.skipped}`)
@@ -68,7 +68,14 @@ const read = await fetch(`${base}/api/health?start=2026-08-01&end=2026-08-07`).t
 check('read API returns days', Array.isArray(read.days) && read.days.length === 7, `got ${read.days?.length}`)
 const d6 = read.days?.find(d => d.date === '2026-08-06')
 check('2026-08-06 has sleep', d6?.sleep?.asleepMin != null, `asleepMin=${d6?.sleep?.asleepMin}`)
+// The real-export shape: asleep===0 with totalSleep carrying the value. A
+// first-non-null pick returns the 0 and the night reads as zero hours slept.
 check('2026-08-06 sleep minutes converted from hours', Math.round(d6?.sleep?.asleepMin) === 353, `got ${d6?.sleep?.asleepMin}`)
+check('asleep:0 does not beat totalSleep', d6?.sleep?.asleepMin > 0, `got ${d6?.sleep?.asleepMin}`)
+check('inBed:0 stored as null, not zero', d6?.sleep?.inBedMin === null, `got ${d6?.sleep?.inBedMin}`)
+// apple_stand_hour and apple_stand_time must not collide on one UI key.
+check('stand hours reads the hour count, not the minutes', d6?.metrics?.standHours === 11, `got ${d6?.metrics?.standHours}`)
+check('stand minutes kept separately in extra', d6?.extra?.apple_stand_time === 64, `got ${d6?.extra?.apple_stand_time}`)
 check('sleep score in range', d6?.scores?.sleep > 0 && d6?.scores?.sleep <= 100, `got ${d6?.scores?.sleep}`)
 check('hrv mapped', d6?.metrics?.hrv === 64.1, `got ${d6?.metrics?.hrv}`)
 check('steps mapped', d6?.metrics?.steps === 11402, `got ${d6?.metrics?.steps}`)
@@ -77,9 +84,13 @@ check('workouts attached to the day', d6?.workouts?.length === 1, `got ${d6?.wor
 check('workout duration from timestamps (min)', Math.round(d6?.workouts?.[0]?.durationMin) === 67, `got ${d6?.workouts?.[0]?.durationMin}`)
 const d5 = read.days?.find(d => d.date === '2026-08-05')
 check('miles converted to km', Math.abs(d5?.workouts?.[0]?.distanceKm - 3.862) < 0.01, `got ${d5?.workouts?.[0]?.distanceKm}`)
-// First day in range has no trailing HRV/RHR baseline, so recovery renormalises
-// onto its one available component (sleep) instead of scoring the day as bad.
-check('recovery renormalises to sleep-only on day 1', d5?.scores?.recovery === d5?.scores?.sleep, `recovery=${d5?.scores?.recovery} sleep=${d5?.scores?.sleep}`)
+// Deliberately NOT asserting "recovery === sleep on day 1". That holds only
+// against an empty database; as soon as any prior days exist the day has real
+// HRV/RHR baselines and recovery correctly stops being sleep-only. Assert the
+// state-independent invariant instead: a day with sleep always scores, and
+// always inside the range.
+const rec = d5?.scores?.recovery
+check('recovery scores whenever sleep exists', typeof rec === 'number' && rec > 0 && rec <= 100, `got ${rec}`)
 
 console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) failed.`)
 process.exit(failures === 0 ? 0 : 1)

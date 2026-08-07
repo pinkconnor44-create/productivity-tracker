@@ -40,7 +40,10 @@ export const METRIC_DEFS: MetricDef[] = [
   { key: 'activeKcal',  aliases: ['active_energy', 'active_energy_burned'], field: 'qty', label: 'Active',      unit: 'kcal',  decimals: 0 },
   { key: 'basalKcal',   aliases: ['basal_energy_burned', 'resting_energy'], field: 'qty', label: 'Resting',     unit: 'kcal',  decimals: 0 },
   { key: 'exerciseMin', aliases: ['apple_exercise_time', 'exercise_time'],  field: 'qty', label: 'Exercise',    unit: 'min',   decimals: 0 },
-  { key: 'standHours',  aliases: ['apple_stand_hour', 'stand_hours', 'apple_stand_time'], field: 'qty', label: 'Stand', unit: 'hr', decimals: 0 },
+  // NOT apple_stand_time: HAE sends both, and they are different quantities
+  // (stand *hours* count vs stand *minutes*). Aliasing both to one key made
+  // whichever row happened to be read last silently win.
+  { key: 'standHours',  aliases: ['apple_stand_hour', 'stand_hours'],      field: 'qty', label: 'Stand',       unit: 'hr',    decimals: 0 },
   { key: 'steps',       aliases: ['step_count', 'steps'],                   field: 'qty', label: 'Steps',       unit: '',      decimals: 0 },
   { key: 'walkingHr',   aliases: ['walking_heart_rate_average'],            field: 'avg', label: 'Walking HR',  unit: 'bpm',   decimals: 0 },
   { key: 'wristTemp',   aliases: ['apple_sleeping_wrist_temperature', 'wrist_temperature'], field: 'avg', label: 'Wrist temp', unit: '°', decimals: 1 },

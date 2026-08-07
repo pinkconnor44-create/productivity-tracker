@@ -58,16 +58,33 @@
             "awake": 0.31
           },
           {
+            "_comment": "The shape the REAL export actually uses: asleep and inBed are 0, totalSleep carries the value, and totalSleep = core + deep + rem + asleep. A first-non-null pick returns the 0 and destroys the night — this happened on 58 of 62 nights in the first real export.",
             "date": "2026-08-06 00:00:00 -0400",
             "sleepStart": "2026-08-05 23:58:00 -0400",
             "sleepEnd": "2026-08-06 06:12:00 -0400",
-            "inBed": 6.23,
-            "asleep": 5.88,
+            "inBed": 0,
+            "asleep": 0,
+            "totalSleep": 5.88,
             "core": 3.61,
             "deep": 0.72,
             "rem": 1.55,
             "awake": 0.35
           }
+        ]
+      },
+      {
+        "_comment": "apple_stand_hour and apple_stand_time are DIFFERENT quantities (hours count vs minutes). Both were once aliased to the same UI key, so whichever row was read last silently won.",
+        "name": "apple_stand_hour",
+        "units": "count",
+        "data": [
+          { "date": "2026-08-06 00:00:00 -0400", "qty": 11 }
+        ]
+      },
+      {
+        "name": "apple_stand_time",
+        "units": "min",
+        "data": [
+          { "date": "2026-08-06 00:00:00 -0400", "qty": 64 }
         ]
       },
       {
