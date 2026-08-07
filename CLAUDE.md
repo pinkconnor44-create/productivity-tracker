@@ -28,7 +28,7 @@ Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, 
 - `src/app/` — Next.js App Router (pages, layout, API routes)
 - `src/app/api/` — route handlers: tasks, habits, lifts, lift-groups, projects, scratchpad, notes, scores, weekly-review, gmail-import, pwa-icon, shutdown, plus completion/skip endpoints
 - `src/components/` — view components (CalendarView, TasksView, HabitsView, LiftTracker, ProjectsView, StatsView, WeeklyReview, SettingsView, Scratchpad, ToastContainer, PWASetup) + `Shell.tsx` (sidebar/drawer chrome)
-- `src/components/ui/` — shared design primitives. Use these instead of building local copies — they route through the Lumina semantic ladder so accent themes flow through automatically:
+- `src/components/ui/` — shared design primitives. Use these instead of building local copies — they route through the semantic token ladder so the palette stays consistent:
   `PageHeader`, `StatCard`, `Card`, `Section`, `KindChip`, `KindPicker`, `Ring`, `TrendChart`, `SegmentedControl`, `kindColors`, `metricColors` (`metricColor`/`statusFor`), `scoreColor`, `ConfirmProvider` + `useConfirm`.
   (`WeightChip`, `Checkbox`, `Eyebrow`, `Hairline` were documented for a long time but never existed.)
 - `src/lib/` — `prisma.ts` (singleton client), `recurring.ts` (date-pattern helpers), `toast.ts` (window-event toast dispatcher)
@@ -36,7 +36,7 @@ Tasks (with `kind` tag: meeting / focus / personal / admin / planning), Habits, 
 - `docs/DESIGN.md` — design system spec
 
 ## Shell (`src/components/Shell.tsx`)
-- Desktop: 240px fixed sidebar (`md:+`) — logo + Today widget (score % + 🔥 streak) + flat draggable nav + footer (Settings + Power)
+- Desktop: 240px fixed sidebar (`md:+`) — logo + Today widget (score Ring + 🔥 streak) + flat draggable nav + footer (Settings + Power)
 - Mobile: hamburger drawer; top bar shows greeting + streak chip; backdrop / Esc closes; body-scroll-locks while open
 - Single flat nav list (no section labels). Order persists to `localStorage('nav-order-v1')`; `loadOrder()` filters saved ids against `NAV_ITEMS`, so adding/removing a tab needs no migration. Settings + Power anchored in footer, not draggable.
 - **Reorder gesture** (`NavItem`): pointer-event long-press (300ms) → drag, hit-tested via `document.elementFromPoint` on `[data-tab]`. Three things it is easy to break:
