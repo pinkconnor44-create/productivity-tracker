@@ -16,7 +16,8 @@ Analytical, concise, no nonsense.
 
 ## Stack
 - Next.js 16 App Router · React 19 · TypeScript · Prisma + libSQL/SQLite (Turso) · Tailwind CSS
-- No UI component libraries; SVG charts only (no chart libraries)
+- Charts are hand-rolled SVG (no chart libraries) — keeps them on the design tokens
+- 3D: `three` + `@react-three/fiber` + `@react-three/drei` + `@react-three/postprocessing`, used only for the calendar orrery hero (`src/components/orrery/`). Dynamically imported, `ssr:false`, desktop-only, IntersectionObserver-gated — it must never reach the initial bundle or a phone.
 - PWA (`public/manifest.json` + `public/sw.js`)
 - **Dark-only** — `dark` class hard-coded on `<html>`. Do **not** add `dark:` Tailwind prefixes. No accent-theme switcher: one curated palette.
 - Fonts via `next/font/google` in `layout.tsx`: Space Grotesk (display, `--font-display`) + Manrope (body, `--font-body`)
