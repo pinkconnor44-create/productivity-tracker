@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, ReactNode, useCallback } from 'react'
-import { scoreColor } from '@/components/ui'
+import { scoreColor, Ring } from '@/components/ui'
 import DockedStopwatch from '@/components/DockedStopwatch'
 import FloatingStopwatch from '@/components/FloatingStopwatch'
 
@@ -395,30 +395,25 @@ function Logo() {
   )
 }
 
+// C6: the big-number-plus-bar became a Ring. Same data, but the dial reads at
+// a glance from across the room, which a 3px bar never did.
 function TodayWidget({ pct, streak }: { pct: number; streak: number }) {
-  const c = scoreColor(pct)
   return (
-    <div className="px-3.5 py-3 rounded-xl bg-surface-container-low border border-outline-variant/40">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50">
-          Today
-        </span>
-        {streak > 0 && (
-          <span className="streak-glow text-[11px] font-bold text-orange-400 leading-none whitespace-nowrap">
-            🔥 {streak}d
+    <div className="px-3.5 py-3.5 rounded-xl glass flex items-center gap-3.5">
+      <Ring pct={pct} size={62} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-micro font-bold uppercase tracking-[0.16em] text-on-surface-variant/50">
+            Today
           </span>
-        )}
+          {streak > 0 && (
+            <span className="streak-glow text-tiny font-bold text-orange-400 leading-none whitespace-nowrap">
+              🔥 {streak}d
+            </span>
+          )}
+        </div>
+        <div className="text-tiny text-on-surface-variant/55 mt-1.5 leading-tight">{fmtToday()}</div>
       </div>
-      <div className="flex items-baseline gap-1 mt-1.5">
-        <span className="font-display text-[28px] font-semibold leading-none tracking-[-0.02em] tabular-nums" style={{ color: c }}>
-          {pct}
-        </span>
-        <span className="text-[12px] font-semibold text-on-surface-variant/70">%</span>
-      </div>
-      <div className="h-[3px] bg-white/5 rounded-full mt-2 overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c }} />
-      </div>
-      <div className="text-[11px] text-on-surface-variant/55 mt-2 leading-none">{fmtToday()}</div>
     </div>
   )
 }

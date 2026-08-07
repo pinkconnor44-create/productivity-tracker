@@ -287,12 +287,12 @@ export default function CalendarView() {
         title={periodLabel()}
         right={
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex bg-surface-container-low border border-outline-variant/40 rounded-lg p-0.5 gap-0.5">
+            <div className="flex glass rounded-lg p-0.5 gap-0.5">
               {(['month','week','day'] as View[]).map(v => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded-md text-[12px] font-semibold capitalize transition-colors ${
+                  className={`px-3 py-1.5 rounded-md text-caption font-semibold capitalize transition-colors ${
                     view === v ? 'bg-primary-500/16 text-primary-300 border border-primary-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
                   }`}
                 >
@@ -302,7 +302,7 @@ export default function CalendarView() {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => navigate(-1)} aria-label="Previous" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">←</button>
-              <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-[12px] font-semibold bg-surface-container-low border border-outline-variant/40 rounded-lg text-on-surface-variant hover:text-primary-300 transition-colors">Today</button>
+              <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-caption font-semibold glass rounded-lg text-on-surface-variant hover:text-primary-300 transition-colors">Today</button>
               <button onClick={() => navigate(1)} aria-label="Next" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">→</button>
             </div>
           </div>
@@ -369,7 +369,7 @@ function YearSpine({ scores, today: todayStrVal, onSelectDay }: {
   const gap = 2
   const cols = Math.ceil(days.length / 30)
   return (
-    <div className="flex flex-col gap-2 px-2 py-3 bg-surface-container-low border border-outline-variant/40 rounded-2xl">
+    <div className="flex flex-col gap-2 px-2 py-3 glass rounded-2xl">
       <div className="text-[9px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/50 px-1">{year}</div>
       <div
         className="grid"
@@ -428,7 +428,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
     <div className="bg-surface-container rounded-2xl border border-outline-variant/40 overflow-hidden">
       <div className="grid grid-cols-7 border-b border-outline-variant/40">
         {WEEKDAYS.map(wd => (
-          <div key={wd} className="py-2.5 text-center text-[10px] font-bold text-on-surface-variant/55 uppercase tracking-[0.12em]">{wd}</div>
+          <div key={wd} className="py-2.5 text-center text-micro font-bold text-on-surface-variant/55 uppercase tracking-[0.12em]">{wd}</div>
         ))}
       </div>
       <div className="grid grid-cols-7">
@@ -465,8 +465,8 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                 <div className={`flex items-center justify-between w-full shrink-0 transition-opacity duration-200 ${isModalOpen ? 'opacity-20' : ''}`}>
                   <span className={`tabular-nums leading-none ${
                     isToday
-                      ? 'font-display text-[20px] font-bold text-primary-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
-                      : 'text-[16px] font-medium text-on-surface'
+                      ? 'font-display text-title font-bold text-primary-300 drop-shadow-[0_0_10px_rgba(167,139,250,0.55)]'
+                      : 'text-body-lg font-medium text-on-surface'
                   }`}>{dayNum}</span>
                   <div className="flex items-center gap-1.5">
                     {notes[date] && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="Has note" />}
@@ -491,7 +491,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         <div
                           key={t.id}
                           title={`${t.time ? formatTime(t.time) + ' · ' : ''}${t.title}`}
-                          className={`flex items-center gap-0.5 max-w-full sm:w-full px-0.5 sm:px-1 py-px rounded-full border text-[7px] sm:text-[10px] leading-tight overflow-hidden ${
+                          className={`flex items-center gap-0.5 max-w-full sm:w-full px-0.5 sm:px-1 py-px rounded-full border text-[9px] sm:text-micro leading-tight overflow-hidden ${
                             done ? 'opacity-40 line-through' : ''
                           }`}
                           style={{
@@ -510,7 +510,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                       )
                     })}
                     {sortedTasks.length > 3 && (
-                      <span className="text-[8px] font-semibold text-on-surface-variant/55 leading-none px-0.5">
+                      <span className="text-[9px] font-semibold text-on-surface-variant/55 leading-none px-0.5">
                         +{sortedTasks.length - 3} more
                       </span>
                     )}
@@ -546,7 +546,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
             className="glass fixed z-[60] w-52 rounded-xl p-3 pointer-events-none"
             style={{ top, left }}
           >
-            <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+            <div className="text-micro font-bold text-on-surface-variant uppercase tracking-wider mb-2">
               {new Date(hover.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
             </div>
             <div className="space-y-1.5">
@@ -563,7 +563,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
                         {task.title}
                       </div>
                       {task.time && (
-                        <div className="text-[10px] text-primary-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
+                        <div className="text-micro text-primary-400">{formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</div>
                       )}
                     </div>
                   </div>
@@ -571,7 +571,7 @@ function MonthView({ currentDate, scores, tasksForDate, habitsForDate, isTaskDon
               })}
             </div>
             {hasNote && (
-              <div className="text-[10px] text-amber-400 mt-2 pt-2 border-t border-outline-variant">
+              <div className="text-micro text-amber-400 mt-2 pt-2 border-t border-outline-variant">
                 📝 {notes[hover.date].length > 60 ? notes[hover.date].slice(0, 60) + '…' : notes[hover.date]}
               </div>
             )}
@@ -638,7 +638,7 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
           items.push(
             <button key={task.id} onClick={() => onToggleTask(task, date)}
               title={`${task.time ? formatTime(task.time) + ' · ' : ''}${task.title}`}
-              className={`w-full text-left text-[7px] sm:text-[10px] px-0.5 sm:px-1 py-1 rounded-md flex flex-col gap-0.5 border overflow-hidden transition-colors ${
+              className={`w-full text-left text-[9px] sm:text-micro px-0.5 sm:px-1 py-1 rounded-md flex flex-col gap-0.5 border overflow-hidden transition-colors ${
                 done ? 'opacity-40 line-through' : ''
               }`}
               style={{
@@ -675,14 +675,14 @@ function WeekView({ currentDate, scores, tasksForDate, isTaskDone, onSelectDay, 
                 ? 'bg-gradient-to-b from-primary-500 to-primary-700 text-white border-primary-600'
                 : 'bg-surface-container-high border-outline-variant/40 text-on-surface'
             }`}>
-              <div className="text-[10px] font-semibold uppercase tracking-wide opacity-75">{WEEKDAYS[d.getDay()]}</div>
+              <div className="text-micro font-semibold uppercase tracking-wide opacity-75">{WEEKDAYS[d.getDay()]}</div>
               <div className="text-lg font-bold leading-tight">{d.getDate()}</div>
               {score && !isFuture && (
-                <div className={`text-[10px] font-bold mt-0.5 ${isToday ? 'text-primary-200' : 'text-primary-400'}`}>{score.pct}%</div>
+                <div className={`text-micro font-bold mt-0.5 ${isToday ? 'text-primary-200' : 'text-primary-400'}`}>{score.pct}%</div>
               )}
             </button>
             <div className="p-1.5 space-y-0.5">
-              {items.length === 0 && <p className="text-[10px] text-on-surface-variant/30 text-center py-2">—</p>}
+              {items.length === 0 && <p className="text-micro text-on-surface-variant/30 text-center py-2">—</p>}
               {items}
             </div>
           </div>
@@ -777,7 +777,7 @@ function DayTaskEditForm({ task, onSave, onCancel }: { task: Task; onSave: (data
         <TimePickerInput value={endTime} onChange={setEndTime} label="End" />
       </div>
       <div>
-        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
+        <div className="text-micro font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
         <KindPicker value={kind} onChange={setKind} size="sm" />
       </div>
       <div className="flex gap-2">
@@ -932,15 +932,15 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                     <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : done ? 'line-through text-on-surface-variant/40' : 'text-on-surface'}`}>{task.title}</div>
                     {task.description && <div className="text-xs text-on-surface-variant mt-0.5 truncate">{task.description}</div>}
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {skipped && <span className="text-[10px] font-semibold text-amber-400">Skipped today</span>}
+                      {skipped && <span className="text-micro font-semibold text-amber-400">Skipped today</span>}
                       {!skipped && <KindChip kind={task.kind} size="sm" />}
                       {!skipped && task.time && (
-                        <span className="text-[10px] text-on-surface-variant">
+                        <span className="text-micro text-on-surface-variant">
                           ⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}
                         </span>
                       )}
                       {!skipped && task.recurringType && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full"
+                        <span className="text-micro px-1.5 py-0.5 rounded-full"
                           style={{ color: 'var(--c-p-hex)', backgroundColor: 'rgba(var(--c-p), 0.10)' }}>
                           🔄 {recurringLabel(task.recurringType, task.recurringDays)}
                         </span>
@@ -987,7 +987,7 @@ function DayContent({ date, tasks, habits, isTaskDone, onToggleTask, onToggleHab
                   </button>
                   <div className="min-w-0 flex-1">
                     <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : done ? 'text-emerald-400' : 'text-on-surface'}`}>{habit.name}</div>
-                    {skipped && <div className="text-[10px] font-semibold text-amber-400 mt-0.5">Skipped today</div>}
+                    {skipped && <div className="text-micro font-semibold text-amber-400 mt-0.5">Skipped today</div>}
                     {habit.description && !skipped && <div className="text-xs text-on-surface-variant mt-0.5">{habit.description}</div>}
                   </div>
                   <div className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
@@ -1041,7 +1041,7 @@ function NoteEditor({ date, note, onSave }: { date: string; note: string; onSave
       <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
         <span className="text-amber-400 text-sm">📝</span>
         <h3 className="font-semibold text-on-surface text-sm">Note</h3>
-        <span className="ml-auto text-[10px] font-medium transition-colors">
+        <span className="ml-auto text-micro font-medium transition-colors">
           {saveStatus === 'saving' && <span className="text-on-surface-variant">Saving…</span>}
           {saveStatus === 'saved'  && <span className="text-emerald-500">Saved ✓</span>}
         </span>
@@ -1122,7 +1122,7 @@ function TimePickerInput({ value, onChange, label }: { value: string; onChange: 
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-semibold text-on-surface-variant text-center">{label}</span>
+      <span className="text-micro font-semibold text-on-surface-variant text-center">{label}</span>
       <div className="flex items-center gap-1">
         <div className="flex items-center px-1 rounded-xl border border-outline-variant bg-surface-container-lowest focus-within:border-primary-500 transition-colors">
           <input ref={hourRef} type="text" inputMode="numeric" value={h} onChange={handleHour}
@@ -1132,7 +1132,7 @@ function TimePickerInput({ value, onChange, label }: { value: string; onChange: 
             onKeyDown={handleMinKeyDown} placeholder="--" className={fieldCls} />
         </div>
         <button type="button" onClick={toggleAp}
-          className="text-[11px] font-bold px-1.5 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-primary-400 hover:bg-primary-500/10 transition-colors w-10 text-center">
+          className="text-tiny font-bold px-1.5 py-2 rounded-xl border border-outline-variant bg-surface-container-lowest text-primary-400 hover:bg-primary-500/10 transition-colors w-10 text-center">
           {ap}
         </button>
       </div>

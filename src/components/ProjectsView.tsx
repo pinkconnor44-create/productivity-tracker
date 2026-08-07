@@ -277,7 +277,7 @@ export default function ProjectsView() {
 
       {/* Add project */}
       <form onSubmit={createProject}
-        className="bg-surface-container border border-outline-variant/40 rounded-2xl p-3 flex items-center gap-2">
+        className="glass rounded-2xl p-3 flex items-center gap-2">
         <input
           type="text"
           value={newTitle}
@@ -309,7 +309,7 @@ export default function ProjectsView() {
                   className="glass neon-card rounded-xl border border-outline-variant/40 px-4 py-3 text-left flex items-center gap-3 transition-all">
                   <span className="flex-1 text-sm font-semibold text-on-surface truncate">{p.title}</span>
                   {pItems.length > 0 && (
-                    <span className="shrink-0 text-[10px] text-on-surface-variant/60 font-medium">{pDone}/{pItems.length}</span>
+                    <span className="shrink-0 text-micro text-on-surface-variant/60 font-medium">{pDone}/{pItems.length}</span>
                   )}
                 </button>
               )
@@ -372,7 +372,7 @@ export default function ProjectsView() {
               <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
                 <span className="text-base">📝</span>
                 <h4 className="text-sm font-semibold text-on-surface">Notes</h4>
-                <span className="ml-auto text-[10px] text-on-surface-variant/30 font-medium">auto-saved</span>
+                <span className="ml-auto text-micro text-on-surface-variant/30 font-medium">auto-saved</span>
               </div>
               <textarea
                 ref={notesRef}
@@ -388,11 +388,11 @@ export default function ProjectsView() {
                 <span className="text-base">☑</span>
                 <h4 className="text-sm font-semibold text-on-surface">Checklist</h4>
                 {items.length > 0 && (
-                  <span className="ml-1 text-[10px] text-on-surface-variant font-medium">{doneCount}/{items.length}</span>
+                  <span className="ml-1 text-micro text-on-surface-variant font-medium">{doneCount}/{items.length}</span>
                 )}
                 {doneCount > 0 && (
                   <button onClick={clearDone}
-                    className="ml-auto text-[11px] text-on-surface-variant hover:text-rose-400 font-medium transition-colors">
+                    className="ml-auto text-tiny text-on-surface-variant hover:text-rose-400 font-medium transition-colors">
                     Clear done
                   </button>
                 )}

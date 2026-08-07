@@ -201,11 +201,11 @@ export default function LiftTracker() {
                           )}
                         </div>
                         {sessions.length > 0 ? (
-                          <div className="text-[11px] text-on-surface-variant/50 mt-0.5">
+                          <div className="text-tiny text-on-surface-variant/50 mt-0.5">
                             {sessions.length} session{sessions.length !== 1 ? 's' : ''} · max {maxWeight} lbs · last {formatDate(sessions[0].date)}
                           </div>
                         ) : (
-                          <div className="text-[11px] text-primary-400 mt-0.5">No sessions yet — tap to log</div>
+                          <div className="text-tiny text-primary-400 mt-0.5">No sessions yet — tap to log</div>
                         )}
                       </div>
                       <span className="text-on-surface-variant/30 shrink-0">›</span>
@@ -263,7 +263,7 @@ export default function LiftTracker() {
                         <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-400 rounded-full uppercase tracking-wide">today</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-on-surface-variant/50 mt-0.5">
+                    <div className="text-tiny text-on-surface-variant/50 mt-0.5">
                       {sessions.length} session{sessions.length !== 1 ? 's' : ''} · max {maxWeight} lbs · last {formatDate(sessions[0].date)}
                     </div>
                   </div>
@@ -357,7 +357,7 @@ export default function LiftTracker() {
                     <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-500/20 text-emerald-400 rounded-full uppercase tracking-wide">today</span>
                   )}
                 </div>
-                <div className="text-[11px] text-on-surface-variant/50">
+                <div className="text-tiny text-on-surface-variant/50">
                   {g.exercises.length} exercise{g.exercises.length !== 1 ? 's' : ''}
                   {lastDate && ` · last ${formatDate(lastDate)}`}
                 </div>
@@ -375,7 +375,7 @@ export default function LiftTracker() {
           <div className="flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold text-on-surface-variant/70 mb-0.5">Ungrouped</div>
-              <div className="text-[11px] text-on-surface-variant/50">
+              <div className="text-tiny text-on-surface-variant/50">
                 {ungroupedExerciseNames.length} exercise{ungroupedExerciseNames.length !== 1 ? 's' : ''} not assigned to a day
               </div>
             </div>
@@ -467,7 +467,7 @@ function ExerciseModal({
         <div className="flex items-center gap-3 px-5 py-4 border-b border-outline-variant/40 shrink-0">
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold text-on-surface truncate">{exName}</h2>
-            <p className="text-[11px] text-on-surface-variant/50 mt-0.5">
+            <p className="text-tiny text-on-surface-variant/50 mt-0.5">
               {sessions.length} session{sessions.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -490,7 +490,7 @@ function ExerciseModal({
           {sessions.length >= 2 && (
             <div className="px-4 pb-6 pt-2 border-t border-outline-variant/40">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wide">
+                <p className="text-tiny font-semibold text-on-surface-variant/50 uppercase tracking-wide">
                   Volume over time (lbs × reps)
                 </p>
                 <VolumeDelta sessions={sessions} />
@@ -532,12 +532,12 @@ function VolumeDelta({ sessions }: { sessions: LiftEntry[] }) {
 
   function Pill({ label, pct, tooltip }: { label: string; pct: number | null; tooltip: string }) {
     if (pct === null) {
-      return <span className="text-[10px] text-on-surface-variant/40 italic">{label} —</span>
+      return <span className="text-micro text-on-surface-variant/40 italic">{label} —</span>
     }
     const positive = pct >= 0
     return (
       <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-micro font-bold ${
           positive ? 'bg-emerald-500/15 text-emerald-300' : 'bg-rose-500/15 text-rose-300'
         }`}
         title={tooltip}
@@ -555,7 +555,7 @@ function VolumeDelta({ sessions }: { sessions: LiftEntry[] }) {
         pct={allTimePct}
         tooltip={first && latest ? `T1 ${firstVol.toLocaleString()} lb·reps (${first.date}) → T0 ${latestVol.toLocaleString()} lb·reps (${latest.date})` : ''}
       />
-      <span className="text-on-surface-variant/30 text-[10px]">|</span>
+      <span className="text-on-surface-variant/30 text-micro">|</span>
       <Pill
         label="3-sess"
         pct={threeSessionPct}
@@ -742,13 +742,13 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
       <div className="flex items-center gap-2 mb-1">
         <span className="text-xs font-semibold text-primary-400">New session — {exName}</span>
         {hasDraft && (
-          <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">draft</span>
+          <span className="text-micro text-amber-400 font-bold uppercase tracking-wider">draft</span>
         )}
-        <button onClick={() => setOpen(false)} className="ml-auto text-[10px] text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">close</button>
+        <button onClick={() => setOpen(false)} className="ml-auto text-micro text-on-surface-variant/60 hover:text-on-surface-variant transition-colors">close</button>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <div className="grid grid-cols-[28px_1fr_1fr_24px] gap-2 px-1 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/45">
+        <div className="grid grid-cols-[28px_1fr_1fr_24px] gap-2 px-1 text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/45">
           <span>Set</span>
           <span>Weight</span>
           <span>Reps</span>
@@ -756,7 +756,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
         </div>
         {rows.map((r, i) => (
           <div key={i} className="grid grid-cols-[28px_1fr_1fr_24px] gap-2 items-center">
-            <span className="text-[11px] font-semibold text-on-surface-variant/70 tabular-nums text-center">{i + 1}</span>
+            <span className="text-tiny font-semibold text-on-surface-variant/70 tabular-nums text-center">{i + 1}</span>
             <input
               type="number"
               value={r.weight}
@@ -801,7 +801,7 @@ function InlineLogForm({ exName, onAdd }: { exName: string; onAdd: (weight: numb
       </div>
 
       {filledRows.length > 0 && (
-        <div className="flex items-center gap-3 px-1 text-[11px]">
+        <div className="flex items-center gap-3 px-1 text-tiny">
           <span className="text-on-surface-variant/60">{filledRows.length} set{filledRows.length === 1 ? '' : 's'}</span>
           <span className="text-on-surface-variant/30">·</span>
           <span className="text-primary-300 font-bold">{totalReps} reps</span>
@@ -837,18 +837,18 @@ function SessionRow({ entry, onDelete }: { entry: LiftEntry; onDelete: (id: numb
     <div className="group flex items-start gap-3 px-4 py-2.5 hover:bg-surface-container-low transition-colors pl-6">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="text-[11px] font-semibold text-on-surface-variant/70">
+          <span className="text-tiny font-semibold text-on-surface-variant/70">
             {entry.date === t ? 'Today' : new Date(entry.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           </span>
-          <span className="text-[11px] text-on-surface-variant/50">{entry.weight} lbs</span>
-          <span className="text-[10px] text-on-surface-variant/50">·</span>
-          <span className="text-[10px] font-bold text-on-surface-variant/70">{entry.totalReps} reps</span>
-          <span className="text-[10px] text-on-surface-variant/50">·</span>
-          <span className="text-[10px] font-semibold text-primary-400">{volume.toLocaleString()} vol</span>
+          <span className="text-tiny text-on-surface-variant/50">{entry.weight} lbs</span>
+          <span className="text-micro text-on-surface-variant/50">·</span>
+          <span className="text-micro font-bold text-on-surface-variant/70">{entry.totalReps} reps</span>
+          <span className="text-micro text-on-surface-variant/50">·</span>
+          <span className="text-micro font-semibold text-primary-400">{volume.toLocaleString()} vol</span>
         </div>
         <div className="flex items-center gap-1 flex-wrap">
           {sets.map((r, i) => (
-            <span key={i} className="px-1.5 py-0.5 text-[10px] font-semibold bg-primary-500/15 text-primary-400 rounded-md">
+            <span key={i} className="px-1.5 py-0.5 text-micro font-semibold bg-primary-500/15 text-primary-400 rounded-md">
               {r}
             </span>
           ))}

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { PageHeader, StatCard, Card, Section, scoreColor, SegmentedControl, TrendChart } from '@/components/ui'
+import { PageHeader, StatCard, Card, Section, scoreColor, SegmentedControl, TrendChart, Ring } from '@/components/ui'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -65,10 +65,10 @@ function WeekdayBars({ data }: { data: { date: string; pct: number }[] }) {
               style={{ height: `${b.avg}%`, background: scoreColor(b.avg) }}
             />
           </div>
-          <div className="font-display text-[14px] font-semibold leading-none text-on-surface tabular-nums">
+          <div className="font-display text-body font-semibold leading-none text-on-surface tabular-nums">
             {b.avg}<span className="text-[9px] text-on-surface-variant/50 font-semibold">%</span>
           </div>
-          <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50">{WEEKDAYS[b.dow]}</div>
+          <div className="text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/50">{WEEKDAYS[b.dow]}</div>
         </div>
       ))}
     </div>
@@ -117,7 +117,7 @@ function YearHeatmap({ scores, todayStr, onHover }: {
             const ml = monthLabels.find(m => m.col === col)
             return (
               <div key={col} className="w-[14px] mr-[2px] shrink-0">
-                {ml && <span className="text-[10px] font-medium text-on-surface-variant whitespace-nowrap leading-none">{ml.label}</span>}
+                {ml && <span className="text-micro font-medium text-on-surface-variant whitespace-nowrap leading-none">{ml.label}</span>}
               </div>
             )
           })}
@@ -233,6 +233,24 @@ export default function StatsView() {
         }
       />
 
+      {/* C6: hero ring — the headline score gets a dial instead of a number
+          buried in the strip. Reads at a glance; the strip stays for detail. */}
+      <div className="glass rounded-2xl px-5 py-5 flex items-center gap-5 sm:gap-7">
+        <Ring pct={avg7} size={104} label="7-day" />
+        <div className="min-w-0">
+          <div className="text-micro font-bold uppercase tracking-[0.16em] text-on-surface-variant/55">
+            Weighted average
+          </div>
+          <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span className="font-display text-display font-semibold tabular-nums text-on-surface">{avg7}<span className="text-title text-on-surface-variant/50">%</span></span>
+            <span className={`text-caption font-semibold ${delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              {delta >= 0 ? '↑' : '↓'} {Math.abs(delta)} pts
+            </span>
+          </div>
+          <div className="text-tiny text-on-surface-variant/50 mt-1.5">vs the prior week</div>
+        </div>
+      </div>
+
       {/* Stat strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <StatCard label="Today" value={todayScore?.pct ?? 0} suffix="%" sub={`${todayScore?.completed ?? 0}/${todayScore?.total ?? 0} weighted`} color={scoreColor(todayScore?.pct)} barPct={todayScore?.pct ?? 0} />
@@ -246,10 +264,10 @@ export default function StatsView() {
         label={`Daily Score · ${range} days`}
         right={
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/70 font-semibold">
+            <span className="flex items-center gap-1.5 text-tiny text-on-surface-variant/70 font-semibold">
               <span className="w-3.5 h-0.5" style={{ background: 'var(--c-p-hex)' }} /> 7d avg
             </span>
-            <span className="flex items-center gap-1.5 text-[11px] text-on-surface-variant/55 font-semibold">
+            <span className="flex items-center gap-1.5 text-tiny text-on-surface-variant/55 font-semibold">
               <span className="w-3.5 h-0.5" style={{ background: 'var(--c-p-hex)', opacity: 0.55 }} /> daily
             </span>
           </div>
@@ -269,14 +287,14 @@ export default function StatsView() {
             <WeekdayBars data={chartData} />
             <div className="flex justify-between mt-5 pt-4 border-t border-outline-variant/30">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Best day</div>
-                <div className="font-display text-[16px] font-semibold text-emerald-400">{best ? `${scores365[best].pct}%` : '—'}</div>
-                <div className="text-[10px] text-on-surface-variant/50 mt-0.5">{best ? formatLabel(best) : ''}</div>
+                <div className="text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Best day</div>
+                <div className="font-display text-body-lg font-semibold text-emerald-400">{best ? `${scores365[best].pct}%` : '—'}</div>
+                <div className="text-micro text-on-surface-variant/50 mt-0.5">{best ? formatLabel(best) : ''}</div>
               </div>
               <div className="text-right">
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Worst day</div>
-                <div className="font-display text-[16px] font-semibold text-rose-400">{worst ? `${scores365[worst].pct}%` : '—'}</div>
-                <div className="text-[10px] text-on-surface-variant/50 mt-0.5">{worst ? formatLabel(worst) : ''}</div>
+                <div className="text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Worst day</div>
+                <div className="font-display text-body-lg font-semibold text-rose-400">{worst ? `${scores365[worst].pct}%` : '—'}</div>
+                <div className="text-micro text-on-surface-variant/50 mt-0.5">{worst ? formatLabel(worst) : ''}</div>
               </div>
             </div>
           </Card>
@@ -286,17 +304,17 @@ export default function StatsView() {
           <Card padding={20}>
             <div className="flex flex-col gap-3 h-full">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Longest run ≥ 75%</div>
-                <div className="font-display text-[36px] font-semibold text-on-surface tabular-nums leading-none">{bestPctStreak}<span className="text-[14px] text-on-surface-variant/50 ml-1">days</span></div>
+                <div className="text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Longest run ≥ 75%</div>
+                <div className="font-display text-display font-semibold text-on-surface tabular-nums leading-none">{bestPctStreak}<span className="text-body text-on-surface-variant/50 ml-1">days</span></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Active days</div>
-                  <div className="font-display text-[20px] font-semibold text-on-surface tabular-nums">{activeDays.length}</div>
+                  <div className="text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Active days</div>
+                  <div className="font-display text-title font-semibold text-on-surface tabular-nums">{activeDays.length}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Perfect days</div>
-                  <div className="font-display text-[20px] font-semibold text-emerald-400 tabular-nums">{perfectDays}</div>
+                  <div className="text-micro font-bold uppercase tracking-[0.1em] text-on-surface-variant/50 mb-1">Perfect days</div>
+                  <div className="font-display text-title font-semibold text-emerald-400 tabular-nums">{perfectDays}</div>
                 </div>
               </div>
             </div>
@@ -311,10 +329,10 @@ export default function StatsView() {
             ? <div className="h-28 flex items-center justify-center text-on-surface-variant text-sm">Loading…</div>
             : <YearHeatmap scores={scores365} todayStr={t} onHover={setHeatTip} />}
           <div className="flex items-center gap-2 mt-4">
-            <span className="text-[10px] text-on-surface-variant/60">Less</span>
+            <span className="text-micro text-on-surface-variant/60">Less</span>
             {['bg-surface-container-low', 'bg-rose-500/70', 'bg-amber-500/65', 'bg-primary-500/70', 'bg-emerald-500/70', 'bg-emerald-400']
               .map((c, i) => <div key={i} className={`w-[14px] h-[14px] rounded-sm ${c}`} />)}
-            <span className="text-[10px] text-on-surface-variant/60">More</span>
+            <span className="text-micro text-on-surface-variant/60">More</span>
           </div>
         </Card>
       </Section>

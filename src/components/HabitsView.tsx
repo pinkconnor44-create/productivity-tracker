@@ -126,11 +126,11 @@ function WeightPicker({ value, onChange }: { value: number; onChange: (w: number
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5">
-        <span className="text-[11px] text-on-surface-variant font-medium">Weight</span>
+        <span className="text-tiny text-on-surface-variant font-medium">Weight</span>
         <div className="flex bg-surface-container-low rounded-lg p-0.5 gap-0.5">
           {[1,2,3].map(w => (
             <button key={w} type="button" onClick={() => onChange(w)} title={labels[w]}
-              className={`w-6 h-5 rounded-md text-[11px] font-bold transition-all ${
+              className={`w-6 h-5 rounded-md text-tiny font-bold transition-all ${
                 value === w
                   ? w === 1 ? 'bg-surface-container text-on-surface-variant/70 shadow-sm'
                   : w === 2 ? 'bg-blue-500 text-white shadow-sm'
@@ -140,7 +140,7 @@ function WeightPicker({ value, onChange }: { value: number; onChange: (w: number
           ))}
         </div>
       </div>
-      <span className="text-[10px] text-on-surface-variant/30">{descriptions[value]}</span>
+      <span className="text-micro text-on-surface-variant/30">{descriptions[value]}</span>
     </div>
   )
 }
@@ -265,11 +265,11 @@ export default function HabitsView() {
             onChange={e => setField('description',e.target.value)}
             className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
           <div className="border-t border-outline-variant/40 pt-2 space-y-2">
-            <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
+            <p className="text-tiny font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
             <div className="flex flex-wrap gap-1">
               {SCHEDULE_PRESETS.map(p => (
                 <button key={String(p.value)} type="button" onClick={() => setField('schedulePreset',p.value)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
+                  className={`px-2.5 py-1 rounded-lg text-tiny font-medium transition-colors ${
                     form.schedulePreset===p.value ? 'bg-primary-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
                   }`}>{p.label}</button>
               ))}
@@ -279,13 +279,13 @@ export default function HabitsView() {
                 <div className="flex gap-1">
                   {DAY_NAMES.map((d,i) => (
                     <button key={i} type="button" onClick={() => toggleCustomDay(i)}
-                      className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.customDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                      className={`flex-1 py-1 rounded-lg text-micro font-bold transition-colors ${form.customDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                       {d[0]}
                     </button>
                   ))}
                 </div>
                 {form.customDays.length === 0 && (
-                  <p className="text-[10px] text-amber-500">Select at least one day.</p>
+                  <p className="text-micro text-amber-500">Select at least one day.</p>
                 )}
               </>
             )}
@@ -315,8 +315,8 @@ export default function HabitsView() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Today's Habits</span>
-                <span className="ml-auto text-[10px] text-on-surface-variant font-medium">{activeToday.filter(h => h.completions.some(c => c.date===todayStr)).length}/{activeToday.length}</span>
+                <span className="text-tiny font-bold uppercase tracking-wider text-emerald-400">Today's Habits</span>
+                <span className="ml-auto text-micro text-on-surface-variant font-medium">{activeToday.filter(h => h.completions.some(c => c.date===todayStr)).length}/{activeToday.length}</span>
               </div>
               <div className={card}>
                 <div className="divide-y divide-outline-variant/40">
@@ -334,7 +334,7 @@ export default function HabitsView() {
             <div className="opacity-50">
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant/30 shrink-0" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">Not Today</span>
+                <span className="text-tiny font-bold uppercase tracking-wider text-on-surface-variant">Not Today</span>
               </div>
               <div className={card}>
                 <div className="divide-y divide-outline-variant/40">
@@ -346,7 +346,7 @@ export default function HabitsView() {
                           <div className="ml-4 shrink-0 w-7 h-7 rounded-xl border-2 border-outline-variant/40 flex items-center justify-center text-on-surface-variant/30 text-xs">—</div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-on-surface-variant">{habit.name}</div>
-                            <div className="text-[10px] text-on-surface-variant mt-0.5">{scheduleLabel(habit.recurringDays)}</div>
+                            <div className="text-micro text-on-surface-variant mt-0.5">{scheduleLabel(habit.recurringDays)}</div>
                           </div>
                           <AllHabitsRowActions habitName={habit.name} onEdit={() => setEditingId(habit.id)} onDelete={() => deleteHabit(habit.id)} />
                         </div>
@@ -412,35 +412,35 @@ function HabitRow({ habit, date, onToggle, onDelete, onEdit, onSkip, onSelect, s
         <div className={`text-sm font-medium ${skipped ? 'text-on-surface-variant' : 'text-on-surface'}`}>{habit.name}</div>
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           {skipped
-            ? <span className="text-[11px] font-semibold text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-700/40">⏸ Excused today</span>
+            ? <span className="text-tiny font-semibold text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-700/40">⏸ Excused today</span>
             : <>
                 {streak > 0 && (
-                  <span className="text-[11px] font-bold text-orange-400 bg-orange-500/15 px-2 py-0.5 rounded-md border border-orange-700/40">
+                  <span className="text-tiny font-bold text-orange-400 bg-orange-500/15 px-2 py-0.5 rounded-md border border-orange-700/40">
                     🔥 {streak}d
                   </span>
                 )}
-                <span className="text-[11px] font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
+                <span className="text-tiny font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
                   {rowStats.w7.done}/{rowStats.w7.scheduled} wk
                 </span>
-                <span className="text-[11px] font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
+                <span className="text-tiny font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
                   {rowStats.w30.done}/{rowStats.w30.scheduled} mo
                 </span>
-                <span className="text-[11px] font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
+                <span className="text-tiny font-semibold text-primary-300 bg-primary-500/15 px-2 py-0.5 rounded-md border border-primary-200/40">
                   {rowStats.all.done}/{rowStats.all.scheduled} all
                 </span>
                 {(() => {
                   const pct = rowStats.all.scheduled ? Math.round((rowStats.all.done / rowStats.all.scheduled) * 100) : null
                   if (pct == null) return (
-                    <span className="text-[11px] font-semibold text-on-surface-variant/55 bg-surface-container-high px-2 py-0.5 rounded-md border border-outline-variant/40">N/A</span>
+                    <span className="text-tiny font-semibold text-on-surface-variant/55 bg-surface-container-high px-2 py-0.5 rounded-md border border-outline-variant/40">N/A</span>
                   )
                   const c = scoreColor(pct)
                   return (
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md border" style={{ color: c, borderColor: `${c}66`, background: `${c}22` }}>
+                    <span className="text-tiny font-bold px-2 py-0.5 rounded-md border" style={{ color: c, borderColor: `${c}66`, background: `${c}22` }}>
                       {pct}%
                     </span>
                   )
                 })()}
-                {w > 1 && <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
+                {w > 1 && <span className={`text-tiny font-bold px-2 py-0.5 rounded-md border ${
                   w === 2 ? 'text-blue-300 bg-blue-500/15 border-blue-700/40'
                           : 'text-orange-300 bg-orange-500/15 border-orange-700/40'
                 }`}>{W_LABEL[w]}</span>}
@@ -498,7 +498,7 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
         <div className="flex items-center gap-3 px-5 py-4 border-b border-outline-variant/40">
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold text-on-surface truncate">{habit.name}</h2>
-            <p className="text-[11px] text-on-surface-variant/50 mt-0.5">{scheduleLabel(habit.recurringDays)}</p>
+            <p className="text-tiny text-on-surface-variant/50 mt-0.5">{scheduleLabel(habit.recurringDays)}</p>
           </div>
           <button onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant/50 hover:text-on-surface-variant transition-colors text-sm font-bold">
@@ -506,7 +506,7 @@ function HabitDetailModal({ habit, onClose }: { habit: Habit; onClose: () => voi
           </button>
         </div>
         <div className="px-5 py-4">
-          <p className="text-[11px] font-semibold text-on-surface-variant/50 uppercase tracking-wide mb-3">
+          <p className="text-tiny font-semibold text-on-surface-variant/50 uppercase tracking-wide mb-3">
             Weekly completion %
           </p>
           <WeeklyCompletionChart data={weeklyData} />
@@ -621,11 +621,11 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description"
         className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
       <div className="border-t border-primary-500/30 pt-2 space-y-2">
-        <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
+        <p className="text-tiny font-semibold text-on-surface-variant uppercase tracking-wide">Schedule</p>
         <div className="flex flex-wrap gap-1">
           {SCHEDULE_PRESETS.map(p => (
             <button key={String(p.value)} type="button" onClick={() => setSchedulePreset(p.value)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${schedulePreset===p.value ? 'bg-primary-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+              className={`px-2.5 py-1 rounded-lg text-tiny font-medium transition-colors ${schedulePreset===p.value ? 'bg-primary-600 text-white shadow-sm' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
               {p.label}
             </button>
           ))}
@@ -635,13 +635,13 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
             <div className="flex gap-1">
               {DAY_NAMES.map((d,i) => (
                 <button key={i} type="button" onClick={() => toggleCustomDay(i)}
-                  className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${customDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                  className={`flex-1 py-1 rounded-lg text-micro font-bold transition-colors ${customDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                   {d[0]}
                 </button>
               ))}
             </div>
             {customDays.length === 0 && (
-              <p className="text-[10px] text-amber-500">Select at least one day.</p>
+              <p className="text-micro text-amber-500">Select at least one day.</p>
             )}
           </>
         )}

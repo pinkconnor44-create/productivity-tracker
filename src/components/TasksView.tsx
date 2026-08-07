@@ -80,7 +80,7 @@ function TimeInput({ value, onChange, placeholder = 'e.g. 9a' }: {
   return (
     <input type="text" value={text} onChange={e => setText(e.target.value)} onBlur={handleBlur}
       placeholder={placeholder}
-      className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none w-16" />
+      className="text-tiny text-on-surface-variant bg-transparent border-0 outline-none w-16" />
   )
 }
 function groupTasks(tasks: Task[]) {
@@ -109,12 +109,12 @@ const card = 'glass card-lift rounded-2xl border overflow-hidden'
 function WeightPicker({ value, onChange }: { value: number; onChange: (w: number) => void }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-on-surface-variant font-medium">Weight</span>
+      <span className="text-tiny text-on-surface-variant font-medium">Weight</span>
       <div className="flex bg-surface-container-low rounded-lg p-0.5 gap-0.5">
         {[1,2,3].map(w => (
           <button key={w} type="button" onClick={() => onChange(w)}
             title={W_LABEL[w]}
-            className={`w-6 h-5 rounded-md text-[11px] font-bold transition-all ${
+            className={`w-6 h-5 rounded-md text-tiny font-bold transition-all ${
               value === w
                 ? w === 1 ? 'bg-surface-container text-on-surface-variant/70 shadow-sm'
                 : w === 2 ? 'bg-blue-500 text-white shadow-sm'
@@ -275,12 +275,12 @@ export default function TasksView() {
                       {task.description && <div className="text-xs text-on-surface-variant mt-0.5 truncate">{task.description}</div>}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         {skipped
-                          ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
-                          : <span className="text-[10px] text-primary-500 font-medium bg-primary-500/15 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
+                          ? <span className="text-micro font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
+                          : <span className="text-micro text-primary-500 font-medium bg-primary-500/15 px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)}</span>
                         }
                         {!skipped && <KindChip kind={task.kind} size="sm" />}
-                        {task.time && <span className="text-[10px] text-on-surface-variant">⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
-                        {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
+                        {task.time && <span className="text-micro text-on-surface-variant">⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
+                        {w > 1 && <span className={`text-micro font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
                     </div>
                     <RecurringRowActions taskTitle={task.title} skipped={!!skipped} onSkip={() => skipTask(task.id)} onEdit={() => setEditingId(task.id)} onDelete={() => deleteTask(task.id)} />
@@ -346,12 +346,12 @@ export default function TasksView() {
                 const w = task.weight ?? 1
                 return (
                   <div key={task.id} className={`flex items-start gap-3 pl-0 pr-4 py-3 group hover:bg-surface-container-low transition-colors border-l-[3px] ${W_BORDER[w]}`}>
-                    <div className="ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 border-outline-variant/40 flex items-center justify-center text-on-surface-variant/30 text-[10px]">—</div>
+                    <div className="ml-4 mt-0.5 shrink-0 w-5 h-5 rounded-md border-2 border-outline-variant/40 flex items-center justify-center text-on-surface-variant/30 text-micro">—</div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-on-surface-variant">{task.title}</div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] text-on-surface-variant font-medium bg-surface-container-lowest px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)} · not today</span>
-                        {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
+                        <span className="text-micro text-on-surface-variant font-medium bg-surface-container-lowest px-1.5 py-0.5 rounded-full">🔄 {recurringLabel(task.recurringType!, task.recurringDays)} · not today</span>
+                        {w > 1 && <span className={`text-micro font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
                       </div>
                     </div>
                     <SimpleRowActions taskTitle={task.title} onEdit={() => setEditingId(task.id)} onDelete={() => deleteTask(task.id)} />
@@ -382,9 +382,9 @@ function Section({ label, dot, color, count, total, children }: {
     <div>
       <div className="flex items-center gap-2 mb-2">
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
-        <span className={`text-[11px] font-bold uppercase tracking-wider ${color}`}>{label}</span>
+        <span className={`text-tiny font-bold uppercase tracking-wider ${color}`}>{label}</span>
         {total !== undefined && (
-          <span className="ml-auto text-[10px] text-on-surface-variant font-medium">
+          <span className="ml-auto text-micro text-on-surface-variant font-medium">
             {count}/{total}
           </span>
         )}
@@ -426,19 +426,19 @@ function TaskRow({ task, onToggle, onDelete, onEdit, onSkip, skipped }: {
         {task.description && <div className="text-xs text-on-surface-variant mt-0.5 line-clamp-1">{task.description}</div>}
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           {skipped
-            ? <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
+            ? <span className="text-micro font-semibold text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full">⏸ Excused today</span>
             : <>
                 <KindChip kind={task.kind} size="sm" />
                 {task.dueDate && (
-                  <span className={`text-[11px] font-medium ${
+                  <span className={`text-tiny font-medium ${
                     task.completed ? 'text-on-surface-variant/30'
                     : isOverdue ? 'text-rose-500'
                     : task.dueDate === t ? 'text-primary-400'
                     : 'text-on-surface-variant'
                   }`}>{isOverdue ? '⚠ ' : ''}{formatDueDate(task.dueDate)}{isOverdue ? ' · overdue' : ''}</span>
                 )}
-                {task.time && <span className={`text-[11px] ${task.completed ? 'text-on-surface-variant/30' : 'text-on-surface-variant'}`}>⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
-                {w > 1 && <span className={`text-[10px] font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
+                {task.time && <span className={`text-tiny ${task.completed ? 'text-on-surface-variant/30' : 'text-on-surface-variant'}`}>⏰ {formatTime(task.time)}{task.endTime ? ` – ${formatTime(task.endTime)}` : ''}</span>}
+                {w > 1 && <span className={`text-micro font-semibold ${W_COLOR[w]}`}>{W_LABEL[w]}</span>}
               </>
           }
         </div>
@@ -534,19 +534,19 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
       <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Description"
         className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
       <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-primary-500/30">
-        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
-          📅 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none" />
+        <label className="flex items-center gap-1 text-tiny text-on-surface-variant">
+          📅 <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} className="text-tiny text-on-surface-variant bg-transparent border-0 outline-none" />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+        <label className="flex items-center gap-1 text-tiny text-on-surface-variant">
           ⏰ <TimeInput value={time} onChange={setTime} />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+        <label className="flex items-center gap-1 text-tiny text-on-surface-variant">
           → <TimeInput value={endTime} onChange={setEndTime} />
         </label>
         <WeightPicker value={weight} onChange={setWeight} />
       </div>
       <div className="border-t border-primary-500/30 pt-2">
-        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
+        <div className="text-micro font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
         <KindPicker value={kind} onChange={setKind} size="sm" />
       </div>
       <div className="border-t border-primary-500/30 pt-2 space-y-2">
@@ -562,7 +562,7 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
             <div className="flex flex-wrap gap-1">
               {RECURRING_TYPES.map(rt => (
                 <button key={rt.value} type="button" onClick={() => setRecurringType(rt.value)}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-colors ${recurringType===rt.value ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+                  className={`px-2 py-1 rounded-lg text-tiny font-medium transition-colors ${recurringType===rt.value ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                   {rt.label}
                 </button>
               ))}
@@ -571,14 +571,14 @@ function InlineTaskEditor({ task, onSave, onCancel }: {
               <div className="flex gap-1">
                 {DAY_NAMES.map((d,i) => (
                   <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${recurringDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                    className={`flex-1 py-1 rounded-lg text-micro font-bold transition-colors ${recurringDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                     {d[0]}
                   </button>
                 ))}
               </div>
             )}
-            <label className="flex items-center gap-2 text-[11px] text-on-surface-variant">
-              Ends: <input type="date" value={recurringEnd} onChange={e => setRecurringEnd(e.target.value)} className="bg-transparent border-0 outline-none text-on-surface-variant text-[11px]" />
+            <label className="flex items-center gap-2 text-tiny text-on-surface-variant">
+              Ends: <input type="date" value={recurringEnd} onChange={e => setRecurringEnd(e.target.value)} className="bg-transparent border-0 outline-none text-on-surface-variant text-tiny" />
               {recurringEnd && <button type="button" onClick={() => setRecurringEnd('')} className="text-on-surface-variant/40 hover:text-on-surface-variant/70">✕</button>}
             </label>
           </div>
@@ -608,19 +608,19 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
       <input type="text" placeholder="Description (optional)" value={form.description} onChange={e => setField('description',e.target.value)}
         className="w-full text-sm bg-transparent border-0 outline-none text-on-surface-variant placeholder-white/70 p-0" />
       <div className="flex flex-wrap gap-3 items-center pt-2 border-t border-outline-variant/40">
-        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
-          📅 <input type="date" value={form.dueDate} onChange={e => setField('dueDate',e.target.value)} className="text-[11px] text-on-surface-variant bg-transparent border-0 outline-none" />
+        <label className="flex items-center gap-1 text-tiny text-on-surface-variant">
+          📅 <input type="date" value={form.dueDate} onChange={e => setField('dueDate',e.target.value)} className="text-tiny text-on-surface-variant bg-transparent border-0 outline-none" />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+        <label className="flex items-center gap-1 text-tiny text-on-surface-variant">
           ⏰ <TimeInput value={form.time} onChange={v => setField('time', v)} />
         </label>
-        <label className="flex items-center gap-1 text-[11px] text-on-surface-variant">
+        <label className="flex items-center gap-1 text-tiny text-on-surface-variant">
           → <TimeInput value={form.endTime} onChange={v => setField('endTime', v)} />
         </label>
         <WeightPicker value={form.weight} onChange={v => setField('weight',v)} />
       </div>
       <div className="border-t border-outline-variant/40 pt-2">
-        <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
+        <div className="text-micro font-bold uppercase tracking-[0.12em] text-on-surface-variant/60 mb-1.5">Kind</div>
         <KindPicker value={form.kind} onChange={(k) => setField('kind', k)} size="sm" />
       </div>
       <div className="border-t border-outline-variant/40 pt-2 space-y-2">
@@ -636,7 +636,7 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
             <div className="flex flex-wrap gap-1">
               {RECURRING_TYPES.map(rt => (
                 <button key={rt.value} type="button" onClick={() => setField('recurringType',rt.value)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${form.recurringType===rt.value ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
+                  className={`px-2.5 py-1 rounded-lg text-tiny font-medium transition-colors ${form.recurringType===rt.value ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'}`}>
                   {rt.label}
                 </button>
               ))}
@@ -645,14 +645,14 @@ function TaskForm({ form, setField, toggleDay, onSubmit, onCancel, submitting }:
               <div className="flex gap-1">
                 {DAY_NAMES.map((d,i) => (
                   <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-bold transition-colors ${form.recurringDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
+                    className={`flex-1 py-1 rounded-lg text-micro font-bold transition-colors ${form.recurringDays.includes(i) ? 'bg-primary-600 text-white' : 'bg-surface-container-low text-on-surface-variant'}`}>
                     {d[0]}
                   </button>
                 ))}
               </div>
             )}
-            <label className="flex items-center gap-2 text-[11px] text-on-surface-variant">
-              Ends: <input type="date" value={form.recurringEnd} onChange={e => setField('recurringEnd',e.target.value)} className="bg-transparent border-0 outline-none text-on-surface-variant text-[11px]" />
+            <label className="flex items-center gap-2 text-tiny text-on-surface-variant">
+              Ends: <input type="date" value={form.recurringEnd} onChange={e => setField('recurringEnd',e.target.value)} className="bg-transparent border-0 outline-none text-on-surface-variant text-tiny" />
               {form.recurringEnd && <button type="button" onClick={() => setField('recurringEnd','')} className="text-on-surface-variant/40 hover:text-on-surface-variant/70">✕</button>}
             </label>
           </div>

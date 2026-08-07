@@ -190,7 +190,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
   return (
     <div>
       {embedded ? (
-        <div className="text-[11px] font-bold uppercase tracking-[0.15em] text-primary-400 mb-3">
+        <div className="text-tiny font-bold uppercase tracking-[0.15em] text-primary-400 mb-3">
           Scratchpad
         </div>
       ) : (
@@ -205,7 +205,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
         <div className="px-4 py-3 border-b border-outline-variant/40 flex items-center gap-2">
           <span className="text-base">📝</span>
           <h3 className="text-sm font-semibold text-on-surface">Notes</h3>
-          <span className="ml-auto text-[10px] text-on-surface-variant/30 font-medium">auto-saved</span>
+          <span className="ml-auto text-micro text-on-surface-variant/30 font-medium">auto-saved</span>
         </div>
         <textarea
           ref={textareaRef}
@@ -222,13 +222,13 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
           <span className="text-base">☑</span>
           <h3 className="text-sm font-semibold text-on-surface">Checklist</h3>
           {checklist.length > 0 && (
-            <span className="ml-1 text-[10px] text-on-surface-variant font-medium">
+            <span className="ml-1 text-micro text-on-surface-variant font-medium">
               {doneCount}/{checklist.length}
             </span>
           )}
           {doneCount > 0 && (
             <button onClick={clearDone}
-              className="ml-auto text-[11px] text-on-surface-variant hover:text-rose-400 font-medium transition-colors">
+              className="ml-auto text-tiny text-on-surface-variant hover:text-rose-400 font-medium transition-colors">
               Clear done
             </button>
           )}

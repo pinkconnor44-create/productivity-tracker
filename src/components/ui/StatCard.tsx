@@ -12,8 +12,12 @@ type Props = {
   className?: string
 }
 
-// Hero stat block. Used in stat strips at the top of every redesigned view.
-// Faithful to the design mock: eyebrow / huge tnum value / sub / colored bar.
+// Hero stat block: eyebrow / big tabular metric / sub / progress meter.
+//
+// The metric carries the whole card, so it is deliberately large and set in
+// the display face with tabular figures and negative tracking — the same
+// treatment fitness apps give their headline numbers. Everything else recedes:
+// the eyebrow is a quiet micro-label and the meter is a hairline.
 export function StatCard({ label, value, suffix, sub, color, barPct, className = '' }: Props) {
   const isPlaceholder = value === '—' || value == null
   const valueStyle = color && !isPlaceholder ? { color } : undefined
@@ -21,35 +25,34 @@ export function StatCard({ label, value, suffix, sub, color, barPct, className =
   return (
     <div
       className={[
-        'flex-1 min-w-0 px-3.5 py-3.5 rounded-xl flex flex-col gap-2',
-        'bg-surface-container border border-outline-variant/40',
-        'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
+        'group flex-1 min-w-0 px-4 py-4 rounded-xl flex flex-col gap-2.5',
+        'glass transition-colors duration-200',
         className,
       ].filter(Boolean).join(' ')}
     >
-      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-on-surface-variant/70">
+      <div className="text-micro font-bold uppercase tracking-[0.14em] text-on-surface-variant/60">
         {label}
       </div>
       <div className="flex items-baseline gap-1">
         <span
-          className={`font-display text-[28px] font-semibold leading-none tracking-[-0.02em] tabular-nums ${
-            isPlaceholder ? 'text-on-surface-variant/40' : color ? '' : 'text-on-surface'
+          className={`font-display text-display-sm font-semibold tabular-nums ${
+            isPlaceholder ? 'text-on-surface-variant/30' : color ? '' : 'text-on-surface'
           }`}
           style={valueStyle}
         >
           {isPlaceholder ? '—' : value}
         </span>
         {suffix != null && !isPlaceholder && (
-          <span className="text-[12px] font-semibold text-on-surface-variant/70">{suffix}</span>
+          <span className="text-caption font-semibold text-on-surface-variant/60">{suffix}</span>
         )}
       </div>
       {sub && (
-        <div className="text-[11px] text-on-surface-variant/60 leading-snug">{sub}</div>
+        <div className="text-tiny text-on-surface-variant/50 leading-snug">{sub}</div>
       )}
       {barPct != null && (
-        <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+        <div className="h-[2px] bg-white/[0.06] rounded-full overflow-hidden mt-auto">
           <div
-            className={`h-full rounded-full ${color ? '' : 'bg-primary-400'}`}
+            className={`h-full rounded-full transition-[width] duration-500 ease-snap ${color ? '' : 'bg-primary-400'}`}
             style={{ width: `${Math.max(0, Math.min(100, barPct))}%`, ...barStyle }}
           />
         </div>

@@ -24,13 +24,13 @@ export function Section({ label, count, total, color, dotColor, right, children 
           style={dotStyle}
         />
         <span
-          className={`text-[11px] font-bold uppercase tracking-[0.12em] ${color ? '' : 'text-primary-400'}`}
+          className={`text-micro font-bold uppercase tracking-[0.16em] ${color ? '' : 'text-primary-400'}`}
           style={labelStyle}
         >
           {label}
         </span>
         {total != null && (
-          <span className="text-[11px] text-on-surface-variant/70 font-semibold tabular-nums ml-auto">
+          <span className="text-tiny text-on-surface-variant/50 font-semibold tabular-nums ml-auto">
             {count ?? 0}/{total}
           </span>
         )}
