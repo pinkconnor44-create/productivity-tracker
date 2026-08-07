@@ -287,7 +287,7 @@ export default function CalendarView() {
     // transform would become its containing block and break it. The horizon
     // owns its own perspective and is a sibling of the content, never a wrapper.
     <div className="relative">
-      <CalendarHorizon dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct} />
+      <CalendarHorizon dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct}>
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}
@@ -314,6 +314,7 @@ export default function CalendarView() {
           </div>
         }
       />
+      </CalendarHorizon>
 
       {/* Stat strip (Variation A) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5">

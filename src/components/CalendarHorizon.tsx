@@ -32,7 +32,20 @@ type Props = {
   weekPct: number | null
   monthPct: number | null
   yearPct: number | null
+  /** Page title / controls, rendered over the scene rather than beneath it. */
+  children?: React.ReactNode
 }
+
+// [x, y, r, opacity] — hand-placed so the field has clumps and voids like a
+// real sky rather than the even spread a random generator produces.
+const STARS: [number, number, number, number][] = [
+  [64,38,1,0.55],[112,92,0.8,0.35],[150,26,1.2,0.7],[198,64,0.7,0.3],[243,18,1,0.5],
+  [287,104,0.9,0.4],[331,52,1.3,0.75],[382,30,0.7,0.28],[425,86,1,0.45],[470,14,0.9,0.6],
+  [516,68,0.7,0.3],[560,40,1.1,0.65],[604,96,0.8,0.35],[651,22,1,0.5],[695,72,0.7,0.26],
+  [740,44,1.2,0.7],[788,16,0.8,0.4],[832,88,1,0.48],[876,34,0.7,0.3],[920,62,1.1,0.6],
+  [966,20,0.9,0.42],[1010,98,0.8,0.34],[1054,46,1.2,0.68],[1098,26,0.7,0.3],[1142,78,1,0.5],
+  [88,140,0.7,0.22],[300,150,0.8,0.25],[520,132,0.7,0.2],[760,146,0.8,0.24],[1000,136,0.7,0.2],
+]
 
 type Orbit = {
   label: string
@@ -46,7 +59,7 @@ type Orbit = {
   reverse?: boolean
 }
 
-export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct }: Props) {
+export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct, children }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [par, setPar] = useState({ x: 0, y: 0 })
   const [reduced, setReduced] = useState(false)
@@ -89,10 +102,10 @@ export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct }: 
   }, [reduced])
 
   const orbits: Orbit[] = [
-    { label: 'Year',  pct: yearPct,  size: 300, tiltX: 74, spinZ: 0,   period: 150 },
-    { label: 'Month', pct: monthPct, size: 232, tiltX: 66, spinZ: 28,  period: 104, reverse: true },
-    { label: 'Week',  pct: weekPct,  size: 168, tiltX: 56, spinZ: -22, period: 72 },
-    { label: 'Day',   pct: dayPct,   size: 108, tiltX: 26, spinZ: 12,  period: 46, reverse: true },
+    { label: 'Year',  pct: yearPct,  size: 300, tiltX: 80, spinZ: 0,   period: 150 },
+    { label: 'Month', pct: monthPct, size: 236, tiltX: 60, spinZ: 34,  period: 104, reverse: true },
+    { label: 'Week',  pct: weekPct,  size: 172, tiltX: 40, spinZ: -30, period: 72 },
+    { label: 'Day',   pct: dayPct,   size: 112, tiltX: 14, spinZ: 16,  period: 46, reverse: true },
   ]
 
   // Distant things move least. That difference IS the depth.
@@ -103,35 +116,60 @@ export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct }: 
   return (
     <div
       ref={ref}
-      aria-hidden
-      className="pointer-events-none absolute inset-x-0 top-0 h-[460px] overflow-hidden -z-[1]"
-      style={{ maskImage: 'linear-gradient(to bottom, #000 55%, transparent 100%)',
-               WebkitMaskImage: 'linear-gradient(to bottom, #000 55%, transparent 100%)' }}
+      className="relative -mx-4 sm:-mx-6 mb-5 h-[300px] sm:h-[360px] overflow-hidden"
     >
+      {/* Scene layers are inert; only the content overlay takes pointer events. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{
+        maskImage: 'linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%)',
+      }}>
       {/* Sky — blue hour. Deep indigo lifting to a violet band at the horizon. */}
       <div className="absolute inset-0" style={{
         background:
-          'radial-gradient(120% 80% at 50% 92%, rgba(128,82,255,0.22) 0%, rgba(60,40,120,0.12) 34%, transparent 68%),' +
-          'linear-gradient(to bottom, #000 0%, #05040d 42%, #0a0718 72%, #120a24 100%)',
+          'radial-gradient(130% 85% at 50% 98%, rgba(120,90,220,0.26) 0%, rgba(56,44,110,0.14) 40%, transparent 74%),' +
+          'linear-gradient(to bottom, #000 0%, #03030c 32%, #07071c 60%, #0d0c28 84%, #131134 100%)',
       }} />
 
-      {/* Horizon glow — the light source everything else is lit by. */}
+      {/* Stars. Cheap, and a night sky without them reads as a gradient. */}
+      <div className="absolute inset-x-0 top-0 h-[62%]" style={shift(2)}>
+        <svg viewBox="0 0 1200 240" preserveAspectRatio="none" className="w-full h-full">
+          {STARS.map((st, i) => (
+            <circle key={i} cx={st[0]} cy={st[1]} r={st[2]} fill="#fff" opacity={st[3]} />
+          ))}
+        </svg>
+      </div>
+
+      {/* Horizon glow — the light source the ridges are lit by. Sits ON the
+          ridge line so the peaks read as backlit. */}
       <div className="absolute left-1/2 -translate-x-1/2" style={{
-        bottom: 96, width: 900, height: 260,
-        background: 'radial-gradient(closest-side, rgba(160,120,255,0.30), rgba(128,82,255,0.10) 55%, transparent 100%)',
+        bottom: 74, width: 1000, height: 210,
+        background: 'radial-gradient(closest-side, rgba(168,150,255,0.30), rgba(110,86,200,0.10) 52%, transparent 100%)',
         ...shift(3),
       }} />
 
-      {/* ── Ridges, far to near. Each is lighter and hazier than the one in
-             front of it, and each overlaps the one behind. ── */}
-      <Ridge d="M0,150 L120,96 L210,126 L330,58 L430,104 L560,44 L660,92 L780,52 L900,104 L1000,74 L1200,120 L1200,300 L0,300 Z"
-             fill="rgba(150,130,220,0.20)" bottom={104} depth={4} par={par} blur={2.5} />
-      <Ridge d="M0,170 L100,120 L230,166 L340,104 L470,152 L590,88 L700,140 L840,96 L960,148 L1100,110 L1200,150 L1200,300 L0,300 Z"
-             fill="rgba(96,80,160,0.34)" bottom={72} depth={8} par={par} blur={1.2} />
-      <Ridge d="M0,190 L140,132 L280,186 L400,120 L520,178 L650,112 L790,172 L920,124 L1060,180 L1200,140 L1200,300 L0,300 Z"
-             fill="rgba(40,32,72,0.72)" bottom={38} depth={14} par={par} />
-      <Ridge d="M0,210 L160,158 L300,208 L460,146 L600,206 L740,150 L900,206 L1040,160 L1200,200 L1200,300 L0,300 Z"
-             fill="#07060f" bottom={0} depth={22} par={par} />
+      {/* ── Ridges, far to near ──────────────────────────────────────────
+             Distant ranges sit HIGHER in frame, lighter and hazier; the
+             foreground ridge sits lower and goes almost pure black. That
+             ordering is what sells the distance. ── */}
+      {/* Four ridges, far to near. Peak heights and spacing are deliberately
+             irregular — evenly spaced peaks of equal height read as a sawtooth
+             waveform, not a mountain range. The foreground is a smooth rolling
+             curve rather than another jagged band, because mixing silhouette
+             shapes is what stops the stack looking like one repeated motif.
+             Colours are desaturated blue-grey, not saturated violet: distance
+             drains colour, and the glow behind supplies the warmth. */}
+      <Ridge h={140} bottom={70} depth={4}  par={par} blur={2.6}
+             fill="rgba(154,152,196,0.26)"
+             d="M0,150 L80,104 L128,126 L212,48 L268,90 L340,68 L420,26 L496,80 L560,58 L648,104 L724,54 L806,96 L884,72 L968,118 L1052,86 L1132,120 L1200,102 L1200,200 L0,200 Z" />
+      <Ridge h={150} bottom={44} depth={9}  par={par} blur={1.3}
+             fill="rgba(96,92,146,0.44)"
+             d="M0,166 Q60,150 110,158 L190,96 L246,132 L322,110 L404,72 L470,120 L540,100 L622,146 L700,108 L780,140 L858,118 L940,156 L1024,126 L1110,152 L1200,134 L1200,200 L0,200 Z" />
+      <Ridge h={152} bottom={18} depth={15} par={par}
+             fill="rgba(44,42,78,0.88)"
+             d="M0,178 L74,142 L156,172 L232,120 L318,158 L396,128 L486,166 L566,124 L654,162 L740,134 L828,174 L912,140 L1000,176 L1088,146 L1176,178 L1200,168 L1200,200 L0,200 Z" />
+      <Ridge h={126} bottom={0}  depth={24} par={par}
+             fill="#04040b"
+             d="M0,172 Q140,146 262,166 Q382,184 500,156 Q622,130 742,158 Q862,184 980,160 Q1102,138 1200,164 L1200,200 L0,200 Z" />
 
       {/* Ground plane — converging lines give the vanishing point that tells
           the eye how far away the horizon is. */}
@@ -141,8 +179,8 @@ export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct }: 
         <div className="absolute inset-0" style={{
           transform: 'rotateX(72deg)', transformOrigin: '50% 0%',
           backgroundImage:
-            'linear-gradient(to right, rgba(128,82,255,0.16) 1px, transparent 1px),' +
-            'linear-gradient(to bottom, rgba(128,82,255,0.10) 1px, transparent 1px)',
+            'linear-gradient(to right, rgba(140,120,220,0.18) 1px, transparent 1px),' +
+            'linear-gradient(to bottom, rgba(140,120,220,0.12) 1px, transparent 1px)',
           backgroundSize: '52px 52px',
           maskImage: 'linear-gradient(to bottom, #000 0%, transparent 72%)',
           WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, transparent 72%)',
@@ -155,8 +193,8 @@ export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct }: 
           parallax transform. Putting both on one element would let the inline
           transform silently overwrite the classes. */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 top-[92px] scale-[0.58] opacity-70
-                   md:left-auto md:translate-x-0 md:right-[6%] md:top-[38px] md:scale-100 md:opacity-100"
+        className="absolute left-1/2 -translate-x-1/2 top-[104px] scale-[0.62] opacity-80
+                   md:left-auto md:translate-x-0 md:right-[9%] md:top-[34px] md:scale-[0.96] md:opacity-100"
       >
         <div style={{ perspective: '1000px', ...shift(-16) }}>
         <div className="relative" style={{ width: 300, height: 300, transformStyle: 'preserve-3d' }}>
@@ -183,20 +221,25 @@ export default function CalendarHorizon({ dayPct, weekPct, monthPct, yearPct }: 
         </div>
         </div>
       </div>
+      </div>
+
+      {/* Content rides on top of the scene — this is what makes it a hero
+          rather than a backdrop the page sits in front of. */}
+      <div className="relative z-10 px-4 sm:px-6 pt-5">{children}</div>
     </div>
   )
 }
 
-function Ridge({ d, fill, bottom, depth, par, blur }: {
-  d: string; fill: string; bottom: number; depth: number
+function Ridge({ d, fill, bottom, depth, par, blur, h }: {
+  d: string; fill: string; bottom: number; depth: number; h: number
   par: { x: number; y: number }; blur?: number
 }) {
   return (
     <svg
-      viewBox="0 0 1200 300" preserveAspectRatio="none"
+      viewBox="0 0 1200 200" preserveAspectRatio="none"
       className="absolute inset-x-0 w-full"
       style={{
-        bottom, height: 300,
+        bottom, height: h,
         filter: blur ? `blur(${blur}px)` : undefined,
         transform: `translate3d(${par.x * depth}px, ${par.y * depth * 0.4}px, 0)`,
       }}
