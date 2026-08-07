@@ -137,6 +137,19 @@ CREATE TABLE "SleepSession" (
 );
 
 -- CreateTable
+CREATE TABLE "HealthImportLog" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "ok" BOOLEAN NOT NULL DEFAULT true,
+    "metrics" INTEGER NOT NULL DEFAULT 0,
+    "sleep" INTEGER NOT NULL DEFAULT 0,
+    "workouts" INTEGER NOT NULL DEFAULT 0,
+    "skipped" INTEGER NOT NULL DEFAULT 0,
+    "span" TEXT,
+    "note" TEXT
+);
+
+-- CreateTable
 CREATE TABLE "HealthWorkout" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "externalId" TEXT NOT NULL,
@@ -178,6 +191,9 @@ CREATE UNIQUE INDEX "HealthMetricDaily_date_metric_key" ON "HealthMetricDaily"("
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SleepSession_date_key" ON "SleepSession"("date");
+
+-- CreateIndex
+CREATE INDEX "HealthImportLog_at_idx" ON "HealthImportLog"("at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "HealthWorkout_externalId_key" ON "HealthWorkout"("externalId");

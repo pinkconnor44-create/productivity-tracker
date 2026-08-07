@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { PageHeader, SegmentedControl } from '@/components/ui'
 import LiftTracker from '@/components/LiftTracker'
 import { useHealthData, LoadingBlock } from './bevel/shared'
+import { ImportStatus } from './bevel/ImportStatus'
 import { BevelDashboard } from './bevel/BevelDashboard'
 import { BevelSleep } from './bevel/BevelSleep'
 import { BevelRecovery } from './bevel/BevelRecovery'
@@ -30,7 +31,7 @@ type Range = '30' | '90' | '365'
 export default function BevelView() {
   const [tab, setTab] = useState<BevelTab>('dashboard')
   const [range, setRange] = useState<Range>('30')
-  const { data, loading, error } = useHealthData(Number(range))
+  const { data, loading, error, anchor } = useHealthData(Number(range))
 
   // Lifts is mounted from the first render, not on first visit: LiftTracker
   // owns the stopwatch UI and in-progress set drafts, and mounting it lazily
@@ -46,6 +47,8 @@ export default function BevelView() {
 
   return (
     <div className="space-y-5">
+      {/* Visibility probe for useHealthData — zero-size, purely structural. */}
+      <span ref={anchor} aria-hidden className="sr-only" />
       <PageHeader
         eyebrow="Bevel"
         title="Health"
@@ -71,6 +74,10 @@ export default function BevelView() {
         value={tab}
         onChange={open}
       />
+
+      {/* Import freshness. Shown on every sub-tab except Lifts, which has
+          nothing to do with the health pipeline. */}
+      {tab !== 'lifts' && data && <ImportStatus last={data.lastImport} />}
 
       {/* Keep-mounted panels, same hidden-div pattern as Shell: switching to
           Lifts and back must not reset a set in progress. */}

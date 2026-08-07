@@ -158,6 +158,30 @@ model SleepSession {
   raw       String? // original JSON, so a parser fix can reprocess history
 }
 
+// One row per authenticated import. Exists because "did the automation
+// actually run?" was otherwise unanswerable: a successful import that carries
+// unchanged data writes identical values, so comparing the data cannot
+// distinguish "ran and no-op'd" from "never ran". Only the request itself is
+// evidence.
+//
+// Unauthenticated requests are deliberately NOT logged — an endpoint that
+// writes a row for anyone who can reach it is a free disk-fill.
+model HealthImportLog {
+  id       Int      @id @default(autoincrement())
+  at       DateTime @default(now())
+  ok       Boolean  @default(true)
+  metrics  Int      @default(0)
+  sleep    Int      @default(0)
+  workouts Int      @default(0)
+  skipped  Int      @default(0)
+  // Day range covered by the payload, e.g. "2026-08-01 → 2026-08-07"
+  span     String?
+  // Failure reason or parser warnings, truncated
+  note     String?
+
+  @@index([at])
+}
+
 // `externalId` is HAE's workout id — the idempotency key. Re-POSTing the same
 // export updates in place instead of duplicating.
 model HealthWorkout {

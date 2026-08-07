@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
 import type { HealthResponse, HealthDay, MetricKey } from '@/lib/health'
 
 // ── dates ─────────────────────────────────────────────────────────────────
@@ -37,6 +37,9 @@ export type HealthState = {
   loading: boolean
   error: boolean
   refetch: () => void
+  /** Attach to any element inside the view. Used only to detect whether the
+   *  view is currently on screen, so a background refresh can be skipped. */
+  anchor: MutableRefObject<HTMLSpanElement | null>
 }
 
 /** Single fetch for the whole Bevel tab. Sub-tabs receive slices of this as
@@ -50,6 +53,7 @@ export function useHealthData(days: number): HealthState {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const inflight = useRef<AbortController | null>(null)
+  const anchor = useRef<HTMLSpanElement | null>(null)
 
   const load = useCallback(() => {
     inflight.current?.abort()
@@ -75,14 +79,23 @@ export function useHealthData(days: number): HealthState {
     return () => inflight.current?.abort()
   }, [load])
 
-  // Shell dispatches this on every tab change; keeps Bevel current without a
-  // poll when Connor comes back to it after an import has landed.
+  // Shell dispatches `score-refresh` on EVERY tab change, and Bevel stays
+  // mounted once visited — so without a guard this refetches the whole range
+  // while the user is on Tasks, Habits, Calendar, anywhere. A 365-day range is
+  // ~7,500 row reads, and Shell fires this on every single tab switch. The
+  // anchor's offsetParent is null exactly when Shell has it inside its
+  // `hidden` div, which is a cheaper and more direct test of "am I on screen"
+  // than threading the active tab down through props.
   useEffect(() => {
-    window.addEventListener('score-refresh', load)
-    return () => window.removeEventListener('score-refresh', load)
+    const onRefresh = () => {
+      if (anchor.current && anchor.current.offsetParent === null) return
+      load()
+    }
+    window.addEventListener('score-refresh', onRefresh)
+    return () => window.removeEventListener('score-refresh', onRefresh)
   }, [load])
 
-  return { data, loading, error, refetch: load }
+  return { data, loading, error, refetch: load, anchor }
 }
 
 // ── derived helpers ───────────────────────────────────────────────────────

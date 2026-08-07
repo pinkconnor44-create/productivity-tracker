@@ -269,10 +269,26 @@ export type HealthDay = {
   baselines: Partial<Record<MetricKey, number | null>>
 }
 
+/** Last authenticated import. Surfaced on an unauthenticated route on
+ *  purpose: it is metadata about Connor's own data, which that route already
+ *  returns in full, so it discloses nothing new — and putting it behind the
+ *  API key would mean the browser could not show it without holding the key. */
+export type LastImport = {
+  at: string
+  ok: boolean
+  metrics: number
+  sleep: number
+  workouts: number
+  skipped: number
+  span: string | null
+  note: string | null
+} | null
+
 export type HealthResponse = {
   start: string
   end: string
   days: HealthDay[]
+  lastImport: LastImport
   /** Baselines as of the most recent day in range — what the UI compares
    *  today's readings against. */
   baselines: Partial<Record<MetricKey, Baseline>>

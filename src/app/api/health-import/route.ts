@@ -108,6 +108,13 @@ export async function POST(req: NextRequest) {
       workouts += slice.length
     }
 
+    await recordImport({
+      ok: true, metrics, sleep, workouts,
+      skipped: parsed.skipped,
+      span: spanOf(parsed),
+      note: parsed.warnings.length ? parsed.warnings.join('; ').slice(0, 500) : null,
+    })
+
     return NextResponse.json({
       ok: true,
       metrics,
@@ -118,7 +125,43 @@ export async function POST(req: NextRequest) {
     })
   } catch (e) {
     console.error('[/api/health-import]', e)
+    // Log the failure too — a run that arrived and broke must be
+    // distinguishable from one that never arrived, which is the entire point
+    // of this table.
+    await recordImport({
+      ok: false, metrics: 0, sleep: 0, workouts: 0, skipped: parsed.skipped,
+      span: spanOf(parsed),
+      note: (e instanceof Error ? e.message : String(e)).slice(0, 500),
+    })
     return NextResponse.json({ error: 'import failed' }, { status: 500 })
+  }
+}
+
+function spanOf(parsed: { metrics: { date: string }[]; sleep: { date: string }[]; workouts: { date: string }[] }): string | null {
+  const days = [
+    ...parsed.metrics.map(m => m.date),
+    ...parsed.sleep.map(s => s.date),
+    ...parsed.workouts.map(w => w.date),
+  ].sort()
+  if (days.length === 0) return null
+  const lo = days[0], hi = days[days.length - 1]
+  return lo === hi ? lo : `${lo} → ${hi}`
+}
+
+/** Never allowed to break an import. A logging failure that rejected a
+ *  successful batch would be strictly worse than having no log at all. */
+async function recordImport(row: {
+  ok: boolean; metrics: number; sleep: number; workouts: number
+  skipped: number; span: string | null; note: string | null
+}) {
+  try {
+    await prisma.healthImportLog.create({ data: row })
+    // Keep the table bounded. Hourly imports are ~8,800 rows a year and the
+    // question this answers is always "recently?", never "last spring?".
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    await prisma.healthImportLog.deleteMany({ where: { at: { lt: cutoff } } })
+  } catch (e) {
+    console.error('[/api/health-import] failed to record import log', e)
   }
 }
 
@@ -131,12 +174,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
   try {
-    const [metrics, sleep, workouts] = await Promise.all([
+    const [metrics, sleep, workouts, recent] = await Promise.all([
       prisma.healthMetricDaily.count(),
       prisma.sleepSession.count(),
       prisma.healthWorkout.count(),
+      prisma.healthImportLog.findMany({ orderBy: { at: 'desc' }, take: 10 }),
     ])
-    return NextResponse.json({ ok: true, rows: { metrics, sleep, workouts } })
+    return NextResponse.json({ ok: true, rows: { metrics, sleep, workouts }, recent })
   } catch (e) {
     console.error('[/api/health-import GET]', e)
     return NextResponse.json({ error: 'count failed' }, { status: 500 })

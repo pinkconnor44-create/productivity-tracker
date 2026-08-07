@@ -6,40 +6,40 @@
         "name": "step_count",
         "units": "count",
         "data": [
-          { "date": "2026-08-05 00:00:00 -0400", "qty": 9124 },
-          { "date": "2026-08-06 00:00:00 -0400", "qty": 11402 }
+          { "date": "2019-03-05 00:00:00 -0400", "qty": 9124 },
+          { "date": "2019-03-06 00:00:00 -0400", "qty": 11402 }
         ]
       },
       {
         "name": "heart_rate_variability",
         "units": "ms",
         "data": [
-          { "date": "2026-08-05 00:00:00 -0400", "Min": 31, "Avg": 58.4, "Max": 96 },
-          { "date": "2026-08-06 00:00:00 -0400", "min": 34, "avg": 64.1, "max": 101 }
+          { "date": "2019-03-05 00:00:00 -0400", "Min": 31, "Avg": 58.4, "Max": 96 },
+          { "date": "2019-03-06 00:00:00 -0400", "min": 34, "avg": 64.1, "max": 101 }
         ]
       },
       {
         "name": "resting_heart_rate",
         "units": "count/min",
         "data": [
-          { "date": "2026-08-05 00:00:00 -0400", "Avg": 54 },
-          { "date": "2026-08-06 00:00:00 -0400", "Avg": 51 }
+          { "date": "2019-03-05 00:00:00 -0400", "Avg": 54 },
+          { "date": "2019-03-06 00:00:00 -0400", "Avg": 51 }
         ]
       },
       {
         "name": "active_energy",
         "units": "kcal",
         "data": [
-          { "date": "2026-08-05 00:00:00 -0400", "qty": 612.4 },
-          { "date": "2026-08-06 00:00:00 -0400", "qty": 845.9 }
+          { "date": "2019-03-05 00:00:00 -0400", "qty": 612.4 },
+          { "date": "2019-03-06 00:00:00 -0400", "qty": 845.9 }
         ]
       },
       {
         "name": "apple_exercise_time",
         "units": "min",
         "data": [
-          { "date": "2026-08-05 00:00:00 -0400", "qty": 42 },
-          { "date": "2026-08-06 00:00:00 -0400", "qty": 71 }
+          { "date": "2019-03-05 00:00:00 -0400", "qty": 42 },
+          { "date": "2019-03-06 00:00:00 -0400", "qty": 71 }
         ]
       },
       {
@@ -47,9 +47,9 @@
         "units": "hr",
         "data": [
           {
-            "date": "2026-08-05 00:00:00 -0400",
-            "sleepStart": "2026-08-04 23:12:00 -0400",
-            "sleepEnd": "2026-08-05 07:04:00 -0400",
+            "date": "2019-03-05 00:00:00 -0400",
+            "sleepStart": "2019-03-04 23:12:00 -0400",
+            "sleepEnd": "2019-03-05 07:04:00 -0400",
             "inBed": 7.87,
             "asleep": 7.21,
             "core": 4.02,
@@ -59,9 +59,9 @@
           },
           {
             "_comment": "The shape the REAL export actually uses: asleep and inBed are 0, totalSleep carries the value, and totalSleep = core + deep + rem + asleep. A first-non-null pick returns the 0 and destroys the night — this happened on 58 of 62 nights in the first real export.",
-            "date": "2026-08-06 00:00:00 -0400",
-            "sleepStart": "2026-08-05 23:58:00 -0400",
-            "sleepEnd": "2026-08-06 06:12:00 -0400",
+            "date": "2019-03-06 00:00:00 -0400",
+            "sleepStart": "2019-03-05 23:58:00 -0400",
+            "sleepEnd": "2019-03-06 06:12:00 -0400",
             "inBed": 0,
             "asleep": 0,
             "totalSleep": 5.88,
@@ -77,21 +77,21 @@
         "name": "apple_stand_hour",
         "units": "count",
         "data": [
-          { "date": "2026-08-06 00:00:00 -0400", "qty": 11 }
+          { "date": "2019-03-06 00:00:00 -0400", "qty": 11 }
         ]
       },
       {
         "name": "apple_stand_time",
         "units": "min",
         "data": [
-          { "date": "2026-08-06 00:00:00 -0400", "qty": 64 }
+          { "date": "2019-03-06 00:00:00 -0400", "qty": 64 }
         ]
       },
       {
         "name": "environmental_audio_exposure",
         "units": "dBASPL",
         "data": [
-          { "date": "2026-08-06 00:00:00 -0400", "Avg": 62.5 }
+          { "date": "2019-03-06 00:00:00 -0400", "Avg": 62.5 }
         ]
       },
       {
@@ -99,7 +99,7 @@
         "units": "count",
         "data": [
           { "date": "not-a-date", "qty": 5 },
-          { "date": "2026-08-06 00:00:00 -0400" }
+          { "date": "2019-03-06 00:00:00 -0400" }
         ]
       }
     ],
@@ -107,8 +107,8 @@
       {
         "id": "E9F7A2C1-0000-4A11-9C3D-FIXTURE000001",
         "name": "Traditional Strength Training",
-        "start": "2026-08-06 17:04:00 -0400",
-        "end": "2026-08-06 18:11:00 -0400",
+        "start": "2019-03-06 17:04:00 -0400",
+        "end": "2019-03-06 18:11:00 -0400",
         "duration": 4020,
         "activeEnergyBurned": { "qty": 431.2, "units": "kcal" },
         "avgHeartRate": 128,
@@ -116,8 +116,8 @@
       },
       {
         "name": "Outdoor Walk",
-        "start": "2026-08-05 12:30:00 -0400",
-        "end": "2026-08-05 13:05:00 -0400",
+        "start": "2019-03-05 12:30:00 -0400",
+        "end": "2019-03-05 13:05:00 -0400",
         "activeEnergyBurned": { "qty": 142.0, "units": "kcal" },
         "distance": { "qty": 2.4, "units": "mi" },
         "avgHeartRate": 104

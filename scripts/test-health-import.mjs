@@ -6,7 +6,7 @@
 //   node scripts/test-health-import.mjs [baseUrl]
 //
 // Defaults to http://localhost:3000. Reads HEALTH_IMPORT_KEY from .env.
-// Writes fixture rows for 2026-08-05/06; scripts/wipe-health-fixtures.mjs
+// Writes fixture rows for 2019-03-05/06; scripts/wipe-health-fixtures.mjs
 // removes everything again.
 import 'dotenv/config'
 import { readFileSync } from 'node:fs'
@@ -64,13 +64,13 @@ const notJson = await post('{ this is not json')
 check('malformed JSON → 400', notJson.status === 400, `got ${notJson.status}`)
 
 // 5 — read API returns the days with scores in range
-const read = await fetch(`${base}/api/health?start=2026-08-01&end=2026-08-07`).then(r => r.json())
+const read = await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-07`).then(r => r.json())
 check('read API returns days', Array.isArray(read.days) && read.days.length === 7, `got ${read.days?.length}`)
-const d6 = read.days?.find(d => d.date === '2026-08-06')
-check('2026-08-06 has sleep', d6?.sleep?.asleepMin != null, `asleepMin=${d6?.sleep?.asleepMin}`)
+const d6 = read.days?.find(d => d.date === '2019-03-06')
+check('2019-03-06 has sleep', d6?.sleep?.asleepMin != null, `asleepMin=${d6?.sleep?.asleepMin}`)
 // The real-export shape: asleep===0 with totalSleep carrying the value. A
 // first-non-null pick returns the 0 and the night reads as zero hours slept.
-check('2026-08-06 sleep minutes converted from hours', Math.round(d6?.sleep?.asleepMin) === 353, `got ${d6?.sleep?.asleepMin}`)
+check('2019-03-06 sleep minutes converted from hours', Math.round(d6?.sleep?.asleepMin) === 353, `got ${d6?.sleep?.asleepMin}`)
 check('asleep:0 does not beat totalSleep', d6?.sleep?.asleepMin > 0, `got ${d6?.sleep?.asleepMin}`)
 check('inBed:0 stored as null, not zero', d6?.sleep?.inBedMin === null, `got ${d6?.sleep?.inBedMin}`)
 // apple_stand_hour and apple_stand_time must not collide on one UI key.
@@ -82,7 +82,7 @@ check('steps mapped', d6?.metrics?.steps === 11402, `got ${d6?.metrics?.steps}`)
 check('unknown metric kept in extra', d6?.extra?.environmental_audio_exposure === 62.5, `got ${d6?.extra?.environmental_audio_exposure}`)
 check('workouts attached to the day', d6?.workouts?.length === 1, `got ${d6?.workouts?.length}`)
 check('workout duration from timestamps (min)', Math.round(d6?.workouts?.[0]?.durationMin) === 67, `got ${d6?.workouts?.[0]?.durationMin}`)
-const d5 = read.days?.find(d => d.date === '2026-08-05')
+const d5 = read.days?.find(d => d.date === '2019-03-05')
 check('miles converted to km', Math.abs(d5?.workouts?.[0]?.distanceKm - 3.862) < 0.01, `got ${d5?.workouts?.[0]?.distanceKm}`)
 // Deliberately NOT asserting "recovery === sleep on day 1". That holds only
 // against an empty database; as soon as any prior days exist the day has real

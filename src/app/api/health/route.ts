@@ -27,8 +27,22 @@ function today(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const EMPTY = (start: string, end: string): HealthResponse =>
-  ({ start, end, days: [], baselines: {}, empty: true })
+const EMPTY = (start: string, end: string, lastImport: HealthResponse['lastImport'] = null): HealthResponse =>
+  ({ start, end, days: [], baselines: {}, empty: true, lastImport })
+
+async function latestImport(): Promise<HealthResponse['lastImport']> {
+  try {
+    const r = await prisma.healthImportLog.findFirst({ orderBy: { at: 'desc' } })
+    if (!r) return null
+    return {
+      at: r.at.toISOString(), ok: r.ok, metrics: r.metrics, sleep: r.sleep,
+      workouts: r.workouts, skipped: r.skipped, span: r.span, note: r.note,
+    }
+  } catch {
+    // Never let the import log break the health read.
+    return null
+  }
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -40,7 +54,7 @@ export async function GET(req: NextRequest) {
   const fetchStart = addDays(start, -HEALTH_CONSTANTS.BASELINE_DAYS)
 
   try {
-    const [metricRows, sleepRows, workoutRows] = await Promise.all([
+    const [metricRows, sleepRows, workoutRows, lastImport] = await Promise.all([
       prisma.healthMetricDaily.findMany({
         where: { date: { gte: fetchStart, lte: end } },
         orderBy: { date: 'asc' },
@@ -53,10 +67,11 @@ export async function GET(req: NextRequest) {
         where: { date: { gte: fetchStart, lte: end } },
         orderBy: { start: 'asc' },
       }),
+      latestImport(),
     ])
 
     if (metricRows.length === 0 && sleepRows.length === 0 && workoutRows.length === 0) {
-      return NextResponse.json(EMPTY(start, end))
+      return NextResponse.json(EMPTY(start, end, lastImport))
     }
 
     // ── index everything by day ──────────────────────────────────────────
@@ -163,6 +178,7 @@ export async function GET(req: NextRequest) {
       start, end, days,
       baselines: latestBaselines,
       empty: false,
+      lastImport,
     }
     return NextResponse.json(res)
   } catch (e) {
