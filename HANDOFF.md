@@ -71,6 +71,22 @@ buttons visible without hover) is *still* outstanding.
   heuristic. This is the second-most-likely thing to be wrong on first contact
   with a real payload, after the timezone assumption.
 
+## ⚠️ Parked here — two open issues
+
+**`docs/BEVEL-OPEN-ISSUES.md` is the pickup point.** Connor stopped here on
+2026-08-07 to come back later.
+
+1. **HAE reports success but zero POSTs ever reach the server.** Confirmed from
+   Vercel runtime logs, not inferred — no request is being made at all, so it
+   is neither an auth nor a parse problem. Auth *was* broken separately (the
+   Vercel env var was set through a PowerShell pipe and didn't land); that is
+   fixed and verified, and is not this.
+2. **Recovery does not match Bevel's numbers.** Expected to some degree — these
+   were always approximations — but the likely real cause is that Bevel uses
+   *sleeping* HRV while this app uses HAE's whole-day HRV average. Different
+   quantity, systematic divergence. Fixable by exporting minute-level HRV and
+   isolating the sleep window. Investigate the input before tuning any weights.
+
 ## Next steps
 
 1. **Device QA on the iPhone PWA** — `docs/BEVEL-QA.md` is the checklist. This
