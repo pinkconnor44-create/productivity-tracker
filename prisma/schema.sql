@@ -109,6 +109,49 @@ CREATE TABLE "Project" (
     "updatedAt" DATETIME NOT NULL
 );
 
+-- CreateTable
+CREATE TABLE "HealthMetricDaily" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "date" TEXT NOT NULL,
+    "metric" TEXT NOT NULL,
+    "qty" REAL,
+    "min" REAL,
+    "avg" REAL,
+    "max" REAL,
+    "units" TEXT
+);
+
+-- CreateTable
+CREATE TABLE "SleepSession" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "date" TEXT NOT NULL,
+    "start" TEXT,
+    "end" TEXT,
+    "inBedMin" REAL,
+    "asleepMin" REAL,
+    "coreMin" REAL,
+    "deepMin" REAL,
+    "remMin" REAL,
+    "awakeMin" REAL,
+    "raw" TEXT
+);
+
+-- CreateTable
+CREATE TABLE "HealthWorkout" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "externalId" TEXT NOT NULL,
+    "date" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "start" TEXT,
+    "end" TEXT,
+    "durationMin" REAL,
+    "activeKcal" REAL,
+    "avgHr" REAL,
+    "maxHr" REAL,
+    "distanceKm" REAL,
+    "raw" TEXT
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "TaskCompletion_taskId_date_key" ON "TaskCompletion"("taskId", "date");
 
@@ -126,4 +169,19 @@ CREATE UNIQUE INDEX "HabitSkip_habitId_date_key" ON "HabitSkip"("habitId", "date
 
 -- CreateIndex
 CREATE UNIQUE INDEX "LiftGroup_name_key" ON "LiftGroup"("name");
+
+-- CreateIndex
+CREATE INDEX "HealthMetricDaily_date_idx" ON "HealthMetricDaily"("date");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "HealthMetricDaily_date_metric_key" ON "HealthMetricDaily"("date", "metric");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SleepSession_date_key" ON "SleepSession"("date");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "HealthWorkout_externalId_key" ON "HealthWorkout"("externalId");
+
+-- CreateIndex
+CREATE INDEX "HealthWorkout_date_idx" ON "HealthWorkout"("date");
 
