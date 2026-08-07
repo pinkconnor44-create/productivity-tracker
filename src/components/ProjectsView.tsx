@@ -419,7 +419,7 @@ export default function ProjectsView() {
                         {item.text}
                       </span>
                       <button onClick={() => deleteItem(item.id)}
-                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant/40 hover:text-rose-500 hover:bg-rose-500/15 opacity-0 group-hover:opacity-100 transition-all">
+                        className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant/40 hover:text-rose-500 hover:bg-rose-500/15 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                         ✕
                       </button>
                     </div>

@@ -343,3 +343,12 @@ button, input, textarea, select {
 .neon-pulse {
   animation: neon-pulse 1.6s ease-in-out infinite;
 }
+
+/* Horizontal scroll without a visible bar — used by SegmentedControl when it
+   carries more segments than fit a phone. The class was referenced before it
+   existed, so the overflow worked but showed a scrollbar. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }

@@ -254,7 +254,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
                 }`}
               >
                 {/* Drag handle */}
-                <span className="shrink-0 mt-0.5 text-on-surface opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-xs select-none leading-[20px]">
+                <span className="shrink-0 mt-0.5 text-on-surface opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing text-xs select-none leading-[20px]">
                   ⠿
                 </span>
                 <button onClick={() => toggleItem(item.id)}
@@ -293,12 +293,12 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
                   <>
                     {!item.done && (
                       <button onClick={() => startEdit(item)}
-                        className="shrink-0 mt-0.5 p-1 rounded-lg text-on-surface hover:text-primary-400 hover:bg-primary-500/10 opacity-0 group-hover:opacity-100 transition-all text-xs">
+                        className="shrink-0 mt-0.5 p-1 rounded-lg text-on-surface hover:text-primary-400 hover:bg-primary-500/10 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all text-xs">
                         ✏
                       </button>
                     )}
                     <button onClick={() => deleteItem(item.id)}
-                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 opacity-0 group-hover:opacity-100 transition-all">
+                      className="shrink-0 w-8 h-8 flex items-center justify-center rounded-xl text-sm font-bold text-on-surface-variant hover:text-rose-500 hover:bg-rose-500/15 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
                       ✕
                     </button>
                   </>
