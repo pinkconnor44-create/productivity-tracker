@@ -2,59 +2,62 @@
 
 > Living session note: where things stand + what to do next. Update at the end of each work session so the next one (you or Claude) has context fast.
 
-_Last updated: 2026-08-07 — **Bevel Phases 0–5 are built, verified and on a
-preview deploy.** The health pipeline, the Bevel tab and the Lifts relocation
-are done; what remains needs Connor's phone and his approval._
+_Last updated: 2026-08-07 — **Bevel Phases 0–8 are done and merged to prod, and
+91 days of Connor's real Apple Watch data are imported and verified.** The
+phone automation still delivers nothing and the recovery score disagrees with
+Bevel's; both are parked in `docs/BEVEL-OPEN-ISSUES.md`._
 
 ## Current state
 
-Branch **`feature/bevel-health`**, 4 commits ahead of `main`. `main` itself is
-still **18 commits ahead of origin — nothing has ever been pushed.**
+**Merged to `main` and deployed to prod** — https://productivity-tracker-murex.vercel.app.
+`main` is **28 commits ahead of origin; nothing has ever been pushed.**
+`feature/bevel-health` was merged with `--no-ff`, so `git revert -m 1 1b0cc48`
+undoes the entire feature in one step.
 
-**Preview (Phase 8 gate):**
-https://productivity-tracker-466gt6m76-pinkconnor44-creates-projects.vercel.app
-Prod is untouched and still serves the pre-Bevel app.
-
-- **Phases 0–5 complete.** Three additive tables live on Turso; `POST
-  /api/health-import` (the app's first authed route); `GET /api/health` with
+- **Phases 0–8 complete.** Three additive tables on Turso; `POST
+  /api/health-import` (the app's only authed route); `GET /api/health` with
   trailing baselines and the three scores; the Bevel tab with six sub-tabs;
-  backfill + seed + wipe scripts.
+  backfill/seed/wipe scripts; merged and deployed.
 - **Lifts is no longer a top-level tab** — it is the Lifts sub-tab of Bevel,
   same component, same APIs, same tables. Only its mount point moved.
-- **Phase 6 was already done** (score rings, shipped as C6 last session).
-- `HEALTH_IMPORT_KEY` is in `.env` and in all three Vercel environments.
-- The design-system rebuild from the previous session is unchanged and still
-  deployed to prod.
-
-⚠️ **The Bevel tab is currently showing ~75 days of DEMO data**, seeded through
-the real endpoint by `scripts/seed-health-fixtures.mjs` so the tab could be
-reviewed before the app purchase. Preview and prod share one Turso database.
-**Run `node scripts/wipe-health-fixtures.mjs --yes` before the first real
-backfill** or invented HRV values will sit inside the same trailing baselines
-as Connor's real readings.
+- **Phase 6 was already done** (score rings, shipped as C6 earlier the same day).
+- **Real data is in**: 1,708 metric rows, 62 nights, 11 workouts covering
+  2026-05-09 → 2026-08-07. Baselines are full and no longer calibrating, so
+  every score is meaningful now — the "wait 30 days" caveat only applied to
+  starting from empty, and backfill removed it.
+- The demo seed has been wiped. `scripts/seed-health-fixtures.mjs` still exists
+  for demoing an empty install; `wipe-health-fixtures.mjs` clears it.
+- `HEALTH_IMPORT_KEY` is in `.env` and all three Vercel environments.
 
 ## Verified vs unverified
 
 **Verified** — by running it, not by reading it:
-- `scripts/test-health-import.mjs`, 21 checks against a live server and the real
+- `scripts/test-health-import.mjs`, 26 checks against a live server and the real
   Turso DB: 401 on wrong key, 400 on bad JSON, malformed points skipped without
   failing the batch, re-POST leaves row counts byte-identical, sleep hours →
   minutes, miles → km, workout duration derived from timestamps, unknown metrics
-  preserved in `extra`.
-- `GET /api/health` over the 75 seeded days: 30-day baselines full and no longer
-  calibrating, every day carries a recovery score, scores land in sensible bands.
-- `npm run build` clean; `npx tsc --noEmit` clean; both new routes in the build
-  output.
-- SSR'd shell contains `data-tab="bevel"` and no longer contains Lifts.
+  preserved in `extra`, and the three real-export shapes below.
+- **The real export parsed correctly**: 1,708 metrics / 62 nights / 11 workouts
+  over 91 days, nothing skipped, sleep averaging 7.07h across a 4.04–9.35h range.
+- **Day attribution is correct — confirmed against Apple Health by Connor.**
+  Sleep durations for 2026-08-04→07 matched exactly (6.8 / 7.1 / 8.6 / 7.6h).
+  This closes the highest-risk assumption in the whole pipeline: `toLocalDay()`
+  taking `slice(0,10)` of HAE's timestamp really is the phone's local day.
+- **Auth against prod**: correct key → row counts, trailing-whitespace key →
+  accepted, wrong key → 401, no key → 401.
+- `npm run build` and `npx tsc --noEmit` clean; both routes in the build output;
+  prod serves `data-tab="bevel"` and no longer serves Lifts.
 
-**NOT verified — the real gap:** *nothing in the Bevel UI has been rendered.*
-The Chrome extension was not connected this session, so no browser drove the
-app at all. Types and the build pass, and the data layer is exercised hard, but
-a runtime error inside a sub-tab's render would not have been caught. Treat
-`docs/BEVEL-QA.md` as genuinely unrun, not as a formality.
+**NOT verified — the same real gap as before:** *nothing in the Bevel UI has
+ever been rendered.* The Chrome extension was not connected, so no browser
+drove the app at any point — including before it was merged and deployed to
+prod. Types and the build pass and the data layer is exercised hard, but a
+runtime error inside a sub-tab's render would not have been caught. Connor has
+looked at it on his phone and likes it, which is partial evidence, but
+`docs/BEVEL-QA.md` is genuinely unrun.
 
-This also means last session's outstanding phone QA (Scratchpad checklist
-buttons visible without hover) is *still* outstanding.
+Last session's outstanding phone QA (Scratchpad checklist buttons visible
+without hover) is *still* outstanding.
 
 ## Traps found this session
 
@@ -68,8 +71,28 @@ buttons visible without hover) is *still* outstanding.
   is pure scoring and deliberately imports nothing from the component tree.
 - **HAE's workout `duration` has shipped in both seconds and minutes.** The
   parser prefers `end - start` and only falls back to `duration` with a >600
-  heuristic. This is the second-most-likely thing to be wrong on first contact
-  with a real payload, after the timezone assumption.
+  heuristic. Real payload confirmed seconds.
+- **`"asleep": 0` with the real value in `totalSleep` — on 58 of 62 nights.**
+  A first-non-null pick returns the 0, which is indistinguishable from "slept
+  zero hours", and would have destroyed most of the sleep history silently.
+  Zero is not a measurement in these fields; it marks the field as *not the one
+  carrying the value*. Also: `asleep` is the unspecified-stage **component**,
+  and `totalSleep = core + deep + rem + asleep` — it is not the total.
+  **General lesson: `?? `/first-non-null is the wrong operator for any numeric
+  field where an absent value is encoded as 0.**
+- **A secret set through a PowerShell pipe does not land.** `$k | npx vercel env
+  add …` stored something that was not the key, and prod 401'd its own correct
+  key. Use `printf '%s' "$k" | …` from bash. The endpoint now trims both sides,
+  because this failure looks exactly like a wrong key on a background job
+  nobody is watching.
+- **Test fixtures used real recent dates and overwrote real data.** Running the
+  suite against the shared Turso DB clobbered 2026-08-05/06 readings. Restored
+  from the export and verified. Fixture dates moved to **2019** — two decades
+  out of range cannot collide. *Preview, prod and local dev all share one
+  database; there is no test database.*
+- **`score-refresh` fires on every tab change and Bevel stays mounted**, so it
+  was refetching its whole range while the user sat on other tabs. Guarded by
+  an off-screen check (`offsetParent === null`).
 
 ## ⚠️ Parked here — two open issues
 
@@ -80,7 +103,10 @@ buttons visible without hover) is *still* outstanding.
    Vercel runtime logs, not inferred — no request is being made at all, so it
    is neither an auth nor a parse problem. Auth *was* broken separately (the
    Vercel env var was set through a PowerShell pipe and didn't land); that is
-   fixed and verified, and is not this.
+   fixed and verified, and is not this. **Check first whether HAE Premium was
+   actually bought** — REST API automations are a paid feature, a manual export
+   is not, and a free-tier install showing automation UI while never sending
+   fits the evidence better than anything else on the list.
 2. **Recovery does not match Bevel's numbers.** Expected to some degree — these
    were always approximations — but the likely real cause is that Bevel uses
    *sleeping* HRV while this app uses HAE's whole-day HRV average. Different
@@ -89,24 +115,26 @@ buttons visible without hover) is *still* outstanding.
 
 ## Next steps
 
-1. **Device QA on the iPhone PWA** — `docs/BEVEL-QA.md` is the checklist. This
-   is the outstanding item and it is genuinely unrun.
-2. **Buy Health Auto Export — JSON+CSV** (~$24.99). Still the long pole: the
-   30-day baselines need calendar time to fill once it is running.
-3. Configure the HAE automation — the empty state in the app lists the five
-   steps and shows the endpoint URL for whichever deployment you are on.
-4. `node scripts/wipe-health-fixtures.mjs --yes`, then backfill with
-   `scripts/backfill-health.mjs` per month of export.
-5. **Phase 8**: approve → merge `feature/bevel-health` → `npx vercel --prod`.
-6. `git push` — still 18+ commits local-only.
+1. **Work `docs/BEVEL-OPEN-ISSUES.md`** — the automation delivering nothing,
+   then the recovery/HRV mismatch. Start with the HAE Premium check.
+2. **Device QA on the iPhone PWA** — `docs/BEVEL-QA.md`. Still unrun, and the
+   feature is now in production, so this is overdue rather than pending.
+3. `git push` — **28 commits local-only**, including the entire Bevel feature.
+   There is no off-machine copy of any of it.
+4. Ongoing data: once the automation works it is hands-off (hourly, upserts,
+   gaps self-heal). Further history beyond 2026-05-09 needs one HAE file export
+   per month through `scripts/backfill-health.mjs`.
 
 ## Open questions / blockers
 
-- **Connor to buy Health Auto Export.** Blocks Phase 5 and nothing else; the
-  entire code path is built and testable without it.
-- **Approval to merge and deploy prod** — deliberately not done.
-- Whether to keep the demo seed data around for a while (it makes the tab
-  reviewable) or wipe it now. Wipe is mandatory before real backfill either way.
+- **Is HAE Premium purchased?** Unconfirmed, and it gates the REST API
+  automation. Leading candidate for issue 1.
+- **Recovery input**: switching from whole-day to sleeping HRV means storing
+  minute-level HRV samples — a schema addition. Decide before tuning weights.
 - Orrery tuning is still open and cheap — `src/components/orrery/Orrery3D.tsx`.
 - Backlog, unstarted: per-screen depth / hero imagery (Connor, 2026-08-07,
   "don't make it yet, keep it in mind"). See the end of `plan.md`.
+
+_(Resolved this session and removed from this list: the merge/deploy approval
+gate, and whether to keep the demo seed — merged and deployed, seed wiped, real
+data in.)_

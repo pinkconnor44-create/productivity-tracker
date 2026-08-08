@@ -26,6 +26,14 @@ made at all. A request that arrived and failed would appear as a 4xx/5xx line.
 - The URL is right and the automation is enabled (per Connor).
 
 **Still to check, roughly in order of likelihood:**
+0. **Is HAE Premium actually purchased?** REST API automations are a paid
+   feature. Connor produced a manual export, which the free tier allows, but it
+   was never confirmed that the Premium tier was bought — and this was written
+   up assuming it had been. A free-tier install can show automation UI and
+   report success while never making the request, which matches the symptom
+   exactly: *configured, claims to send, zero requests arrive*. **Check this
+   first — it is the cheapest to rule out and it fits the evidence better than
+   anything below.**
 1. **"Sync" vs "Automation" are different things in HAE.** The 100% progress
    indicator is HAE loading data *from HealthKit into its own database*. It
    says nothing about whether a REST automation fired. Look for a per-automation
