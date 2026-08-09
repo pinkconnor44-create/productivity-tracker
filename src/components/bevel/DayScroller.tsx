@@ -9,10 +9,11 @@ import { addDays, today } from './shared'
 // not a window length. The window is now an implementation detail: it starts
 // at 90 days and only grows when the user actually scrolls back that far.
 //
-// Newest is LEFTMOST and time runs rightward into the past. That is the wrong
-// direction for a chart and the right one for this: it opens on today with no
-// scroll-to-end effect, and "scroll right to go back" matches how the strip is
-// read on a phone.
+// Time runs LEFT TO RIGHT: oldest on the left, today on the right, matching
+// every calendar and chart in the app — and the arrows agree with it, left
+// going back and right going forward. The first version ran newest-first to
+// avoid needing a scroll-to-end on mount; that saved one effect and cost the
+// reading direction everyone already has, which was the wrong trade.
 
 type Props = {
   days: HealthDay[]
@@ -33,26 +34,28 @@ function hasAny(d: HealthDay): boolean {
 }
 
 export function DayScroller({ days, selected, onSelect, onLoadEarlier, loadingEarlier }: Props) {
-  const strip = useRef<HTMLDivElement | null>(null)
   const selectedRef = useRef<HTMLButtonElement | null>(null)
 
-  // Newest first. `days` arrives oldest-first from the API.
-  const ordered = useMemo(() => [...days].reverse(), [days])
+  // `days` already arrives oldest-first from the API, which is the order the
+  // strip renders in: oldest left, today right.
+  const ordered = days
   const withData = useMemo(() => new Set(days.filter(hasAny).map(d => d.date)), [days])
 
   const t = today()
   const index = ordered.findIndex(d => d.date === selected)
-  const newest = ordered[0]?.date
-  const oldest = ordered[ordered.length - 1]?.date
+  const oldest = ordered[0]?.date
+  const newest = ordered[ordered.length - 1]?.date
 
-  // Keep the selection in view when it moves by arrow rather than by tap.
+  // Keep the selection in view. This also does the initial scroll: the default
+  // selection is the newest day with data, which sits at the far RIGHT of a
+  // strip that opens scrolled to the left.
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ block: 'nearest', inline: 'center' })
   }, [selected])
 
   function step(delta: number) {
-    // delta -1 = older (rightward in this strip), +1 = newer.
-    const next = ordered[index - delta]
+    // +1 = forward in time (right), -1 = back in time (left).
+    const next = ordered[index + delta]
     if (next) onSelect(next.date)
   }
 
@@ -75,11 +78,26 @@ export function DayScroller({ days, selected, onSelect, onLoadEarlier, loadingEa
       </button>
 
       <div
-        ref={strip}
         className="flex-1 min-w-0 flex gap-1.5 overflow-x-auto no-scrollbar py-0.5"
         role="group"
         aria-label="Select a day"
       >
+        {/* Older days live to the LEFT, so the widen-the-window control does
+            too — putting it at the end of the strip would mean scrolling past
+            today into the future to load the past. */}
+        {onLoadEarlier && (
+          <button
+            type="button"
+            onClick={onLoadEarlier}
+            disabled={loadingEarlier}
+            className="shrink-0 w-[52px] rounded-xl border border-dashed border-outline-variant/50 px-1 py-2 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant/60 hover:text-on-surface transition-colors disabled:opacity-50"
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wide leading-none">
+              {loadingEarlier ? '…' : 'More'}
+            </span>
+            <span className="text-[15px] leading-tight">↺</span>
+          </button>
+        )}
         {ordered.map(d => {
           const active = d.date === selected
           const dot = withData.has(d.date)
@@ -114,19 +132,6 @@ export function DayScroller({ days, selected, onSelect, onLoadEarlier, loadingEa
           )
         })}
 
-        {onLoadEarlier && (
-          <button
-            type="button"
-            onClick={onLoadEarlier}
-            disabled={loadingEarlier}
-            className="shrink-0 w-[52px] rounded-xl border border-dashed border-outline-variant/50 px-1 py-2 flex flex-col items-center justify-center gap-0.5 text-on-surface-variant/60 hover:text-on-surface transition-colors disabled:opacity-50"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-wide leading-none">
-              {loadingEarlier ? '…' : 'More'}
-            </span>
-            <span className="text-[15px] leading-tight">↺</span>
-          </button>
-        )}
       </div>
 
       <button
