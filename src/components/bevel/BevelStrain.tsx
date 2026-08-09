@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Card, Section, Ring, MetricRow, TrendChart, METRIC_COLORS } from '@/components/ui'
 import { deltaPct, formatMinutes, type HealthResponse, type HealthWorkoutLite } from '@/lib/health'
-import { ChartTip, LoadingBlock, CalibratingNote, clockTime, formatDay, latestDayWith, seriesOf, type Tip } from './shared'
+import { ChartTip, LoadingBlock, CalibratingNote, NoDayData, clockTime, dayOf, formatDay, seriesOf, type Tip } from './shared'
 
 // Strain detail: the ring, today's workouts, and the active-energy history
 // that the score is measured against.
@@ -10,14 +10,14 @@ import { ChartTip, LoadingBlock, CalibratingNote, clockTime, formatDay, latestDa
 // A low strain score is a rest day, not a failure — nothing on this tab uses
 // scoreColor's traffic light, and the copy never calls a light day "bad".
 
-export function BevelStrain({ data }: { data: HealthResponse }) {
+export function BevelStrain({ data, selected }: { data: HealthResponse; selected: string }) {
   const [tip, setTip] = useState<Tip | null>(null)
 
-  const day = latestDayWith(data.days, d => d.scores.strain != null || d.workouts.length > 0)
+  const day = dayOf(data.days, selected)
   const kcalSeries = seriesOf(data.days, 'activeKcal')
 
-  if (!day) {
-    return <Card padding={20}><LoadingBlock label="No activity recorded in this range." /></Card>
+  if (!day || (day.scores.strain == null && day.workouts.length === 0)) {
+    return <NoDayData date={selected} what="activity recorded" />
   }
 
   const kcalBase = data.baselines.activeKcal

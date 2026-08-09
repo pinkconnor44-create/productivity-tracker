@@ -1,7 +1,7 @@
 'use client'
 import { StatCard, RingCluster, InsightCard, Section, Card, TrendChart, METRIC_COLORS } from '@/components/ui'
 import { deltaPct, formatMinutes, METRIC_DEFS, type HealthResponse, type MetricKey } from '@/lib/health'
-import { ChartTip, CalibratingNote, formatDay, latestDayWith, scoreSeries, type Tip } from './shared'
+import { ChartTip, CalibratingNote, NoDayData, dayOf, scoreSeries, type Tip } from './shared'
 import { useState } from 'react'
 import type { BevelTab } from '../BevelView'
 
@@ -11,38 +11,31 @@ import type { BevelTab } from '../BevelView'
 
 const STAT_KEYS: MetricKey[] = ['hrv', 'restingHr', 'steps', 'activeKcal', 'exerciseMin', 'respRate', 'spo2', 'vo2Max']
 
-export function BevelDashboard({ data, onOpen }: { data: HealthResponse; onOpen: (t: BevelTab) => void }) {
+export function BevelDashboard({ data, selected, onOpen }: { data: HealthResponse; selected: string; onOpen: (t: BevelTab) => void }) {
   const [tip, setTip] = useState<Tip | null>(null)
 
-  // "Today" is the most recent day carrying any reading. Before HAE's first
-  // run of the morning that is yesterday, and labelling it honestly is better
-  // than showing a page of dashes.
-  const day = latestDayWith(data.days, d =>
-    Object.values(d.metrics).some(v => v != null) || d.sleep != null || d.workouts.length > 0
-  )
-  const isToday = day?.date === data.end
+  // The day chosen in the scroller. It defaults to the most recent day
+  // carrying any reading, which before HAE's first run of the morning is
+  // yesterday.
+  //
+  // There used to be an amber "Showing Fri, Aug 7 — no readings have arrived
+  // for today yet" line here. It was right when the day was picked FOR the
+  // user and wrong the moment the user picks it themselves: it read as a
+  // warning about a deliberate choice. The scroller says which day is selected
+  // far more clearly than a sentence can, and a day with no data is already
+  // visible there as a chip with no dot.
+  const day = dayOf(data.days, selected)
 
-  if (!day) {
-    return (
-      <div className="glass rounded-2xl px-5 py-8 text-center">
-        <div className="text-body font-semibold text-on-surface">No readings in this range</div>
-        <div className="text-caption text-on-surface-variant/55 mt-1.5">
-          Widen the range, or check that the export automation ran.
-        </div>
-      </div>
-    )
+  const hasAnything =
+    !!day && (Object.values(day.metrics).some(v => v != null) || day.sleep != null || day.workouts.length > 0)
+  if (!day || !hasAnything) {
+    return <NoDayData date={selected} what="readings" />
   }
 
   const recentScores = scoreSeries(data.days.slice(-14), 'recovery')
 
   return (
     <div className="space-y-5">
-      {!isToday && (
-        <div className="text-tiny text-amber-400/80 font-semibold">
-          Showing {formatDay(day.date)} — no readings have arrived for today yet.
-        </div>
-      )}
-
       {/* Hero rings. Tapping one opens its detail tab — the same affordance
           Bevel uses, and it saves a trip back up to the sub-tab bar. */}
       <div className="glass rounded-2xl px-4 sm:px-6 py-6">

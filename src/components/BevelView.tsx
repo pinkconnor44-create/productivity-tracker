@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
-import { PageHeader, SegmentedControl } from '@/components/ui'
+import { useEffect, useState } from 'react'
+import { SegmentedControl } from '@/components/ui'
 import LiftTracker from '@/components/LiftTracker'
-import { useHealthData, LoadingBlock } from './bevel/shared'
+import { useStopwatch } from '@/lib/stopwatch'
+import { useHealthData, LoadingBlock, latestDayWith, today } from './bevel/shared'
+import { DayScroller } from './bevel/DayScroller'
 import { ImportStatus } from './bevel/ImportStatus'
 import { BevelDashboard } from './bevel/BevelDashboard'
 import { BevelSleep } from './bevel/BevelSleep'
@@ -14,6 +16,12 @@ import { HealthEmptyState } from './bevel/HealthEmptyState'
 // Bevel — Apple Watch health, plus the lift tracker that used to have its own
 // tab. One fetch at this level feeds every sub-tab; Lifts is untouched and
 // keeps its own APIs and state.
+//
+// The page header and the 30/90/365 range control were removed 2026-08-09.
+// Every sub-tab except Trends renders exactly ONE day, so the control that
+// belongs at the top is a day picker, not a window length. The window is now
+// an implementation detail that starts at 90 days and grows only when the user
+// scrolls past it.
 
 export type BevelTab = 'dashboard' | 'sleep' | 'recovery' | 'strain' | 'lifts' | 'trends'
 
@@ -26,44 +34,59 @@ const TABS: { value: BevelTab; label: string }[] = [
   { value: 'trends', label: 'Trends' },
 ]
 
-type Range = '30' | '90' | '365'
+/** Days fetched on open. Wide enough that scrolling back a couple of months
+ *  needs no extra request, narrow enough that opening Bevel is not a
+ *  four-figure row read. */
+const INITIAL_WINDOW = 90
+const WINDOW_STEPS = [90, 180, 365, 730]
 
 export default function BevelView() {
   const [tab, setTab] = useState<BevelTab>('dashboard')
-  const [range, setRange] = useState<Range>('30')
-  const { data, loading, error, anchor } = useHealthData(Number(range))
+  const [windowDays, setWindowDays] = useState(INITIAL_WINDOW)
+  const { data, loading, error, anchor } = useHealthData(windowDays)
+  const { setLiftsActive } = useStopwatch()
 
-  // Lifts is mounted from the first render, not on first visit: LiftTracker
-  // owns the stopwatch UI and in-progress set drafts, and mounting it lazily
-  // would mean the floating timer only exists once the sub-tab has been
-  // opened — a regression against the old standalone Lifts tab.
+  // The day every sub-tab renders. Null until the first response, then the
+  // most recent day carrying anything — which in the morning is yesterday,
+  // because HAE has not run yet.
+  const [selected, setSelected] = useState<string | null>(null)
+  useEffect(() => {
+    if (!data || selected !== null) return
+    const latest = latestDayWith(data.days, d =>
+      d.sleep != null || d.workouts.length > 0 || Object.values(d.metrics).some(v => v != null)
+    )
+    setSelected(latest?.date ?? data.end ?? today())
+  }, [data, selected])
+
+  // Lifts is mounted from the first render, not on first visit: it owns
+  // in-progress set drafts, and a lazy mount would drop a set the moment the
+  // user looked at another sub-tab.
   const [visited, setVisited] = useState<Set<BevelTab>>(() => new Set<BevelTab>(['dashboard', 'lifts']))
   function open(t: BevelTab) {
     setTab(t)
     setVisited(prev => prev.has(t) ? prev : new Set(prev).add(t))
   }
 
+  // The rest timer belongs to Lifts and nothing else. Shell renders it (it must
+  // sit outside the transformed tab-fade subtree, or `position: fixed` would be
+  // trapped) but only Bevel knows which sub-tab is open, so the flag is shared
+  // through the stopwatch context rather than drilled through Shell's props.
+  useEffect(() => {
+    setLiftsActive(tab === 'lifts')
+    return () => setLiftsActive(false)
+  }, [tab, setLiftsActive])
+
   const healthEmpty = !loading && !error && (data?.empty ?? true)
+  const canLoadEarlier = WINDOW_STEPS.some(s => s > windowDays)
+  function loadEarlier() {
+    const next = WINDOW_STEPS.find(s => s > windowDays)
+    if (next) setWindowDays(next)
+  }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Visibility probe for useHealthData — zero-size, purely structural. */}
       <span ref={anchor} aria-hidden className="sr-only" />
-      <PageHeader
-        eyebrow="Bevel"
-        title="Health"
-        sub="Apple Watch recovery, sleep and strain — plus your lifts."
-        right={
-          tab !== 'lifts' ? (
-            <SegmentedControl
-              ariaLabel="Time range"
-              options={(['30', '90', '365'] as Range[]).map(r => ({ value: r, label: `${r}d` }))}
-              value={range}
-              onChange={setRange}
-            />
-          ) : undefined
-        }
-      />
 
       {/* Sub-tab bar. Scrollable rather than wrapping — six segments do not
           fit a 375px viewport and a wrapped second row reads as two bars. */}
@@ -74,6 +97,18 @@ export default function BevelView() {
         value={tab}
         onChange={open}
       />
+
+      {/* Day picker. Hidden on Lifts (no day dimension) and on Trends (a range
+          view by definition — a single-day selection would mean nothing). */}
+      {tab !== 'lifts' && tab !== 'trends' && data && selected && !healthEmpty && (
+        <DayScroller
+          days={data.days}
+          selected={selected}
+          onSelect={setSelected}
+          onLoadEarlier={canLoadEarlier ? loadEarlier : null}
+          loadingEarlier={loading}
+        />
+      )}
 
       {/* Import freshness. Shown on every sub-tab except Lifts, which has
           nothing to do with the health pipeline. */}
@@ -94,12 +129,12 @@ export default function BevelView() {
                       The request failed. Switching tabs retries it.
                     </div>
                   </div>
-                : healthEmpty || !data
+                : healthEmpty || !data || !selected
                   ? <HealthEmptyState />
-                  : t === 'dashboard' ? <BevelDashboard data={data} onOpen={open} />
-                  : t === 'sleep' ? <BevelSleep data={data} />
-                  : t === 'recovery' ? <BevelRecovery data={data} />
-                  : t === 'strain' ? <BevelStrain data={data} />
+                  : t === 'dashboard' ? <BevelDashboard data={data} selected={selected} onOpen={open} />
+                  : t === 'sleep' ? <BevelSleep data={data} selected={selected} />
+                  : t === 'recovery' ? <BevelRecovery data={data} selected={selected} />
+                  : t === 'strain' ? <BevelStrain data={data} selected={selected} />
                   : <BevelTrends data={data} />}
         </div>
       ))}

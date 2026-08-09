@@ -1,10 +1,15 @@
 'use client'
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react'
 
-// Lifts-tab rest timer hoisted to app-level so the docked variant stays visible
-// while the user navigates between tabs. The floating variant is still rendered
-// inside LiftTracker (only on the Lifts tab); the docked variant is rendered by
-// Shell and persists across tab switches.
+// Lifts rest timer, hoisted to app level so a running timer survives tab
+// switches: the interval lives here, not in the components that draw it.
+//
+// `liftsActive` exists because the timer must be VISIBLE only on the Lifts
+// sub-tab (Connor, 2026-08-09) while still being RENDERED by Shell — Shell is
+// outside the `tab-fade` subtree, and tab-fade animates `transform`, which
+// would otherwise become the containing block for these `position: fixed`
+// overlays (see CLAUDE.md). Shell cannot see Bevel's sub-tab, and Bevel cannot
+// safely render the overlays itself, so the flag crosses through this context.
 
 export type StopwatchMode = 'float' | 'dock'
 const MODE_KEY = 'stopwatch-mode-v1'
@@ -17,6 +22,9 @@ type StopwatchCtx = {
   stop: () => void
   reset: () => void
   setMode: (m: StopwatchMode) => void
+  /** True only while the Lifts sub-tab is open. Set by BevelView. */
+  liftsActive: boolean
+  setLiftsActive: (v: boolean) => void
 }
 
 const Ctx = createContext<StopwatchCtx | null>(null)
@@ -25,6 +33,7 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
   const [ms, setMs] = useState(0)
   const [running, setRunning] = useState(false)
   const [mode, setModeState] = useState<StopwatchMode>('float')
+  const [liftsActive, setLiftsActive] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startRef = useRef<number>(0)
 
@@ -57,7 +66,11 @@ export function StopwatchProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, [])
 
-  return <Ctx.Provider value={{ ms, running, mode, start, stop, reset, setMode }}>{children}</Ctx.Provider>
+  return (
+    <Ctx.Provider value={{ ms, running, mode, start, stop, reset, setMode, liftsActive, setLiftsActive }}>
+      {children}
+    </Ctx.Provider>
+  )
 }
 
 export function useStopwatch() {

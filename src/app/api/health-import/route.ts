@@ -33,16 +33,36 @@ function keyMatches(provided: string, expected: string): boolean {
   return timingSafeEqual(a, b)
 }
 
+/** What the request looked like, with nothing secret in it.
+ *
+ *  The key itself is never logged — only whether a header arrived and how long
+ *  it was after trimming, which is what actually separates "nothing was sent",
+ *  "the wrong key was sent" and "the right key arrived with a stray newline".
+ *  The user agent is the most useful field of all: it settles whether the
+ *  request came from Health Auto Export or from something else entirely. */
+function describe(req: NextRequest): string {
+  const key = (req.headers.get('x-api-key') ?? '').trim()
+  const ua = (req.headers.get('user-agent') ?? 'none').slice(0, 120)
+  return `key ${key ? `${key.length} chars` : 'absent'}; ua ${ua}`
+}
+
 export async function POST(req: NextRequest) {
   const expected = process.env.HEALTH_IMPORT_KEY
   // Fail closed. An unset key must not mean "open endpoint" — that is how a
   // misconfigured preview deploy turns into a public write endpoint.
   if (!expected) {
     console.error('[/api/health-import] HEALTH_IMPORT_KEY is not set')
+    await recordRejection(`not configured — HEALTH_IMPORT_KEY unset; ${describe(req)}`)
     return NextResponse.json({ error: 'import not configured' }, { status: 500 })
   }
   const provided = req.headers.get('x-api-key') ?? ''
   if (!keyMatches(provided, expected)) {
+    // Logged, not silent. An empty import log used to mean BOTH "no request
+    // ever arrived" and "requests arrived and were turned away at the door" —
+    // opposite diagnoses with opposite fixes, and the second was invisible in
+    // the app, so every investigation had to go to Vercel's runtime logs. The
+    // Bevel status line now answers it directly.
+    await recordRejection(`unauthorized — ${describe(req)}`)
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
@@ -50,6 +70,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
+    await recordRejection(`invalid JSON — ${describe(req)}`)
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 })
   }
 
@@ -163,6 +184,35 @@ async function recordImport(row: {
   } catch (e) {
     console.error('[/api/health-import] failed to record import log', e)
   }
+}
+
+/** Prefix that marks a row written by a request that never got past the door.
+ *  Used to find the previous rejection for rate limiting. */
+const REJECTED = 'rejected: '
+
+/** Log a request that was turned away, at most once every few minutes.
+ *
+ *  Rate limited on purpose: this path is reachable WITHOUT the API key, so an
+ *  unlimited version would let anyone on the internet write rows into Connor's
+ *  database and push real imports out of the log — turning a diagnostic into a
+ *  vandalism surface. One row per window is plenty: the automation runs hourly,
+ *  so every genuine failed run still gets recorded. */
+async function recordRejection(note: string) {
+  const WINDOW_MS = 5 * 60 * 1000
+  try {
+    const previous = await prisma.healthImportLog.findFirst({
+      where: { ok: false, note: { startsWith: REJECTED } },
+      orderBy: { at: 'desc' },
+    })
+    if (previous && Date.now() - previous.at.getTime() < WINDOW_MS) return
+  } catch {
+    // If the lookup fails, fall through and write: losing the rate limit is
+    // better than losing the diagnostic that this whole change exists for.
+  }
+  await recordImport({
+    ok: false, metrics: 0, sleep: 0, workouts: 0, skipped: 0, span: null,
+    note: (REJECTED + note).slice(0, 500),
+  })
 }
 
 // A GET is handy for confirming from the phone that the URL and key are right

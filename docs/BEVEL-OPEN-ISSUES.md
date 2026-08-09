@@ -55,6 +55,48 @@ made at all. A request that arrived and failed would appear as a 4xx/5xx line.
 sub-tab bar reads the import log directly — "No imports received yet" vs "Last
 import 4 min ago · 47 rows". No need to read Vercel logs or ask Claude.
 
+### 2026-08-09 — re-checked, and the log itself had a hole in it
+
+**Still nothing arriving.** Prod row counts are unchanged from the backfill
+(1,708 metrics / 62 nights / 11 workouts) and `HealthImportLog` is **empty**,
+though Connor reports the automation ran and said it exported minutes earlier.
+
+**But an empty log was never the proof it looked like.** `recordImport` was
+only reached *after* auth and JSON parsing had already passed. A request
+rejected with **401** (wrong or missing key) or **400** (unparseable body)
+wrote no row at all — so "the log is empty" meant BOTH "no request ever
+arrived" and "requests arrived and were turned away at the door". Opposite
+diagnoses, opposite fixes, and the second was invisible from the app.
+
+**Fixed.** `POST /api/health-import` now logs rejections too, noting the
+reason, whether an `x-api-key` header arrived and its length after trimming,
+and the **User-Agent** — the field that settles whether the request came from
+Health Auto Export at all. The key itself is never logged. Rejection logging is
+rate limited to one row per 5 minutes: that path is reachable *without* the
+key, and an unlimited version would let anyone on the internet push real
+imports out of the log.
+
+Bevel's status line renders the reason under a failed row, so the next run is
+diagnosable **from the phone**:
+
+| What you see | What it means |
+|---|---|
+| `No imports received yet` | Nothing is reaching the server. HAE is not making the request — item 0 above (Premium) stays the leading candidate. |
+| `unauthorized — key absent; ua HealthAutoExport/…` | HAE **is** reaching the server and sending no key. Fix the header in the automation. |
+| `unauthorized — key N chars; ua HealthAutoExport/…` | Reaching the server with the **wrong** key. Compare N to the real key's length. |
+| `unauthorized — … ua <not HAE>` | Something else is posting. Not your automation. |
+| `invalid JSON` | Arriving and authenticated, wrong body — likely the wrong HAE export format. |
+
+⚠️ **Useless until deployed** — the phone posts to prod, so this does nothing
+until `npx vercel --prod` runs. **No `db:push` needed**: it reuses the existing
+`note` column, so there is no schema change.
+
+Verified end to end against a local server on 2026-08-09 — a POST with a wrong
+key and a spoofed HAE user agent produced
+`rejected: unauthorized — key 22 chars; ua HealthAutoExport/8.1 (iPhone; iOS 26.1)`
+and Bevel rendered it. The test row was then deleted from the shared Turso
+database, so the log is genuinely empty again rather than carrying a fake.
+
 ---
 
 ## 2. Recovery score does not match Bevel's

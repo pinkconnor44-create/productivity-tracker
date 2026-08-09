@@ -108,6 +108,29 @@ export function latestDayWith(days: HealthDay[], has: (d: HealthDay) => boolean)
   return null
 }
 
+/** The one day the sub-tabs render, picked by the day scroller.
+ *
+ *  Deliberately exact: it returns the selected day or nothing, and never falls
+ *  back to an earlier day that happens to have readings. A silent fallback is
+ *  the worst possible behaviour for a date picker — the header would say one
+ *  day while the numbers came from another, and the user has no way to tell.
+ *  Each sub-tab renders its own empty state naming the day instead. */
+export function dayOf(days: HealthDay[], date: string): HealthDay | null {
+  return days.find(d => d.date === date) ?? null
+}
+
+/** Shown by every sub-tab when the selected day has nothing for it. */
+export function NoDayData({ date, what }: { date: string; what: string }) {
+  return (
+    <div className="glass rounded-2xl px-5 py-8 text-center">
+      <div className="text-body font-semibold text-on-surface">No {what} for {formatDay(date)}</div>
+      <div className="text-caption text-on-surface-variant/55 mt-1.5">
+        Pick another day above, or check that the export automation ran.
+      </div>
+    </div>
+  )
+}
+
 export function seriesOf(days: HealthDay[], key: MetricKey): { date: string; value: number }[] {
   return days
     .filter(d => d.metrics[key] != null && Number.isFinite(d.metrics[key] as number))

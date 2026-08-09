@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Card, Section, Ring, TrendChart, MetricRow, RangeGauge, StatusChip, METRIC_COLORS, statusFor } from '@/components/ui'
 import { HEALTH_CONSTANTS, deltaPct, interpolate, type HealthResponse } from '@/lib/health'
-import { ChartTip, LoadingBlock, CalibratingNote, formatDay, latestDayWith, seriesOf, type Tip } from './shared'
+import { ChartTip, LoadingBlock, CalibratingNote, NoDayData, dayOf, formatDay, seriesOf, type Tip } from './shared'
 
 // Recovery detail: the ring, the two inputs that drive it against their
 // personal baselines, and an explicit breakdown of how the score was reached.
@@ -12,16 +12,16 @@ import { ChartTip, LoadingBlock, CalibratingNote, formatDay, latestDayWith, seri
 // these are approximations of Bevel's scores — showing the arithmetic makes
 // them auditable instead of magic.
 
-export function BevelRecovery({ data }: { data: HealthResponse }) {
+export function BevelRecovery({ data, selected }: { data: HealthResponse; selected: string }) {
   const [hrvTip, setHrvTip] = useState<Tip | null>(null)
   const [rhrTip, setRhrTip] = useState<Tip | null>(null)
 
-  const day = latestDayWith(data.days, d => d.scores.recovery != null)
+  const day = dayOf(data.days, selected)
   const hrvSeries = seriesOf(data.days, 'hrv')
   const rhrSeries = seriesOf(data.days, 'restingHr')
 
-  if (!day) {
-    return <Card padding={20}><LoadingBlock label="Not enough data to score recovery yet." /></Card>
+  if (!day || day.scores.recovery == null) {
+    return <NoDayData date={selected} what="recovery score" />
   }
 
   const hrvBase = data.baselines.hrv

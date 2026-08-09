@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Card, Section, Ring, SegmentedBar, TrendChart, MetricRow, METRIC_COLORS } from '@/components/ui'
 import { formatMinutes, type HealthResponse } from '@/lib/health'
-import { ChartTip, LoadingBlock, clockTime, formatDay, latestDayWith, type Tip } from './shared'
+import { ChartTip, LoadingBlock, NoDayData, clockTime, dayOf, formatDay, type Tip } from './shared'
 
 // Sleep detail: last night's ring, the stage breakdown, then the duration
 // trend and a scrollable history. Stage colours are steps along the Electric
@@ -16,14 +16,14 @@ const STAGE_COLORS = {
   awake: 'rgba(255,255,255,0.18)',
 }
 
-export function BevelSleep({ data }: { data: HealthResponse }) {
+export function BevelSleep({ data, selected }: { data: HealthResponse; selected: string }) {
   const [tip, setTip] = useState<Tip | null>(null)
 
   const nights = data.days.filter(d => d.sleep?.asleepMin != null)
-  const last = latestDayWith(data.days, d => d.sleep?.asleepMin != null)
+  const last = dayOf(data.days, selected)
 
-  if (!last?.sleep) {
-    return <Card padding={20}><LoadingBlock label="No sleep recorded in this range." /></Card>
+  if (!last?.sleep?.asleepMin) {
+    return <NoDayData date={selected} what="sleep recorded" />
   }
 
   const s = last.sleep

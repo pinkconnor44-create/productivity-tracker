@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { scoreColor, Ring } from '@/components/ui'
 import DockedStopwatch from '@/components/DockedStopwatch'
 import FloatingStopwatch from '@/components/FloatingStopwatch'
+import { useStopwatch } from '@/lib/stopwatch'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Z-INDEX LADDER (documented for future modals — keep in sync with new code)
@@ -105,6 +106,7 @@ function fmtToday(): string {
 }
 
 export default function Shell({ activeTab, onTabChange, views }: Props) {
+  const { liftsActive, running } = useStopwatch()
   const [mounted, setMounted] = useState<Set<Tab>>(() => new Set([activeTab]))
   const [scores, setScores] = useState<ScoreData>({})
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -363,9 +365,14 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           )
         })}
       </main>
-      {/* Re-gated from 'lifts' to 'bevel' — the timer belongs to the tab that
-          now contains the lift tracker. */}
-      {activeTab === 'bevel' && (
+      {/* The rest timer belongs to the LIFTS sub-tab, not to Bevel as a whole
+          (Connor, 2026-08-09) — it was showing over Sleep, Recovery, Strain
+          and Trends, which have nothing to do with it. `liftsActive` is set by
+          BevelView; it is rendered HERE rather than inside BevelView because
+          `tab-fade` animates `transform` and would trap these fixed overlays
+          inside the tab panel. A running timer is exempt: hiding a live count
+          because the user glanced at Recovery would lose their rest interval. */}
+      {activeTab === 'bevel' && (liftsActive || running) && (
         <>
           <FloatingStopwatch />
           <DockedStopwatch />

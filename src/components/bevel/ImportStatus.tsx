@@ -41,20 +41,34 @@ export function ImportStatus({ last }: { last: LastImport }) {
   const rows = last.metrics + last.sleep + last.workouts
   const stale = now != null && now - Date.parse(last.at) > 6 * 60 * 60 * 1000
 
+  // A request turned away at the door is recorded with a `rejected: ` note.
+  // It is a different failure from an import that arrived and then broke, and
+  // it has a different fix, so it gets different wording.
+  const rejected = !last.ok && (last.note ?? '').startsWith('rejected: ')
+  const reason = rejected ? (last.note ?? '').slice('rejected: '.length) : last.note
+
   return (
-    <div className="flex items-center gap-2 text-micro">
-      <span
-        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-          !last.ok ? 'bg-rose-400' : stale ? 'bg-amber-400' : 'bg-emerald-400'
-        }`}
-        aria-hidden
-      />
-      <span className="text-on-surface-variant/55">
-        {last.ok ? 'Last import' : 'Last import failed'} {when}
-        {last.ok && <> · {rows} row{rows === 1 ? '' : 's'}</>}
-        {last.span && <> · {last.span}</>}
-        {last.skipped > 0 && <> · {last.skipped} skipped</>}
-      </span>
+    <div className="flex flex-col gap-0.5 text-micro">
+      <div className="flex items-center gap-2">
+        <span
+          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+            !last.ok ? 'bg-rose-400' : stale ? 'bg-amber-400' : 'bg-emerald-400'
+          }`}
+          aria-hidden
+        />
+        <span className="text-on-surface-variant/55">
+          {last.ok ? 'Last import' : rejected ? 'Last request rejected' : 'Last import failed'} {when}
+          {last.ok && <> · {rows} row{rows === 1 ? '' : 's'}</>}
+          {last.span && <> · {last.span}</>}
+          {last.skipped > 0 && <> · {last.skipped} skipped</>}
+        </span>
+      </div>
+      {/* The reason, only on failure. This is the line that makes "the
+          automation says it ran but nothing arrived" diagnosable from the
+          phone rather than from Vercel's runtime logs. */}
+      {!last.ok && reason && (
+        <div className="text-on-surface-variant/40 pl-3.5 break-words">{reason}</div>
+      )}
     </div>
   )
 }
