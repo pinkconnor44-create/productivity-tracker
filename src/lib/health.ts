@@ -64,37 +64,82 @@ export const HEALTH_CONSTANTS = {
   /** Below this many observations a baseline is shown as "Calibrating". */
   BASELINE_MIN_DAYS: 7,
 
+  // Every constant below was CALIBRATED against Bevel's own scores on
+  // 2026-08-09, using nine days Connor screenshotted (2026-07-31 .. 08-09).
+  // This is a fit to observed output, not a copy of Bevel's algorithm — that
+  // is not public, and writing functions that claimed to be theirs would be
+  // an invention. `scripts/fit-bevel.mjs` reproduces every number here and
+  // reports the residuals; re-run it when more days are available.
   SLEEP: {
-    /** Duration target. 8h of *asleep* time scores the full duration component. */
-    TARGET_MIN: 8 * 60,
-    /** Stage targets as a share of asleep time. */
-    TARGET_DEEP_PCT: 0.15,
-    TARGET_REM_PCT: 0.20,
-    W_DURATION: 0.70,
-    W_DEEP: 0.15,
-    W_REM: 0.15,
+    /** Hours ASLEEP → score, linearly interpolated.
+     *
+     *  Bevel's sleep score turned out to be almost purely a duration curve
+     *  with a hard knee below ~6.8h: 3.2h→27, 5.8h→51, 6.8h→94, then a
+     *  plateau in the mid-90s no matter how much more is slept. The old model
+     *  was `min(1, asleep/8h)` and was far too forgiving of a short night —
+     *  it scored a 3.2h night at 58 where Bevel said 27.
+     *
+     *  Stage mix (deep/REM) is deliberately NOT weighted any more: across the
+     *  nine calibration days it had no detectable effect on Bevel's number.
+     *  A 6.8h night with 106m deep scored 94; a 7.1h night with 62m deep
+     *  scored 99. Keeping a stage term would have been fitting noise. */
+    DURATION_ANCHORS: [[0, 0], [3.2, 27], [5.8, 51], [6.8, 94], [7.4, 96], [14, 96]] as [number, number][],
   },
 
   RECOVERY: {
+    // The fit recovered these three weights independently and landed exactly
+    // on the values already here, which is the useful finding: the weighting
+    // was never wrong. The INPUT is. See RECOVERY_LIMIT below.
     W_HRV: 0.50,
     W_RHR: 0.30,
     W_SLEEP: 0.20,
-    /** ratio (value / baseline) → score. Linearly interpolated between
-     *  anchors, clamped at the ends. HRV above baseline is good. */
-    HRV_ANCHORS: [[0.60, 10], [0.75, 30], [0.90, 55], [1.00, 70], [1.15, 88], [1.35, 100]] as [number, number][],
-    /** Resting HR is inverted — *below* baseline is the good direction. */
-    RHR_ANCHORS: [[0.88, 100], [0.95, 88], [1.00, 70], [1.05, 48], [1.12, 25], [1.20, 8]] as [number, number][],
+    /** ratio (value / baseline) → score, linearly interpolated and clamped.
+     *  HRV above baseline is good. Refit against Bevel: the old curves sat a
+     *  flat ~20 points high (every one of the nine days scored over, mean
+     *  +14) and were too shallow, so an ordinary day and a genuinely good one
+     *  landed within a few points of each other. */
+    HRV_ANCHORS: [[0.60, 0], [0.75, 0], [0.90, 31], [1.00, 50], [1.15, 73], [1.35, 89]] as [number, number][],
+    /** Heart rate is inverted — *below* baseline is the good direction. This
+     *  now scores the daily MINIMUM heart rate, which swings considerably
+     *  more than Apple's smoothed resting HR, hence the steeper curve. */
+    RHR_ANCHORS: [[0.88, 89], [0.95, 73], [1.00, 50], [1.05, 21], [1.12, 0], [1.20, 0]] as [number, number][],
   },
 
   STRAIN: {
-    W_KCAL: 0.60,
-    W_EXERCISE: 0.40,
-    /** A day exactly at baseline load scores this. Leaves headroom above for
-     *  genuinely hard days instead of pinning a normal Tuesday at 100. */
-    BASELINE_SCORE: 67,
+    /** strain = KCAL_COEF*activeKcal + EX_COEF*exerciseMin + INTERCEPT,
+     *  clamped to 0..100. Least-squares fit against Bevel over the seven
+     *  calibration days with complete daily volume; mean absolute error 1.0.
+     *
+     *  This replaced a baseline-relative model that ran roughly 3x hot — it
+     *  scored a 526kcal/13min day at 78 where Bevel said 29. Bevel's strain
+     *  is an absolute load scale against a target band (its own copy says
+     *  "Target Strain of 20-42%"), not a percentile against your own history,
+     *  so a baseline-relative model could not have matched it at any
+     *  weighting. */
+    KCAL_COEF: 0.028,
+    EX_COEF: 1.35,
+    INTERCEPT: -3.0,
     MAX: 100,
   },
 } as const
+
+/** Why recovery still does not match Bevel, stated where the constants are.
+ *
+ *  Bevel scores recovery on SLEEP-WINDOW physiology. This app only has daily
+ *  aggregates. Measured over the nine calibration days:
+ *
+ *    Bevel recovery vs Bevel's own sleeping HR : r = -0.81
+ *    Bevel recovery vs our daily minimum HR    : r = -0.41
+ *    Bevel recovery vs Apple's resting HR      : r = +0.39   (wrong sign)
+ *
+ *  Switching the input from Apple's resting HR to the daily minimum halves
+ *  the error (about 20 points of mean absolute error down to about 9), which
+ *  is why this file now scores on the minimum. Closing the rest needs actual
+ *  sleep-window readings — 2026-08-01 is the proof: Bevel saw a sleeping HR
+ *  of 64.6 against a normal ~44 and scored recovery 1, while every daily
+ *  aggregate we hold looked unremarkable and no weighting could have found
+ *  it. */
+export const RECOVERY_LIMIT = 'daily aggregates, not sleep-window readings' as const
 
 // ── baselines ─────────────────────────────────────────────────────────────
 
@@ -150,26 +195,19 @@ export type SleepInput = {
  *  being penalised for the watch not tracking stages. */
 export function sleepScore(s: SleepInput): number | null {
   if (!s || s.asleepMin == null || !Number.isFinite(s.asleepMin) || s.asleepMin <= 0) return null
-  const C = HEALTH_CONSTANTS.SLEEP
-  const asleep = s.asleepMin
-
-  const parts: { w: number; v: number }[] = [
-    { w: C.W_DURATION, v: Math.min(1, asleep / C.TARGET_MIN) * 100 },
-  ]
-  if (s.deepMin != null && Number.isFinite(s.deepMin)) {
-    parts.push({ w: C.W_DEEP, v: Math.min(1, (s.deepMin / asleep) / C.TARGET_DEEP_PCT) * 100 })
-  }
-  if (s.remMin != null && Number.isFinite(s.remMin)) {
-    parts.push({ w: C.W_REM, v: Math.min(1, (s.remMin / asleep) / C.TARGET_REM_PCT) * 100 })
-  }
-  return renormalise(parts)
+  // Duration only — see SLEEP.DURATION_ANCHORS for why the stage terms went.
+  return interpolate(HEALTH_CONSTANTS.SLEEP.DURATION_ANCHORS, s.asleepMin / 60)
 }
 
 export type RecoveryInput = {
   hrv?: number | null
   hrvBaseline?: number | null
-  restingHr?: number | null
-  rhrBaseline?: number | null
+  /** The day's MINIMUM heart rate, not Apple's resting HR — the closest
+   *  proxy available to the sleeping heart rate Bevel scores on. Named
+   *  `restingHr` no longer, because it is a different quantity and the whole
+   *  bug was two different quantities sharing one name. */
+  lowHr?: number | null
+  lowHrBaseline?: number | null
   sleepScore?: number | null
 }
 
@@ -182,8 +220,8 @@ export function recoveryScore(i: RecoveryInput): number | null {
   if (i.hrv != null && i.hrvBaseline != null && i.hrvBaseline > 0) {
     parts.push({ w: C.W_HRV, v: interpolate(C.HRV_ANCHORS, i.hrv / i.hrvBaseline) })
   }
-  if (i.restingHr != null && i.rhrBaseline != null && i.rhrBaseline > 0) {
-    parts.push({ w: C.W_RHR, v: interpolate(C.RHR_ANCHORS, i.restingHr / i.rhrBaseline) })
+  if (i.lowHr != null && i.lowHrBaseline != null && i.lowHrBaseline > 0) {
+    parts.push({ w: C.W_RHR, v: interpolate(C.RHR_ANCHORS, i.lowHr / i.lowHrBaseline) })
   }
   if (i.sleepScore != null) {
     parts.push({ w: C.W_SLEEP, v: i.sleepScore })
@@ -202,16 +240,14 @@ export type StrainInput = {
  *  baseline load lands on STRAIN.BASELINE_SCORE. */
 export function strainScore(i: StrainInput): number | null {
   const C = HEALTH_CONSTANTS.STRAIN
-  const parts: { w: number; v: number }[] = []
-
-  if (i.kcalBaseline != null && i.kcalBaseline > 0) {
-    parts.push({ w: C.W_KCAL, v: ((i.activeKcal ?? 0) / i.kcalBaseline) * C.BASELINE_SCORE })
-  }
-  if (i.exerciseBaseline != null && i.exerciseBaseline > 0) {
-    parts.push({ w: C.W_EXERCISE, v: ((i.exerciseMin ?? 0) / i.exerciseBaseline) * C.BASELINE_SCORE })
-  }
-  const raw = renormalise(parts)
-  return raw == null ? null : Math.min(C.MAX, raw)
+  // Absolute load, not load-relative-to-your-own-baseline. The baselines are
+  // still accepted on the input type so callers do not all have to change,
+  // and are deliberately unused: Bevel's strain is measured against a fixed
+  // target band, so a day at your personal average is a LOW strain day, not
+  // a middling one. The old baseline-relative model could not express that.
+  if (i.activeKcal == null && i.exerciseMin == null) return null
+  const raw = C.KCAL_COEF * (i.activeKcal ?? 0) + C.EX_COEF * (i.exerciseMin ?? 0) + C.INTERCEPT
+  return Math.max(0, Math.min(C.MAX, Math.round(raw * 10) / 10))
 }
 
 /** Weighted mean over whichever components are present. Returns null for an

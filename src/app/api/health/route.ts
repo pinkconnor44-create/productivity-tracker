@@ -78,11 +78,13 @@ export async function GET(req: NextRequest) {
     type DayBucket = {
       metrics: Partial<Record<MetricKey, number | null>>
       extra: Record<string, number | null>
+      /** The day's lowest heart rate. Not a MetricKey — see the assignment. */
+      lowHr: number | null
     }
     const buckets = new Map<string, DayBucket>()
     const bucket = (d: string): DayBucket => {
       let b = buckets.get(d)
-      if (!b) { b = { metrics: {}, extra: {} }; buckets.set(d, b) }
+      if (!b) { b = { metrics: {}, extra: {}, lowHr: null }; buckets.set(d, b) }
       return b
     }
 
@@ -96,6 +98,12 @@ export async function GET(req: NextRequest) {
         // lands rather than reading as missing.
         const primary = def.field === 'qty' ? r.qty : r.avg
         b.metrics[def.key] = primary ?? (def.field === 'qty' ? r.avg : r.qty) ?? null
+        // The day's LOWEST heart rate, kept beside the mapped metrics rather
+        // than as a MetricDef of its own — heart_rate already owns that alias,
+        // and this is a second statistic off the same row, not a second
+        // metric. Recovery scores on it because it is the nearest thing we
+        // hold to a sleeping heart rate. See RECOVERY_LIMIT in lib/health.
+        if (r.metric === 'heart_rate' && r.min != null) b.lowHr = r.min
       } else {
         b.extra[r.metric] = r.qty ?? r.avg ?? null
       }
@@ -115,12 +123,13 @@ export async function GET(req: NextRequest) {
     // appended, which is what makes it trailing-and-exclusive.
     const history: Partial<Record<MetricKey, (number | null)[]>> = {}
     for (const def of METRIC_DEFS) history[def.key] = []
+    const lowHrHistory: (number | null)[] = []
 
     const days: HealthDay[] = []
     let latestBaselines: Partial<Record<MetricKey, Baseline>> = {}
 
     for (let d = fetchStart; d <= end; d = addDays(d, 1)) {
-      const b = buckets.get(d) ?? { metrics: {}, extra: {} }
+      const b = buckets.get(d) ?? { metrics: {}, extra: {}, lowHr: null }
       const sleep = sleepByDay.get(d) ?? null
       const workouts = workoutsByDay.get(d) ?? []
 
@@ -128,13 +137,14 @@ export async function GET(req: NextRequest) {
       for (const def of METRIC_DEFS) {
         dayBaselines[def.key] = baselineOf(history[def.key] ?? [])
       }
+      const lowHrBaseline = baselineOf(lowHrHistory)
 
       const sScore = sleepScore(sleep)
       const rScore = recoveryScore({
         hrv: b.metrics.hrv ?? null,
         hrvBaseline: dayBaselines.hrv?.value ?? null,
-        restingHr: b.metrics.restingHr ?? null,
-        rhrBaseline: dayBaselines.restingHr?.value ?? null,
+        lowHr: b.lowHr ?? null,
+        lowHrBaseline: lowHrBaseline.value,
         sleepScore: sScore,
       })
       const xScore = strainScore({
@@ -172,6 +182,7 @@ export async function GET(req: NextRequest) {
       for (const def of METRIC_DEFS) {
         history[def.key]!.push(b.metrics[def.key] ?? null)
       }
+      lowHrHistory.push(b.lowHr ?? null)
     }
 
     const res: HealthResponse = {
