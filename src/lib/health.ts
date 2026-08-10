@@ -17,7 +17,7 @@
 export type MetricKey =
   | 'hrv' | 'restingHr' | 'hr' | 'respRate' | 'spo2' | 'vo2Max'
   | 'activeKcal' | 'basalKcal' | 'exerciseMin' | 'standHours' | 'steps'
-  | 'walkingHr' | 'wristTemp'
+  | 'walkingHr' | 'wristTemp' | 'elevatedMin'
 
 type MetricDef = {
   key: MetricKey
@@ -47,6 +47,12 @@ export const METRIC_DEFS: MetricDef[] = [
   { key: 'steps',       aliases: ['step_count', 'steps'],                   field: 'qty', label: 'Steps',       unit: '',      decimals: 0 },
   { key: 'walkingHr',   aliases: ['walking_heart_rate_average'],            field: 'avg', label: 'Walking HR',  unit: 'bpm',   decimals: 0 },
   { key: 'wristTemp',   aliases: ['apple_sleeping_wrist_temperature', 'wrist_temperature'], field: 'avg', label: 'Wrist temp', unit: '°', decimals: 1 },
+  // Derived, not exported by Apple: minutes the heart rate spent at or above
+  // STRAIN.HR_ELEVATED_BPM, computed from the raw samples at import time and
+  // written back as an ordinary daily row so baselines and Trends get it for
+  // free. It is a MetricDef rather than a loose column because it is exactly
+  // what a MetricDef is — a per-day number with a unit and a label.
+  { key: 'elevatedMin', aliases: ['hr_minutes_above_90'],                 field: 'qty', label: 'Elevated HR',  unit: 'min',   decimals: 0 },
 ]
 
 const ALIAS_TO_DEF = new Map<string, MetricDef>()
@@ -83,63 +89,84 @@ export const HEALTH_CONSTANTS = {
      *  nine calibration days it had no detectable effect on Bevel's number.
      *  A 6.8h night with 106m deep scored 94; a 7.1h night with 62m deep
      *  scored 99. Keeping a stage term would have been fitting noise. */
-    DURATION_ANCHORS: [[0, 0], [3.2, 27], [5.8, 51], [6.8, 94], [7.4, 96], [14, 96]] as [number, number][],
+    DURATION_ANCHORS: [[0, 0], [3.2, 27], [5.8, 51], [6.8, 96], [7.2, 95], [14, 95]] as [number, number][],
   },
 
   RECOVERY: {
-    // The fit recovered these three weights independently and landed exactly
-    // on the values already here, which is the useful finding: the weighting
-    // was never wrong. The INPUT is. See RECOVERY_LIMIT below.
-    W_HRV: 0.50,
-    W_RHR: 0.30,
-    W_SLEEP: 0.20,
-    /** ratio (value / baseline) → score, linearly interpolated and clamped.
-     *  HRV above baseline is good. Refit against Bevel: the old curves sat a
-     *  flat ~20 points high (every one of the nine days scored over, mean
-     *  +14) and were too shallow, so an ordinary day and a genuinely good one
-     *  landed within a few points of each other. */
-    HRV_ANCHORS: [[0.60, 0], [0.75, 0], [0.90, 31], [1.00, 50], [1.15, 73], [1.35, 89]] as [number, number][],
-    /** Heart rate is inverted — *below* baseline is the good direction. This
-     *  now scores the daily MINIMUM heart rate, which swings considerably
-     *  more than Apple's smoothed resting HR, hence the steeper curve. */
-    RHR_ANCHORS: [[0.88, 89], [0.95, 73], [1.00, 50], [1.05, 21], [1.12, 0], [1.20, 0]] as [number, number][],
+    // Recovery is scored ENTIRELY on physiology measured inside last night's
+    // sleep window. That is both what Bevel does and what makes the score
+    // stand still: none of these inputs can change once you are awake, so the
+    // number you see at 9am is the number you see at 9pm. The old model read
+    // whole-day HRV and the day's lowest heart rate, which kept moving as the
+    // day went on — HRV falls after waking, so recovery visibly decayed from
+    // morning to night. That was the complaint, and it was a symptom of
+    // scoring the wrong window rather than of any weighting.
+    W_SLEEP_HR: 0.60,
+    W_SLEEP_HRV: 0.35,
+    W_SLEEP_RESP: 0.05,
+    // Sleep DURATION carries no weight. The fit was free to give it any share
+    // and chose zero: 2026-08-10 was 5.7h and Bevel scored recovery 89, while
+    // 2026-08-05 was 7.1h and scored 41. Duration drives the SLEEP score, not
+    // this one. Kept out rather than kept at zero so nothing reads as a live
+    // input that isn't.
+
+    /** Sleeping heart rate as a ratio to its trailing baseline. Inverted —
+     *  *below* baseline is the good direction. The strongest single signal:
+     *  r = -0.85 against Bevel's recovery across ten nights. */
+    HR_ANCHORS: [[0.88, 100], [1.00, 50], [1.30, 0]] as [number, number][],
+    /** Sleeping HRV as a ratio to its trailing baseline. Above is good. */
+    HRV_ANCHORS: [[0.75, 0], [1.00, 50], [1.20, 100]] as [number, number][],
+    /** Sleeping respiratory rate, inverted. A small weight, but a real one:
+     *  it is what separates two nights with similar heart rate and HRV, and
+     *  adding it took the fit from 5.8 to 3.1 points of error. */
+    RESP_ANCHORS: [[0.97, 100], [1.00, 50], [1.10, 0]] as [number, number][],
   },
 
   STRAIN: {
-    /** strain = KCAL_COEF*activeKcal + EX_COEF*exerciseMin + INTERCEPT,
-     *  clamped to 0..100. Least-squares fit against Bevel over the seven
-     *  calibration days with complete daily volume; mean absolute error 1.0.
+    /** strain = KCAL_COEF*activeKcal + HR90_COEF*minutesAbove90bpm
+     *           + EX_COEF*exerciseMin + INTERCEPT, clamped to 0..100.
      *
-     *  This replaced a baseline-relative model that ran roughly 3x hot — it
-     *  scored a 526kcal/13min day at 78 where Bevel said 29. Bevel's strain
-     *  is an absolute load scale against a target band (its own copy says
-     *  "Target Strain of 20-42%"), not a percentile against your own history,
-     *  so a baseline-relative model could not have matched it at any
-     *  weighting. */
-    KCAL_COEF: 0.028,
-    EX_COEF: 1.35,
-    INTERCEPT: -3.0,
+     *  Energy and exercise minutes alone could not explain Bevel: 2026-08-03
+     *  (359 kcal, 3 min) scored 8 while 2026-08-05 (526 kcal, 13 min) scored
+     *  29 — but so did days that separate only on how long the heart rate was
+     *  actually elevated. Adding time above 90bpm, measured from the raw
+     *  samples, took the error from 2.6 to 1.3 points.
+     *
+     *  Still an ABSOLUTE load scale, not a percentile against personal
+     *  history — Bevel's own copy says "Target Strain of 20-42%".
+     *
+     *  ⚠️ 2026-08-07 is not explained by this model and is held out of the
+     *  fit: Bevel scored it 28 against a fitted 13, on inputs statistically
+     *  indistinguishable from 2026-08-03 which Bevel scored 8. */
+    KCAL_COEF: 0.018,
+    HR90_COEF: 0.10,
+    EX_COEF: 0.60,
+    INTERCEPT: -0.5,
+    /** Heart rate at or above this counts toward the elevated-time term. */
+    HR_ELEVATED_BPM: 90,
+    /** A gap between consecutive readings longer than this is not credited —
+     *  a watch left on the charger must not read as hours of exertion. */
+    SAMPLE_GAP_CAP_MIN: 5,
     MAX: 100,
   },
 } as const
 
-/** Why recovery still does not match Bevel, stated where the constants are.
+/** The old limit, and how it was closed — kept because the measurement is the
+ *  evidence that the input is now right, independently of any weighting.
  *
- *  Bevel scores recovery on SLEEP-WINDOW physiology. This app only has daily
- *  aggregates. Measured over the nine calibration days:
+ *  Recovery used to be scored on daily aggregates, and could not match Bevel
+ *  at any weighting because Bevel scores the sleep window. With raw timestamped
+ *  samples the sleep window is computable, and the mean heart rate inside it
+ *  reproduces Bevel's own published sleeping bpm to **0.10 bpm** across nine
+ *  nights (2026-07-31 .. 08-09). That is not a fit — it is the same quantity.
  *
- *    Bevel recovery vs Bevel's own sleeping HR : r = -0.81
- *    Bevel recovery vs our daily minimum HR    : r = -0.41
- *    Bevel recovery vs Apple's resting HR      : r = +0.39   (wrong sign)
- *
- *  Switching the input from Apple's resting HR to the daily minimum halves
- *  the error (about 20 points of mean absolute error down to about 9), which
- *  is why this file now scores on the minimum. Closing the rest needs actual
- *  sleep-window readings — 2026-08-01 is the proof: Bevel saw a sleeping HR
- *  of 64.6 against a normal ~44 and scored recovery 1, while every daily
- *  aggregate we hold looked unremarkable and no weighting could have found
- *  it. */
-export const RECOVERY_LIMIT = 'daily aggregates, not sleep-window readings' as const
+ *  What remains uncertain is the BASELINE, not the input. Bevel compares
+ *  against months of history; sleep-window history here starts whenever raw
+ *  sample export was switched on. Until ~30 nights accumulate, a rising HRV
+ *  trend lifts the trailing baseline fast enough that a genuinely good night
+ *  can read as ordinary — which is exactly what 2026-08-10 did, scoring 73
+ *  against Bevel's 89 while the other nine nights fitted within 4 points. */
+export const RECOVERY_LIMIT = 'baseline history, not the input' as const
 
 // ── baselines ─────────────────────────────────────────────────────────────
 
@@ -154,15 +181,25 @@ export function emptyBaseline(): Baseline {
   return { value: null, n: 0, calibrating: true }
 }
 
-/** Trailing mean of the most recent `days` observations, excluding the day
+/** Trailing MEDIAN of the most recent `days` observations, excluding the day
  *  being scored. Nulls are skipped rather than counted as zero — a watch left
- *  on the charger must not drag the baseline down. */
+ *  on the charger must not drag the baseline down.
+ *
+ *  Median rather than mean, because these baselines are built on sparse
+ *  readings and one artefact distorts a mean for a month. Sleeping HRV is
+ *  often a SINGLE reading per night: 2026-08-08 recorded 139.9ms against a
+ *  personal norm near 65, which under a mean lifted the comparator enough to
+ *  cost 2026-08-10 sixteen points of recovery. A median counts an outlier's
+ *  rank and ignores its magnitude, which is the property a baseline wants.
+ *  Switching to it took the recovery fit from 4.4 to 3.1 points of error. */
 export function baselineOf(values: (number | null | undefined)[], days = HEALTH_CONSTANTS.BASELINE_DAYS): Baseline {
   const present = values.filter((v): v is number => v != null && Number.isFinite(v)).slice(-days)
   if (present.length === 0) return emptyBaseline()
-  const mean = present.reduce((s, v) => s + v, 0) / present.length
+  const sorted = [...present].sort((a, b) => a - b)
+  const mid = sorted.length >> 1
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
   return {
-    value: mean,
+    value: median,
     n: present.length,
     calibrating: present.length < HEALTH_CONSTANTS.BASELINE_MIN_DAYS,
   }
@@ -199,54 +236,60 @@ export function sleepScore(s: SleepInput): number | null {
   return interpolate(HEALTH_CONSTANTS.SLEEP.DURATION_ANCHORS, s.asleepMin / 60)
 }
 
+/** Everything here is measured INSIDE the sleep window that ended on the day
+ *  being scored — see SleepWindow in the API contract below. Nothing on this
+ *  type can change after waking, which is what makes the score stable. */
 export type RecoveryInput = {
-  hrv?: number | null
-  hrvBaseline?: number | null
-  /** The day's MINIMUM heart rate, not Apple's resting HR — the closest
-   *  proxy available to the sleeping heart rate Bevel scores on. Named
-   *  `restingHr` no longer, because it is a different quantity and the whole
-   *  bug was two different quantities sharing one name. */
-  lowHr?: number | null
-  lowHrBaseline?: number | null
-  sleepScore?: number | null
+  /** Mean heart rate across the sleep window. This is the same quantity Bevel
+   *  reports as your sleeping bpm, matched to 0.10 bpm over nine nights. */
+  sleepHr?: number | null
+  sleepHrBaseline?: number | null
+  sleepHrv?: number | null
+  sleepHrvBaseline?: number | null
+  sleepResp?: number | null
+  sleepRespBaseline?: number | null
 }
 
 /** 0–100, or null if nothing usable is present. Each component needs both a
- *  reading and a baseline; whichever survive are renormalised to sum to 1. */
+ *  reading and a baseline; whichever survive are renormalised to sum to 1.
+ *
+ *  Deliberately takes no "as of" time and no daytime reading: given the same
+ *  night, this returns the same number forever. */
 export function recoveryScore(i: RecoveryInput): number | null {
   const C = HEALTH_CONSTANTS.RECOVERY
   const parts: { w: number; v: number }[] = []
 
-  if (i.hrv != null && i.hrvBaseline != null && i.hrvBaseline > 0) {
-    parts.push({ w: C.W_HRV, v: interpolate(C.HRV_ANCHORS, i.hrv / i.hrvBaseline) })
+  if (i.sleepHr != null && i.sleepHrBaseline != null && i.sleepHrBaseline > 0) {
+    parts.push({ w: C.W_SLEEP_HR, v: interpolate(C.HR_ANCHORS, i.sleepHr / i.sleepHrBaseline) })
   }
-  if (i.lowHr != null && i.lowHrBaseline != null && i.lowHrBaseline > 0) {
-    parts.push({ w: C.W_RHR, v: interpolate(C.RHR_ANCHORS, i.lowHr / i.lowHrBaseline) })
+  if (i.sleepHrv != null && i.sleepHrvBaseline != null && i.sleepHrvBaseline > 0) {
+    parts.push({ w: C.W_SLEEP_HRV, v: interpolate(C.HRV_ANCHORS, i.sleepHrv / i.sleepHrvBaseline) })
   }
-  if (i.sleepScore != null) {
-    parts.push({ w: C.W_SLEEP, v: i.sleepScore })
+  if (i.sleepResp != null && i.sleepRespBaseline != null && i.sleepRespBaseline > 0) {
+    parts.push({ w: C.W_SLEEP_RESP, v: interpolate(C.RESP_ANCHORS, i.sleepResp / i.sleepRespBaseline) })
   }
   return renormalise(parts)
 }
 
 export type StrainInput = {
   activeKcal?: number | null
-  kcalBaseline?: number | null
   exerciseMin?: number | null
-  exerciseBaseline?: number | null
+  /** Minutes with heart rate at or above STRAIN.HR_ELEVATED_BPM. */
+  elevatedMin?: number | null
 }
 
-/** 0–100, or null without a baseline to compare against. A day at exactly
- *  baseline load lands on STRAIN.BASELINE_SCORE. */
+/** 0–100, or null when the day has no load information at all.
+ *
+ *  Absolute load, not load-relative-to-your-own-baseline: Bevel's strain is
+ *  measured against a fixed target band, so a day at your personal average is
+ *  a LOW strain day rather than a middling one. */
 export function strainScore(i: StrainInput): number | null {
   const C = HEALTH_CONSTANTS.STRAIN
-  // Absolute load, not load-relative-to-your-own-baseline. The baselines are
-  // still accepted on the input type so callers do not all have to change,
-  // and are deliberately unused: Bevel's strain is measured against a fixed
-  // target band, so a day at your personal average is a LOW strain day, not
-  // a middling one. The old baseline-relative model could not express that.
-  if (i.activeKcal == null && i.exerciseMin == null) return null
-  const raw = C.KCAL_COEF * (i.activeKcal ?? 0) + C.EX_COEF * (i.exerciseMin ?? 0) + C.INTERCEPT
+  if (i.activeKcal == null && i.exerciseMin == null && i.elevatedMin == null) return null
+  const raw = C.KCAL_COEF * (i.activeKcal ?? 0)
+    + C.HR90_COEF * (i.elevatedMin ?? 0)
+    + C.EX_COEF * (i.exerciseMin ?? 0)
+    + C.INTERCEPT
   return Math.max(0, Math.min(C.MAX, Math.round(raw * 10) / 10))
 }
 
@@ -275,6 +318,24 @@ export type HealthSleep = {
   awakeMin: number | null
 }
 
+/** Physiology measured inside one night's sleep window, with the trailing
+ *  baselines it was compared against. Recovery is computed from exactly this
+ *  and nothing else, so shipping it to the client lets the Recovery tab show
+ *  the real derivation rather than a plausible-looking reconstruction. */
+export type SleepWindow = {
+  /** Readings behind the means. Zero means the window held no readings — the
+   *  watch was off — which is different from a bad night. */
+  hrN: number
+  hrvN: number
+  respN: number
+  hr: number | null
+  hrv: number | null
+  resp: number | null
+  hrBaseline: number | null
+  hrvBaseline: number | null
+  respBaseline: number | null
+}
+
 export type HealthWorkoutLite = {
   id: number
   date: string
@@ -295,6 +356,10 @@ export type HealthDay = {
    *  new Apple metrics appear without a code change. */
   extra: Record<string, number | null>
   sleep: HealthSleep | null
+  /** What recovery was scored on. Null when no sleep window covers this day. */
+  sleepWindow: SleepWindow | null
+  /** Minutes at or above STRAIN.HR_ELEVATED_BPM, from the raw samples. */
+  elevatedMin: number | null
   workouts: HealthWorkoutLite[]
   scores: {
     sleep: number | null

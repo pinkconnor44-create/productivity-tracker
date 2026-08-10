@@ -8,9 +8,24 @@
 // keep everything else verbatim, and never throw on a single bad point — a
 // batch of 30 days must not be lost because one row is malformed.
 
+import { defForMetric } from './health'
+
 export type MetricRow = {
   date: string
   metric: string
+  qty: number | null
+  min: number | null
+  avg: number | null
+  max: number | null
+  units: string | null
+}
+
+/** One raw reading, as delivered with HAE's "Aggregate Data" switched off. */
+export type SampleRow = {
+  date: string
+  metric: string
+  start: string
+  source: string
   qty: number | null
   min: number | null
   avg: number | null
@@ -47,6 +62,8 @@ export type WorkoutRow = {
 
 export type ParseResult = {
   metrics: MetricRow[]
+  /** Sub-daily readings, for the metrics we keep sample history on. */
+  samples: SampleRow[]
   sleep: SleepRow[]
   workouts: WorkoutRow[]
   /** Points we could not read. Reported in the response so a silent parser
@@ -74,6 +91,100 @@ export function toLocalDay(ts: unknown): string | null {
   if (typeof ts !== 'string') return null
   const day = ts.slice(0, 10)
   return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null
+}
+
+/** True when a timestamp sits exactly on local midnight.
+ *
+ *  This is what separates HAE's two export modes, and the separation has to be
+ *  made per point rather than per payload: with "Aggregate Data" ON every point
+ *  is one whole day stamped 00:00:00, and with it OFF every point is a real
+ *  reading stamped at the instant it was taken. Mixing the two lanes is what
+ *  destroyed a week of totals — a one-hour delta labelled with a day looks
+ *  exactly like that day's total unless you read the clock as well as the date.
+ *
+ *  A genuine reading at exactly 00:00:00 would be misread as a daily total.
+ *  That costs one heart-rate sample a night at worst, and the alternative —
+ *  trusting a payload-level flag HAE does not send — costs the whole day. */
+function isDayStamp(ts: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}[ T]00:00:00/.test(ts)
+}
+
+/** Metrics we keep per-reading history for.
+ *
+ *  Deliberately just these two. They are Watch-only, so raw readings can be
+ *  aggregated without worrying about the iPhone recording the same event —
+ *  and they are the two recovery is scored on. Steps and active energy are
+ *  recorded by BOTH devices, Apple de-duplicates them when it reports a daily
+ *  total, and summing raw per-source readings would overshoot. Those stay in
+ *  the aggregate lane where Apple has already done that work. */
+const SAMPLE_METRICS = new Set(['heart_rate', 'heart_rate_variability', 'respiratory_rate'])
+
+/** Units whose readings ADD UP over a day. Everything else is a rate, a level
+ *  or a percentage, and averages instead.
+ *
+ *  Consulted only for metrics with no MetricDef — the known ones carry the
+ *  answer already in `field` ('qty' totals, 'avg' samples). Defaulting the
+ *  unknown ones to averaging is the safe direction: averaging a total
+ *  understates a number that is still recognisably itself, while summing a
+ *  percentage or a temperature produces a value with no meaning at all. */
+const CUMULATIVE_UNITS = new Set([
+  'count', 'kcal', 'kj', 'min', 'mi', 'km', 'ft', 'l', 'ml', 'g', 'mg', 'mcg', 'iu',
+])
+
+type Bucket = {
+  units: string | null
+  cumulative: boolean
+  sum: number
+  nSum: number
+  min: number | null
+  max: number | null
+  sumAvg: number
+  nAvg: number
+}
+
+/** Accumulate one sub-daily reading into its day. */
+function rollUp(
+  buckets: Map<string, Bucket>,
+  date: string,
+  metric: string,
+  units: string | null,
+  p: { qty: number | null; min: number | null; avg: number | null; max: number | null },
+) {
+  const def = defForMetric(metric)
+  const cumulative = def ? def.field === 'qty' : CUMULATIVE_UNITS.has((units ?? '').toLowerCase())
+  const k = `${date}|${metric}`
+  let b = buckets.get(k)
+  if (!b) {
+    b = { units, cumulative, sum: 0, nSum: 0, min: null, max: null, sumAvg: 0, nAvg: 0 }
+    buckets.set(k, b)
+  }
+  if (p.qty != null) { b.sum += p.qty; b.nSum++ }
+  // A heart-rate reading carries Min/Avg/Max of its own bucket; a plain
+  // reading carries only qty. Fall back so both shapes land in one place.
+  const lo = p.min ?? p.qty, hi = p.max ?? p.qty, mid = p.avg ?? p.qty
+  if (lo != null) b.min = b.min == null ? lo : Math.min(b.min, lo)
+  if (hi != null) b.max = b.max == null ? hi : Math.max(b.max, hi)
+  if (mid != null) { b.sumAvg += mid; b.nAvg++ }
+}
+
+/** Turn the accumulated buckets into one daily row each. */
+function flushBuckets(buckets: Map<string, Bucket>): MetricRow[] {
+  const rows: MetricRow[] = []
+  for (const [k, b] of buckets) {
+    const i = k.indexOf('|')
+    const date = k.slice(0, i), metric = k.slice(i + 1)
+    rows.push(b.cumulative
+      ? { date, metric, qty: b.nSum > 0 ? b.sum : null, min: null, avg: null, max: null, units: b.units }
+      : {
+          date, metric,
+          qty: null,
+          min: b.min,
+          avg: b.nAvg > 0 ? b.sumAvg / b.nAvg : null,
+          max: b.max,
+          units: b.units,
+        })
+  }
+  return rows
 }
 
 /** Unwrap HAE's two number shapes: a bare number, or `{qty, units}`. */
@@ -149,7 +260,7 @@ function kmFrom(v: unknown, units: string | null): number | null {
 // ── the parser ────────────────────────────────────────────────────────────
 
 export function parseHealthPayload(body: unknown): ParseResult {
-  const out: ParseResult = { metrics: [], sleep: [], workouts: [], skipped: 0, warnings: [] }
+  const out: ParseResult = { metrics: [], samples: [], sleep: [], workouts: [], skipped: 0, warnings: [] }
   const warn = (m: string) => { if (out.warnings.length < MAX_WARNINGS) out.warnings.push(m) }
 
   if (!body || typeof body !== 'object') {
@@ -166,6 +277,9 @@ export function parseHealthPayload(body: unknown): ParseResult {
 
   const metrics = Array.isArray(r.metrics) ? r.metrics : []
   const workouts = Array.isArray(r.workouts) ? r.workouts : []
+  // Sub-daily readings, accumulated per (day, metric) and flushed to daily
+  // rows once every point has been seen.
+  const buckets = new Map<string, Bucket>()
 
   for (const raw of metrics) {
     if (!raw || typeof raw !== 'object') { out.skipped++; continue }
@@ -187,8 +301,9 @@ export function parseHealthPayload(body: unknown): ParseResult {
         continue
       }
 
-      const date = toLocalDay(pick(pt, 'date', 'startDate', 'start'))
-      if (!date) { out.skipped++; warn(`${key}: point with no readable date`); continue }
+      const stamp = str(pick(pt, 'date', 'startDate', 'start'))
+      const date = toLocalDay(stamp)
+      if (!date || !stamp) { out.skipped++; warn(`${key}: point with no readable date`); continue }
       const qty = num(pick(pt, 'qty', 'value', 'quantity'))
       const min = num(pick(pt, 'Min', 'min'))
       const avg = num(pick(pt, 'Avg', 'avg', 'average'))
@@ -196,7 +311,27 @@ export function parseHealthPayload(body: unknown): ParseResult {
       if (qty == null && min == null && avg == null && max == null) {
         out.skipped++; warn(`${key}: point with no numeric value`); continue
       }
-      out.metrics.push({ date, metric: key, qty, min, avg, max, units })
+
+      if (isDayStamp(stamp)) {
+        // Whole-day total, straight into the aggregate lane.
+        out.metrics.push({ date, metric: key, qty, min, avg, max, units })
+        continue
+      }
+
+      // Sub-daily reading. Rolled up into the day below, and additionally kept
+      // verbatim when it is one of the metrics recovery needs a sleep window
+      // of. Summing is safe here: Health Auto Export merges the iPhone and the
+      // Watch before exporting — every step reading arrives under the single
+      // source "Connor's Apple Watch|iPhone" with no duplicate timestamps, and
+      // summing 2026-08-10 reproduces Apple's own 4,391 to within 0.3%.
+      if (SAMPLE_METRICS.has(key)) {
+        out.samples.push({
+          date, metric: key, start: stamp,
+          source: str(pick(pt, 'source')) ?? '',
+          qty, min, avg, max, units,
+        })
+      }
+      rollUp(buckets, date, key, units, { qty, min, avg, max })
     }
   }
 
@@ -206,6 +341,12 @@ export function parseHealthPayload(body: unknown): ParseResult {
     if (row) out.workouts.push(row)
     else { out.skipped++; warn('unparseable workout') }
   }
+
+  // Rolled-up days go in AFTER the whole-day rows, so that if a payload
+  // somehow carries both shapes for one (day, metric), the roll-up — built
+  // from every reading rather than one pre-aggregated number — is the one the
+  // caller's de-dupe keeps.
+  out.metrics.push(...flushBuckets(buckets))
 
   return out
 }

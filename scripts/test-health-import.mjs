@@ -84,13 +84,72 @@ check('workouts attached to the day', d6?.workouts?.length === 1, `got ${d6?.wor
 check('workout duration from timestamps (min)', Math.round(d6?.workouts?.[0]?.durationMin) === 67, `got ${d6?.workouts?.[0]?.durationMin}`)
 const d5 = read.days?.find(d => d.date === '2019-03-05')
 check('miles converted to km', Math.abs(d5?.workouts?.[0]?.distanceKm - 3.862) < 0.01, `got ${d5?.workouts?.[0]?.distanceKm}`)
-// Deliberately NOT asserting "recovery === sleep on day 1". That holds only
-// against an empty database; as soon as any prior days exist the day has real
-// HRV/RHR baselines and recovery correctly stops being sleep-only. Assert the
-// state-independent invariant instead: a day with sleep always scores, and
-// always inside the range.
+// Recovery is scored on physiology measured INSIDE the sleep window, so a
+// night with no heart-rate readings in it cannot be scored and must come back
+// null. This fixture has sleep but no sub-daily readings, which is exactly
+// that case.
+//
+// The previous assertion here was "a day with sleep always scores", and it was
+// asserting the bug: recovery used to fold in whole-day HRV and the day's
+// lowest heart rate, both of which keep moving after you wake up, which is why
+// the score sank through every afternoon. Null is the correct answer for a
+// night we have no sleep-window readings for — the same rule as everywhere
+// else in this file, that a missing input is null and never zero.
 const rec = d5?.scores?.recovery
-check('recovery scores whenever sleep exists', typeof rec === 'number' && rec > 0 && rec <= 100, `got ${rec}`)
+check('recovery is null without sleep-window readings', rec === null, `got ${rec}`)
+check('sleep still scores without sleep-window readings', typeof d5?.scores?.sleep === 'number', `got ${d5?.scores?.sleep}`)
+check('no sleep window reported when nothing was recorded in it', d5?.sleepWindow === null, `got ${JSON.stringify(d5?.sleepWindow)}`)
+
+// ── the partial-window regressions ────────────────────────────────────────
+// These two are the whole reason this session existed. HAE's "Since Last Sync"
+// export period sends only what was recorded since the last run but still
+// labels it with the DAY, so an hourly automation posted an hour of steps as
+// if it were the day's total, and a sleep fragment as if it were the night.
+const DAY = '2019-03-06'
+const partial = {
+  data: {
+    metrics: [
+      { name: 'step_count', units: 'count', data: [{ date: `${DAY} 00:00:00 -0500`, qty: 15 }] },
+      { name: 'sleep_analysis', units: 'hr', data: [{
+        sleepStart: `${DAY} 06:47:04 -0500`, sleepEnd: `${DAY} 08:02:33 -0500`,
+        totalSleep: 1.2, core: 1.0, deep: 0, rem: 0.2, awake: 0.1, asleep: 0,
+      }] },
+    ],
+  },
+}
+await post(partial)
+const afterPartial = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const d6b = afterPartial.days?.find(d => d.date === DAY)
+check('a partial window cannot shrink a day\'s step total',
+  d6b?.metrics?.steps === 11402, `got ${d6b?.metrics?.steps}`)
+check('a sleep fragment cannot replace a longer night',
+  d6b?.sleep?.asleepMin > 100, `got ${d6b?.sleep?.asleepMin}`)
+
+// ── sub-daily readings roll up into the day ───────────────────────────────
+// A raw-sample export sends many readings per day instead of one total. They
+// must sum, not overwrite each other — the old parser kept whichever point
+// happened to be read last.
+const ROLL = '2019-03-08'
+await post({
+  data: {
+    metrics: [
+      { name: 'step_count', units: 'count', data: [
+        { date: `${ROLL} 08:15:00 -0500`, qty: 100 },
+        { date: `${ROLL} 09:15:00 -0500`, qty: 250 },
+        { date: `${ROLL} 10:15:00 -0500`, qty: 60 },
+      ] },
+      { name: 'heart_rate', units: 'count/min', data: [
+        { date: `${ROLL} 08:15:00 -0500`, Min: 50, Avg: 55, Max: 60, source: 'Watch' },
+        { date: `${ROLL} 09:15:00 -0500`, Min: 70, Avg: 95, Max: 130, source: 'Watch' },
+      ] },
+    ],
+  },
+})
+const rolled = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const dr = rolled.days?.find(d => d.date === ROLL)
+check('sub-daily totals SUM into the day', dr?.metrics?.steps === 410, `got ${dr?.metrics?.steps}`)
+check('sub-daily vitals AVERAGE into the day', dr?.metrics?.hr === 75, `got ${dr?.metrics?.hr}`)
+check('elevated-HR minutes derived from samples', typeof dr?.elevatedMin === 'number', `got ${dr?.elevatedMin}`)
 
 console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) failed.`)
 process.exit(failures === 0 ? 0 : 1)

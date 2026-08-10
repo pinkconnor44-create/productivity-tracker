@@ -38,7 +38,15 @@ for (const w of workouts) {
 const allDays = [...days].sort()
 console.log(`${allDays.length} day(s) in ${file}: ${allDays[0] ?? '—'} → ${allDays[allDays.length - 1] ?? '—'}`)
 
-const DAYS_PER_CHUNK = 7
+// One day per request. A raw-sample export carries a few thousand readings per
+// day — roughly 600KB — and Vercel rejects a body over 4.5MB at the edge with
+// a 413 that never reaches our code. Seven-day chunks were fine for aggregated
+// exports and are three times over the limit for sample ones. A chunk must
+// also never split one day across two requests, or a partially-applied batch
+// leaves that day looking complete when it isn't; one day per chunk satisfies
+// both. Chunks go in date order so a night's first half is already stored when
+// the wake day's derived values are recomputed.
+const DAYS_PER_CHUNK = 1
 const chunks = []
 for (let i = 0; i < allDays.length; i += DAYS_PER_CHUNK) {
   const window = new Set(allDays.slice(i, i + DAYS_PER_CHUNK))
@@ -56,7 +64,12 @@ let totals = { metrics: 0, sleep: 0, workouts: 0, skipped: 0 }
 for (const [i, chunk] of chunks.entries()) {
   const res = await fetch(`${base}/api/health-import`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Api-Key': key },
+    // `replace` lifts the importer's do-not-shrink guard on daily totals. The
+    // guard exists to stop a partial hourly export overwriting a day's total
+    // with an hour of it; a deliberate backfill is the one caller that must be
+    // able to correct a value DOWNWARD, including repairing days the broken
+    // automation already flattened.
+    headers: { 'Content-Type': 'application/json', 'X-Api-Key': key, 'X-Import-Mode': 'replace' },
     body: JSON.stringify(chunk),
   })
   const json = await res.json().catch(() => ({}))
