@@ -6,7 +6,15 @@
 _Last updated: 2026-08-10 — **the automation was silently destroying every
 day's data**, and recovery now scores sleep-window physiology so it holds still
 all day. Root cause found, ingest rebuilt on raw samples, models refit,
-2026-08-08→10 repaired. **Not yet committed or deployed.**_
+2026-08-08→10 repaired. **Merged to `main` (`2b84222`, `--no-ff`) and deployed
+to production.**_
+
+⚠️ **The repair had to be done twice.** The first pass was applied through
+`localhost` while production still ran the old code, so the next phone export
+flattened it straight back — 2026-08-10 went from 4,652 steps to 23.8. Nothing
+is safe to repair until the fix is actually deployed; the raw samples and
+sleep-window values survived both times, because the old code did not know
+those tables existed.
 
 ## 2026-08-10 — the automation was overwriting each day with one hour of it
 
@@ -228,23 +236,27 @@ sleeping-HR input check above is the real evidence. Add rows to `BEVEL` in
 
 ## Next steps
 
-1. 🔴 **Connor: set the HAE automation to `Aggregate Data` OFF, `Export
-   Period` = Today, `Include Workouts` ON.** Nothing below matters until this
-   is done — the app now expects timestamped readings, and the automation is
-   still on the setting that caused the bug.
-2. 🔴 **Commit and deploy.** Everything from 2026-08-10 is local only. Needs
-   `npx vercel --prod`; the DB is already migrated (see 3).
-3. **Schema is already applied to Turso** — `HealthSample` via `db:push`, the
-   six `SleepSession` columns via hand-written `ALTER TABLE` because `db:push`
-   only emits `CREATE TABLE`. Do not re-run those ALTERs blindly.
-4. **Raw-sample export for 2026-06-01 → 08-10**, then re-run
+1. **Confirm the automation runs unattended.** Connor set finest time grouping
+   and a date range including yesterday on 2026-08-10; no phone export has
+   landed since, so it is unverified. The Bevel status line now says
+   `· from phone` or `· manual backfill` — if it says "from phone" and he did
+   not touch it, the schedule works. iOS grants Background App Refresh every
+   2–3 hours regardless of the cadence setting, with a multi-hour hole
+   overnight; that is an iOS budget, not a bug, and **it no longer costs
+   anything** now that each run re-sends whole days.
+2. **Raw-sample export for 2026-06-01 → 08-10**, then re-run
    `scripts/fit-bevel.mjs` — the only route to closing today's 16-point
    recovery gap, which is a baseline-history problem, not a model one.
-5. **Rotate `HEALTH_IMPORT_KEY`** — it is in the 2026-08-09 transcript AND in
+3. **Rotate `HEALTH_IMPORT_KEY`** — it is in the 2026-08-09 transcript AND in
    plaintext in the automation config file Connor uploaded 2026-08-10.
-6. **Device QA on the iPhone PWA** (`docs/BEVEL-QA.md`) — still unrun.
-7. **Delete `scripts/migrate-from-neon.mjs` and `npm uninstall pg @types/pg`.**
+4. **Device QA on the iPhone PWA** (`docs/BEVEL-QA.md`) — still unrun, and
+   Recovery and Strain have never been opened in a browser at any width.
+5. **Delete `scripts/migrate-from-neon.mjs` and `npm uninstall pg @types/pg`.**
    The Neon project was to be decommissioned ~one week after 2026-05-09.
+
+**Schema is fully applied to Turso**: `HealthSample` via `db:push`; the six
+`SleepSession` columns and `HealthImportLog.source` via hand-written
+`ALTER TABLE`, because `db:push` only emits `CREATE TABLE`.
 
 ## Open questions
 
