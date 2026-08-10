@@ -47,13 +47,28 @@ function describe(req: NextRequest): string {
   return `key ${key ? `${key.length} chars` : 'absent'}; ua ${ua}`
 }
 
+/** Who sent this request, in one word.
+ *
+ *  Health Auto Export identifies itself as "Auto Export/<build>"; the backfill
+ *  script runs under node. Recorded on every row, success included, because
+ *  "did the automation fire on its own, or was that me pressing Export?" is
+ *  otherwise unanswerable — both write a successful row and the rows are
+ *  identical. Knowing the automation ran unattended is the only way to tell a
+ *  working schedule from a habit of triggering it by hand. */
+function sourceOf(req: NextRequest): string {
+  const ua = (req.headers.get('user-agent') ?? '').toLowerCase()
+  if (ua.includes('auto%20export') || ua.includes('auto export') || ua.includes('autoexport')) return 'phone'
+  if (ua.includes('node') || ua.includes('undici')) return 'backfill'
+  return 'other'
+}
+
 export async function POST(req: NextRequest) {
   const expected = process.env.HEALTH_IMPORT_KEY
   // Fail closed. An unset key must not mean "open endpoint" — that is how a
   // misconfigured preview deploy turns into a public write endpoint.
   if (!expected) {
     console.error('[/api/health-import] HEALTH_IMPORT_KEY is not set')
-    await recordRejection(`not configured — HEALTH_IMPORT_KEY unset; ${describe(req)}`)
+    await recordRejection(`not configured — HEALTH_IMPORT_KEY unset; ${describe(req)}`, sourceOf(req))
     return NextResponse.json({ error: 'import not configured' }, { status: 500 })
   }
   const provided = req.headers.get('x-api-key') ?? ''
@@ -63,7 +78,7 @@ export async function POST(req: NextRequest) {
     // opposite diagnoses with opposite fixes, and the second was invisible in
     // the app, so every investigation had to go to Vercel's runtime logs. The
     // Bevel status line now answers it directly.
-    await recordRejection(`unauthorized — ${describe(req)}`)
+    await recordRejection(`unauthorized — ${describe(req)}`, sourceOf(req))
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
@@ -71,7 +86,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    await recordRejection(`invalid JSON — ${describe(req)}`)
+    await recordRejection(`invalid JSON — ${describe(req)}`, sourceOf(req))
     return NextResponse.json({ error: 'invalid JSON' }, { status: 400 })
   }
 
@@ -202,6 +217,7 @@ export async function POST(req: NextRequest) {
       skipped: parsed.skipped,
       span: spanOf(parsed),
       note: parsed.warnings.length ? parsed.warnings.join('; ').slice(0, 500) : null,
+      source: sourceOf(req),
     })
 
     return NextResponse.json({
@@ -223,6 +239,7 @@ export async function POST(req: NextRequest) {
       ok: false, metrics: 0, sleep: 0, workouts: 0, skipped: parsed.skipped,
       span: spanOf(parsed),
       note: (e instanceof Error ? e.message : String(e)).slice(0, 500),
+      source: sourceOf(req),
     })
     return NextResponse.json({ error: 'import failed' }, { status: 500 })
   }
@@ -388,7 +405,7 @@ function spanOf(parsed: { metrics: { date: string }[]; sleep: { date: string }[]
  *  successful batch would be strictly worse than having no log at all. */
 async function recordImport(row: {
   ok: boolean; metrics: number; sleep: number; workouts: number
-  skipped: number; span: string | null; note: string | null
+  skipped: number; span: string | null; note: string | null; source: string
 }) {
   try {
     await prisma.healthImportLog.create({ data: row })
@@ -412,7 +429,7 @@ const REJECTED = 'rejected: '
  *  database and push real imports out of the log — turning a diagnostic into a
  *  vandalism surface. One row per window is plenty: the automation runs hourly,
  *  so every genuine failed run still gets recorded. */
-async function recordRejection(note: string) {
+async function recordRejection(note: string, source = 'other') {
   const WINDOW_MS = 5 * 60 * 1000
   try {
     const previous = await prisma.healthImportLog.findFirst({
@@ -427,6 +444,7 @@ async function recordRejection(note: string) {
   await recordImport({
     ok: false, metrics: 0, sleep: 0, workouts: 0, skipped: 0, span: null,
     note: (REJECTED + note).slice(0, 500),
+    source,
   })
 }
 

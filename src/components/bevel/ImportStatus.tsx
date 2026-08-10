@@ -58,6 +58,13 @@ export function ImportStatus({ last }: { last: LastImport }) {
         />
         <span className="text-on-surface-variant/55">
           {last.ok ? 'Last import' : rejected ? 'Last request rejected' : 'Last import failed'} {when}
+          {/* Who sent it. The whole reason this line exists in this form: a
+              successful import from the phone and one from a hand-run backfill
+              write identical rows, so "is the automation actually running on
+              its own?" could not be answered from the app — only guessed at by
+              whether you remembered pressing Export. */}
+          {last.source === 'phone' && <> · from phone</>}
+          {last.source === 'backfill' && <> · manual backfill</>}
           {last.ok && <> · {rows} row{rows === 1 ? '' : 's'}</>}
           {last.span && <> · {last.span}</>}
           {last.skipped > 0 && <> · {last.skipped} skipped</>}

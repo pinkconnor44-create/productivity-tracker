@@ -37,6 +37,7 @@ async function latestImport(): Promise<HealthResponse['lastImport']> {
     return {
       at: r.at.toISOString(), ok: r.ok, metrics: r.metrics, sleep: r.sleep,
       workouts: r.workouts, skipped: r.skipped, span: r.span, note: r.note,
+      source: r.source,
     }
   } catch {
     // Never let the import log break the health read.

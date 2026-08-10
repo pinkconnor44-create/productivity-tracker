@@ -383,6 +383,9 @@ export type LastImport = {
   skipped: number
   span: string | null
   note: string | null
+  /** "phone" | "backfill" | "other" — who sent it. Null on rows written
+   *  before the column existed. */
+  source: string | null
 } | null
 
 export type HealthResponse = {

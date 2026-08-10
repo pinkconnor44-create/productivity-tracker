@@ -227,6 +227,12 @@ model HealthImportLog {
   span     String?
   // Failure reason or parser warnings, truncated
   note     String?
+  // WHO sent it — "phone", "backfill" or "other", derived from the user agent.
+  // Without this, "did the automation fire, or was that me pressing Export?"
+  // cannot be answered from the log at all: both write a successful row that
+  // looks identical. That ambiguity is the same one that made the original
+  // sync failure take two days to find, in a different costume.
+  source   String?
 
   @@index([at])
 }
