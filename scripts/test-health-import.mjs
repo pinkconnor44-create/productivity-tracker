@@ -151,5 +151,39 @@ check('sub-daily totals SUM into the day', dr?.metrics?.steps === 410, `got ${dr
 check('sub-daily vitals AVERAGE into the day', dr?.metrics?.hr === 75, `got ${dr?.metrics?.hr}`)
 check('elevated-HR minutes derived from samples', typeof dr?.elevatedMin === 'number', `got ${dr?.elevatedMin}`)
 
+// ── hour-grouped exports keep their midnight bucket ───────────────────────
+// HAE's "time grouping: hour" stamps the 00:00–01:00 bucket with exactly the
+// same `00:00:00` a whole-day aggregate carries. Classifying on midnight
+// alone read that hour as the entire day and dropped it from the roll-up —
+// losing the midnight hour every single day, silently. A point is a day total
+// only if it is midnight-stamped AND the only point for that metric that day.
+const HOUR = '2019-03-09'
+await post({
+  data: {
+    metrics: [
+      { name: 'step_count', units: 'count', data: [
+        { date: `${HOUR} 00:00:00 -0500`, qty: 7 },
+        { date: `${HOUR} 01:00:00 -0500`, qty: 11 },
+        { date: `${HOUR} 02:00:00 -0500`, qty: 22 },
+      ] },
+    ],
+  },
+})
+const hourly = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const dh = hourly.days?.find(d => d.date === HOUR)
+check('hour-grouped: midnight bucket counted, not mistaken for the day',
+  dh?.metrics?.steps === 40, `got ${dh?.metrics?.steps}`)
+
+// The complementary case must still work: a genuine aggregated export sends
+// exactly one midnight-stamped point per day, and that IS the day's total.
+const AGG = '2019-03-10'
+await post({ data: { metrics: [
+  { name: 'step_count', units: 'count', data: [{ date: `${AGG} 00:00:00 -0500`, qty: 8123 }] },
+] } })
+const agg = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+check('aggregated export: lone midnight point is the day total',
+  agg.days?.find(d => d.date === AGG)?.metrics?.steps === 8123,
+  `got ${agg.days?.find(d => d.date === AGG)?.metrics?.steps}`)
+
 console.log(failures === 0 ? '\nAll checks passed.' : `\n${failures} check(s) failed.`)
 process.exit(failures === 0 ? 0 : 1)

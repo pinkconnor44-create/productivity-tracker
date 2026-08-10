@@ -93,20 +93,30 @@ export function toLocalDay(ts: unknown): string | null {
   return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null
 }
 
-/** True when a timestamp sits exactly on local midnight.
- *
- *  This is what separates HAE's two export modes, and the separation has to be
- *  made per point rather than per payload: with "Aggregate Data" ON every point
- *  is one whole day stamped 00:00:00, and with it OFF every point is a real
- *  reading stamped at the instant it was taken. Mixing the two lanes is what
- *  destroyed a week of totals — a one-hour delta labelled with a day looks
- *  exactly like that day's total unless you read the clock as well as the date.
- *
- *  A genuine reading at exactly 00:00:00 would be misread as a daily total.
- *  That costs one heart-rate sample a night at worst, and the alternative —
- *  trusting a payload-level flag HAE does not send — costs the whole day. */
-function isDayStamp(ts: string): boolean {
+/** True when a timestamp sits exactly on local midnight. */
+function isMidnight(ts: string): boolean {
   return /^\d{4}-\d{2}-\d{2}[ T]00:00:00/.test(ts)
+}
+
+/** Whether a point is a whole-day total rather than a reading taken at an
+ *  instant. That distinction is the difference between a correct day and a
+ *  destroyed one — a one-hour delta labelled with a day looks exactly like
+ *  that day's total unless something else separates them.
+ *
+ *  Midnight alone is NOT enough to decide it. HAE's "time grouping" can bucket
+ *  readings by hour, and the 00:00–01:00 bucket carries the identical
+ *  `00:00:00` stamp a daily aggregate does — so a midnight-only test reads
+ *  that hour as the whole day and loses it from the roll-up, every day,
+ *  silently.
+ *
+ *  So require BOTH: stamped at midnight, and the only point this metric has
+ *  for this day. One point at midnight is an aggregate; one of twenty-four is
+ *  an hour. A day whose only readings happen to fall in the midnight hour is
+ *  still classified as an aggregate, but its value is then the same either
+ *  way, and the next export — which carries the rest of the day — reclassifies
+ *  it. */
+function isDayTotal(ts: string, pointsThatDay: number): boolean {
+  return pointsThatDay === 1 && isMidnight(ts)
 }
 
 /** Metrics we keep per-reading history for.
@@ -290,6 +300,16 @@ export function parseHealthPayload(body: unknown): ParseResult {
     const units = str(pick(m, 'units', 'unit'))
     const points = Array.isArray(m.data) ? m.data : []
 
+    // How many points this metric carries for each day, counted before any of
+    // them are classified — a point cannot be told apart from a whole-day
+    // total without knowing whether it has siblings.
+    const perDay = new Map<string, number>()
+    for (const p of points) {
+      if (!p || typeof p !== 'object') continue
+      const d = toLocalDay(pick(p as Record<string, unknown>, 'date', 'startDate', 'start'))
+      if (d) perDay.set(d, (perDay.get(d) ?? 0) + 1)
+    }
+
     for (const p of points) {
       if (!p || typeof p !== 'object') { out.skipped++; continue }
       const pt = p as Record<string, unknown>
@@ -312,7 +332,7 @@ export function parseHealthPayload(body: unknown): ParseResult {
         out.skipped++; warn(`${key}: point with no numeric value`); continue
       }
 
-      if (isDayStamp(stamp)) {
+      if (isDayTotal(stamp, perDay.get(date) ?? 1)) {
         // Whole-day total, straight into the aggregate lane.
         out.metrics.push({ date, metric: key, qty, min, avg, max, units })
         continue
