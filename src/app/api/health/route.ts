@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import {
   HEALTH_CONSTANTS, METRIC_DEFS, defForMetric,
   baselineOf, sleepScore, recoveryScore, strainScore,
-  type Baseline, type HealthDay, type HealthResponse, type MetricKey,
+  type Baseline, type HealthDay, type HealthResponse, type MetricKey, type SleepWindow,
 } from '@/lib/health'
 
 // GET /api/health?start=YYYY-MM-DD&end=YYYY-MM-DD
@@ -78,13 +78,11 @@ export async function GET(req: NextRequest) {
     type DayBucket = {
       metrics: Partial<Record<MetricKey, number | null>>
       extra: Record<string, number | null>
-      /** The day's lowest heart rate. Not a MetricKey — see the assignment. */
-      lowHr: number | null
     }
     const buckets = new Map<string, DayBucket>()
     const bucket = (d: string): DayBucket => {
       let b = buckets.get(d)
-      if (!b) { b = { metrics: {}, extra: {}, lowHr: null }; buckets.set(d, b) }
+      if (!b) { b = { metrics: {}, extra: {} }; buckets.set(d, b) }
       return b
     }
 
@@ -98,12 +96,6 @@ export async function GET(req: NextRequest) {
         // lands rather than reading as missing.
         const primary = def.field === 'qty' ? r.qty : r.avg
         b.metrics[def.key] = primary ?? (def.field === 'qty' ? r.avg : r.qty) ?? null
-        // The day's LOWEST heart rate, kept beside the mapped metrics rather
-        // than as a MetricDef of its own — heart_rate already owns that alias,
-        // and this is a second statistic off the same row, not a second
-        // metric. Recovery scores on it because it is the nearest thing we
-        // hold to a sleeping heart rate. See RECOVERY_LIMIT in lib/health.
-        if (r.metric === 'heart_rate' && r.min != null) b.lowHr = r.min
       } else {
         b.extra[r.metric] = r.qty ?? r.avg ?? null
       }
@@ -123,13 +115,19 @@ export async function GET(req: NextRequest) {
     // appended, which is what makes it trailing-and-exclusive.
     const history: Partial<Record<MetricKey, (number | null)[]>> = {}
     for (const def of METRIC_DEFS) history[def.key] = []
-    const lowHrHistory: (number | null)[] = []
+    // Sleep-window histories are kept separately from the daily metrics: a
+    // sleeping heart rate and a daily heart rate are different quantities and
+    // must never share a baseline. Comparing a sleeping reading against a
+    // whole-day baseline would make every night look outstanding.
+    const sleepHrHistory: (number | null)[] = []
+    const sleepHrvHistory: (number | null)[] = []
+    const sleepRespHistory: (number | null)[] = []
 
     const days: HealthDay[] = []
     let latestBaselines: Partial<Record<MetricKey, Baseline>> = {}
 
     for (let d = fetchStart; d <= end; d = addDays(d, 1)) {
-      const b = buckets.get(d) ?? { metrics: {}, extra: {}, lowHr: null }
+      const b: DayBucket = buckets.get(d) ?? { metrics: {}, extra: {} }
       const sleep = sleepByDay.get(d) ?? null
       const workouts = workoutsByDay.get(d) ?? []
 
@@ -137,21 +135,34 @@ export async function GET(req: NextRequest) {
       for (const def of METRIC_DEFS) {
         dayBaselines[def.key] = baselineOf(history[def.key] ?? [])
       }
-      const lowHrBaseline = baselineOf(lowHrHistory)
+      const hrBase = baselineOf(sleepHrHistory)
+      const hrvBase = baselineOf(sleepHrvHistory)
+      const respBase = baselineOf(sleepRespHistory)
+
+      // Recovery reads ONLY the night that ended on this day. Nothing measured
+      // after waking reaches it, which is what stops the score drifting down
+      // through the afternoon as HRV falls.
+      const sw: SleepWindow | null = sleep && (sleep.hrN > 0 || sleep.hrvN > 0 || sleep.respN > 0)
+        ? {
+            hrN: sleep.hrN, hrvN: sleep.hrvN, respN: sleep.respN,
+            hr: sleep.sleepHr, hrv: sleep.sleepHrv, resp: sleep.sleepResp,
+            hrBaseline: hrBase.value, hrvBaseline: hrvBase.value, respBaseline: respBase.value,
+          }
+        : null
 
       const sScore = sleepScore(sleep)
       const rScore = recoveryScore({
-        hrv: b.metrics.hrv ?? null,
-        hrvBaseline: dayBaselines.hrv?.value ?? null,
-        lowHr: b.lowHr ?? null,
-        lowHrBaseline: lowHrBaseline.value,
-        sleepScore: sScore,
+        sleepHr: sleep?.sleepHr ?? null,
+        sleepHrBaseline: hrBase.value,
+        sleepHrv: sleep?.sleepHrv ?? null,
+        sleepHrvBaseline: hrvBase.value,
+        sleepResp: sleep?.sleepResp ?? null,
+        sleepRespBaseline: respBase.value,
       })
       const xScore = strainScore({
         activeKcal: b.metrics.activeKcal ?? null,
-        kcalBaseline: dayBaselines.activeKcal?.value ?? null,
         exerciseMin: b.metrics.exerciseMin ?? null,
-        exerciseBaseline: dayBaselines.exerciseMin?.value ?? null,
+        elevatedMin: b.metrics.elevatedMin ?? null,
       })
 
       if (d >= start) {
@@ -165,6 +176,8 @@ export async function GET(req: NextRequest) {
             coreMin: sleep.coreMin, deepMin: sleep.deepMin,
             remMin: sleep.remMin, awakeMin: sleep.awakeMin,
           },
+          sleepWindow: sw,
+          elevatedMin: b.metrics.elevatedMin ?? null,
           workouts: workouts.map(w => ({
             id: w.id, date: w.date, type: w.type, start: w.start, end: w.end,
             durationMin: w.durationMin, activeKcal: w.activeKcal,
@@ -182,7 +195,9 @@ export async function GET(req: NextRequest) {
       for (const def of METRIC_DEFS) {
         history[def.key]!.push(b.metrics[def.key] ?? null)
       }
-      lowHrHistory.push(b.lowHr ?? null)
+      sleepHrHistory.push(sleep?.sleepHr ?? null)
+      sleepHrvHistory.push(sleep?.sleepHrv ?? null)
+      sleepRespHistory.push(sleep?.sleepResp ?? null)
     }
 
     const res: HealthResponse = {

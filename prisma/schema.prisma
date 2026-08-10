@@ -121,10 +121,9 @@ model Project {
 }
 
 // ── Health (Apple Watch via Health Auto Export) ────────────────────────────
-// Additive-only: nothing above this line was modified. Dropping these three
-// tables is the complete DB rollback. Daily aggregates only — no minute-level
-// samples — and baselines are computed on the fly, so there is no baseline
-// table to keep in sync.
+// Additive-only: nothing above this line was modified. Dropping these four
+// tables is the complete DB rollback. Baselines are computed on the fly, so
+// there is no baseline table to keep in sync.
 
 // One row per (day, metric). `metric` is HAE's own metric name, stored
 // verbatim so an unrecognised metric is still persisted rather than dropped.
@@ -142,6 +141,40 @@ model HealthMetricDaily {
   @@index([date])
 }
 
+// One row per raw Apple Health reading, as delivered by Health Auto Export
+// with "Aggregate Data" OFF.
+//
+// This table exists for exactly one reason: recovery has to be scored on
+// SLEEP-WINDOW physiology, and a daily aggregate cannot express "your HRV
+// while you were asleep". With per-reading timestamps, the readings inside
+// last night's sleep window can be selected and scored, and the answer stops
+// changing the moment you wake up — which is the whole point. See
+// RECOVERY_LIMIT in lib/health.ts for the measurement that forced this.
+//
+// It deliberately does NOT feed steps or active energy. Both the iPhone and
+// the Watch record those, Apple de-duplicates overlapping sources when it
+// reports a daily total, and summing raw per-source samples would overshoot.
+// Volume metrics come from the aggregated daily rows above; this table carries
+// heart rate and HRV, which only the Watch records.
+model HealthSample {
+  id     Int     @id @default(autoincrement())
+  metric String // normalised HAE name, e.g. "heart_rate_variability"
+  date   String // YYYY-MM-DD local day of `start`, for range queries
+  start  String // raw HAE timestamp, verbatim
+  // `source` is part of the identity, not decoration: two devices can record
+  // the same metric at the same instant, and collapsing them onto one key
+  // would silently drop one device's reading.
+  source String  @default("")
+  qty    Float?
+  min    Float?
+  avg    Float?
+  max    Float?
+  units  String?
+
+  @@unique([metric, start, source])
+  @@index([date, metric])
+}
+
 // One row per night, keyed on the WAKE day — matching how Bevel and Apple
 // Health both attribute a night's sleep.
 model SleepSession {
@@ -156,6 +189,22 @@ model SleepSession {
   remMin    Float?
   awakeMin  Float?
   raw       String? // original JSON, so a parser fix can reprocess history
+
+  // Physiology measured INSIDE this night's window, derived from HealthSample
+  // at import time. Stored rather than computed per request because the query
+  // that produces them reads several hundred readings per night, and every
+  // page load would otherwise re-read months of them to draw one ring.
+  //
+  // `sleepHr` is the quantity Bevel reports as your sleeping bpm — mean heart
+  // rate across the window, matched to 0.10 bpm over nine nights.
+  sleepHr   Float?
+  sleepHrv  Float?
+  sleepResp Float?
+  // Readings behind each mean. Zero is meaningful: it says the watch recorded
+  // nothing that night, which is not the same as a bad night.
+  hrN       Int     @default(0)
+  hrvN      Int     @default(0)
+  respN     Int     @default(0)
 }
 
 // One row per authenticated import. Exists because "did the automation

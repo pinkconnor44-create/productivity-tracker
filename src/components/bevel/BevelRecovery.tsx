@@ -4,52 +4,68 @@ import { Card, Section, Ring, TrendChart, MetricRow, RangeGauge, StatusChip, MET
 import { HEALTH_CONSTANTS, deltaPct, interpolate, type HealthResponse } from '@/lib/health'
 import { ChartTip, LoadingBlock, CalibratingNote, NoDayData, dayOf, formatDay, seriesOf, type Tip } from './shared'
 
-// Recovery detail: the ring, the two inputs that drive it against their
-// personal baselines, and an explicit breakdown of how the score was reached.
+// Recovery detail: the ring, the three sleep-window readings that drive it
+// against their personal baselines, and an explicit breakdown of how the score
+// was reached.
 //
 // The breakdown is the point of this tab. A recovery number with no visible
 // derivation is exactly the thing Connor would have to take on faith, and
 // these are approximations of Bevel's scores — showing the arithmetic makes
 // them auditable instead of magic.
+//
+// Everything shown is measured INSIDE last night's sleep window, which is why
+// the number holds still all day. The daytime HRV and resting-HR readings that
+// used to be shown here were not what the score was computed from — the score
+// had already moved to a sleeping heart rate while this panel still explained
+// it with Apple's resting HR, so the "derivation" was describing a different
+// calculation from the one that produced the number above it.
 
 export function BevelRecovery({ data, selected }: { data: HealthResponse; selected: string }) {
   const [hrvTip, setHrvTip] = useState<Tip | null>(null)
   const [rhrTip, setRhrTip] = useState<Tip | null>(null)
 
   const day = dayOf(data.days, selected)
-  const hrvSeries = seriesOf(data.days, 'hrv')
-  const rhrSeries = seriesOf(data.days, 'restingHr')
+  // Trends over the same quantity the score uses, not the daytime one.
+  const hrvSeries = data.days
+    .filter(d => d.sleepWindow?.hrv != null)
+    .map(d => ({ date: d.date, value: d.sleepWindow!.hrv! }))
+  const rhrSeries = data.days
+    .filter(d => d.sleepWindow?.hr != null)
+    .map(d => ({ date: d.date, value: d.sleepWindow!.hr! }))
 
   if (!day || day.scores.recovery == null) {
     return <NoDayData date={selected} what="recovery score" />
   }
 
-  const hrvBase = data.baselines.hrv
-  const rhrBase = data.baselines.restingHr
-  const hrv = day.metrics.hrv ?? null
-  const rhr = day.metrics.restingHr ?? null
+  const sw = day.sleepWindow
+  const hrv = sw?.hrv ?? null
+  const hrvBaseValue = sw?.hrvBaseline ?? null
+  const hr = sw?.hr ?? null
+  const hrBaseValue = sw?.hrBaseline ?? null
+  const resp = sw?.resp ?? null
+  const respBaseValue = sw?.respBaseline ?? null
 
   const C = HEALTH_CONSTANTS.RECOVERY
-  // Recomputed here from the same pure functions the API used, so the
-  // breakdown can never disagree with the score it is explaining.
+  // Recomputed here from the same pure functions and the same inputs the API
+  // used, so the breakdown can never disagree with the score it is explaining.
   const components = [
     {
-      name: 'HRV vs baseline',
-      weight: C.W_HRV,
-      score: hrv != null && hrvBase?.value ? interpolate(C.HRV_ANCHORS, hrv / hrvBase.value) : null,
-      detail: hrv != null && hrvBase?.value ? `${hrv.toFixed(0)}ms vs ${hrvBase.value.toFixed(0)}ms` : 'no baseline yet',
+      name: 'Sleeping heart rate',
+      weight: C.W_SLEEP_HR,
+      score: hr != null && hrBaseValue ? interpolate(C.HR_ANCHORS, hr / hrBaseValue) : null,
+      detail: hr != null && hrBaseValue ? `${hr.toFixed(1)}bpm vs ${hrBaseValue.toFixed(1)}bpm baseline` : 'no readings in the sleep window',
     },
     {
-      name: 'Resting HR vs baseline',
-      weight: C.W_RHR,
-      score: rhr != null && rhrBase?.value ? interpolate(C.RHR_ANCHORS, rhr / rhrBase.value) : null,
-      detail: rhr != null && rhrBase?.value ? `${rhr.toFixed(0)}bpm vs ${rhrBase.value.toFixed(0)}bpm` : 'no baseline yet',
+      name: 'Sleeping HRV',
+      weight: C.W_SLEEP_HRV,
+      score: hrv != null && hrvBaseValue ? interpolate(C.HRV_ANCHORS, hrv / hrvBaseValue) : null,
+      detail: hrv != null && hrvBaseValue ? `${hrv.toFixed(0)}ms vs ${hrvBaseValue.toFixed(0)}ms baseline` : 'no readings in the sleep window',
     },
     {
-      name: 'Last night’s sleep',
-      weight: C.W_SLEEP,
-      score: day.scores.sleep,
-      detail: day.scores.sleep != null ? `sleep score ${Math.round(day.scores.sleep)}` : 'no sleep recorded',
+      name: 'Sleeping respiratory rate',
+      weight: C.W_SLEEP_RESP,
+      score: resp != null && respBaseValue ? interpolate(C.RESP_ANCHORS, resp / respBaseValue) : null,
+      detail: resp != null && respBaseValue ? `${resp.toFixed(1)} br/min vs ${respBaseValue.toFixed(1)} baseline` : 'no readings in the sleep window',
     },
   ]
   const live = components.filter(c => c.score != null)
@@ -70,38 +86,38 @@ export function BevelRecovery({ data, selected }: { data: HealthResponse; select
             <div className="text-micro font-bold uppercase tracking-[0.16em] text-on-surface-variant/55">
               {formatDay(day.date)}
             </div>
-            {(hrvBase?.calibrating || rhrBase?.calibrating) && (
-              <div className="mt-1.5"><CalibratingNote n={Math.max(hrvBase?.n ?? 0, rhrBase?.n ?? 0)} /></div>
-            )}
+            <div className="text-micro text-on-surface-variant/45 mt-1">
+              Locked at wake · from {sw?.hrN ?? 0} readings during sleep
+            </div>
           </div>
           <MetricRow
-            label="HRV"
+            label="Sleeping HRV"
             value={hrv}
             unit="ms"
-            delta={deltaPct(hrv, hrvBase?.value)}
-            status={hrv != null && hrvBase?.value ? statusFor(hrv, hrvBase.value * 0.9, hrvBase.value * 1.1) : undefined}
-            sub={hrvBase?.value ? `baseline ${hrvBase.value.toFixed(0)}ms` : 'no baseline yet'}
+            delta={deltaPct(hrv, hrvBaseValue)}
+            status={hrv != null && hrvBaseValue ? statusFor(hrv, hrvBaseValue * 0.9, hrvBaseValue * 1.1) : undefined}
+            sub={hrvBaseValue ? `baseline ${hrvBaseValue.toFixed(0)}ms` : 'no baseline yet'}
           />
           <MetricRow
-            label="Resting heart rate"
-            value={rhr}
+            label="Sleeping heart rate"
+            value={hr}
             unit="bpm"
-            delta={deltaPct(rhr, rhrBase?.value)}
-            status={rhr != null && rhrBase?.value ? statusFor(rhr, rhrBase.value * 0.95, rhrBase.value * 1.05) : undefined}
-            sub={rhrBase?.value ? `baseline ${rhrBase.value.toFixed(0)}bpm` : 'no baseline yet'}
+            delta={deltaPct(hr, hrBaseValue)}
+            status={hr != null && hrBaseValue ? statusFor(hr, hrBaseValue * 0.95, hrBaseValue * 1.05) : undefined}
+            sub={hrBaseValue ? `baseline ${hrBaseValue.toFixed(1)}bpm` : 'no baseline yet'}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Section label="Where today sits · HRV" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
+        <Section label="Where last night sits · Sleeping HRV" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
           <Card padding={20}>
-            <RangeGauge value={hrv} baseline={hrvBase?.value} color={METRIC_COLORS.recovery.base} format={v => `${Math.round(v)}ms`} />
+            <RangeGauge value={hrv} baseline={hrvBaseValue} color={METRIC_COLORS.recovery.base} format={v => `${Math.round(v)}ms`} />
           </Card>
         </Section>
-        <Section label="Where today sits · Resting HR" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
+        <Section label="Where last night sits · Sleeping HR" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
           <Card padding={20}>
-            <RangeGauge value={rhr} baseline={rhrBase?.value} bandPct={0.05} color={METRIC_COLORS.recovery.base} format={v => `${Math.round(v)}`} />
+            <RangeGauge value={hr} baseline={hrBaseValue} bandPct={0.05} color={METRIC_COLORS.recovery.base} format={v => `${v.toFixed(1)}`} />
           </Card>
         </Section>
       </div>
@@ -135,7 +151,7 @@ export function BevelRecovery({ data, selected }: { data: HealthResponse; select
       </Section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Section label="HRV trend" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
+        <Section label="Sleeping HRV trend" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
           <Card padding={20}>
             {hrvSeries.length > 1
               ? <TrendChart
@@ -143,22 +159,22 @@ export function BevelRecovery({ data, selected }: { data: HealthResponse; select
                   onHover={setHrvTip}
                   color={METRIC_COLORS.recovery.base}
                   format={v => `${v.toFixed(0)} ms`}
-                  refLine={hrvBase?.value != null ? { value: hrvBase.value, label: 'baseline' } : null}
+                  refLine={hrvBaseValue != null ? { value: hrvBaseValue, label: 'baseline' } : null}
                 />
-              : <LoadingBlock height="h-24" label="Not enough HRV readings yet." />}
+              : <LoadingBlock height="h-24" label="Not enough nights with HRV readings yet." />}
           </Card>
         </Section>
-        <Section label="Resting HR trend" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
+        <Section label="Sleeping HR trend" color={METRIC_COLORS.recovery.base} dotColor={METRIC_COLORS.recovery.base}>
           <Card padding={20}>
             {rhrSeries.length > 1
               ? <TrendChart
                   data={rhrSeries}
                   onHover={setRhrTip}
                   color={METRIC_COLORS.recovery.base}
-                  format={v => `${v.toFixed(0)} bpm`}
-                  refLine={rhrBase?.value != null ? { value: rhrBase.value, label: 'baseline' } : null}
+                  format={v => `${v.toFixed(1)} bpm`}
+                  refLine={hrBaseValue != null ? { value: hrBaseValue, label: 'baseline' } : null}
                 />
-              : <LoadingBlock height="h-24" label="Not enough resting HR readings yet." />}
+              : <LoadingBlock height="h-24" label="Not enough nights with heart-rate readings yet." />}
           </Card>
         </Section>
       </div>

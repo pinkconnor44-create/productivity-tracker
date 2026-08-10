@@ -122,6 +122,20 @@ CREATE TABLE "HealthMetricDaily" (
 );
 
 -- CreateTable
+CREATE TABLE "HealthSample" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "metric" TEXT NOT NULL,
+    "date" TEXT NOT NULL,
+    "start" TEXT NOT NULL,
+    "source" TEXT NOT NULL DEFAULT '',
+    "qty" REAL,
+    "min" REAL,
+    "avg" REAL,
+    "max" REAL,
+    "units" TEXT
+);
+
+-- CreateTable
 CREATE TABLE "SleepSession" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "date" TEXT NOT NULL,
@@ -133,7 +147,13 @@ CREATE TABLE "SleepSession" (
     "deepMin" REAL,
     "remMin" REAL,
     "awakeMin" REAL,
-    "raw" TEXT
+    "raw" TEXT,
+    "sleepHr" REAL,
+    "sleepHrv" REAL,
+    "sleepResp" REAL,
+    "hrN" INTEGER NOT NULL DEFAULT 0,
+    "hrvN" INTEGER NOT NULL DEFAULT 0,
+    "respN" INTEGER NOT NULL DEFAULT 0
 );
 
 -- CreateTable
@@ -188,6 +208,12 @@ CREATE INDEX "HealthMetricDaily_date_idx" ON "HealthMetricDaily"("date");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "HealthMetricDaily_date_metric_key" ON "HealthMetricDaily"("date", "metric");
+
+-- CreateIndex
+CREATE INDEX "HealthSample_date_metric_idx" ON "HealthSample"("date", "metric");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "HealthSample_metric_start_source_key" ON "HealthSample"("metric", "start", "source");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "SleepSession_date_key" ON "SleepSession"("date");

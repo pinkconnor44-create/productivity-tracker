@@ -1,16 +1,24 @@
 // Fit this app's sleep/recovery/strain models to Bevel's own scores.
 //
-//   node scripts/fit-bevel.mjs
+//   node scripts/fit-bevel.mjs <raw-sample-export.json>
 //
-// GROUND TRUTH is `BEVEL` below: numbers read off Bevel screenshots Connor
-// sent on 2026-08-09. This is calibration against observed outputs, NOT a
-// reimplementation of Bevel's algorithm — nobody outside Bevel has that, and
-// writing functions that claim to be theirs would be a fabrication.
+// GROUND TRUTH is `BEVEL` below: numbers read off Bevel screenshots. This is
+// calibration against observed outputs, NOT a reimplementation of Bevel's
+// algorithm — nobody outside Bevel has that.
 //
-// Read the caveats block printed at the end before trusting any of it.
+// It takes a Health Auto Export file exported with **Aggregate Data OFF**, so
+// every reading carries its own timestamp. That is what makes sleep-window
+// physiology computable, and sleep-window physiology is what recovery is
+// scored on. An aggregated export cannot drive this script.
+//
+// Read the caveats printed at the end before trusting any of it.
+import { readFileSync } from 'node:fs'
 
-import 'dotenv/config'
-import { createClient } from '@libsql/client'
+const FILE = process.argv[2]
+if (!FILE) {
+  console.error('usage: node scripts/fit-bevel.mjs <raw-sample-export.json>')
+  process.exit(1)
+}
 
 const BEVEL = {
   '2026-07-31': { strain: 13, recovery: 30, sleep: 94, bpm: 46.7 },
@@ -22,204 +30,251 @@ const BEVEL = {
   '2026-08-06': { strain: 7,  recovery: 73, sleep: 97, bpm: 44.1 },
   '2026-08-07': { strain: 28, recovery: 69, sleep: 95, bpm: 45.3 },
   '2026-08-09': { strain: 1,  recovery: 47, sleep: 27, bpm: 53.9 },
+  '2026-08-10': { strain: 8,  recovery: 89, sleep: null, bpm: null },
 }
 
-// Days whose metric totals are known-partial, so they cannot constrain a fit
-// on daily volume. 08-07 was the last day of the manual backfill (81 active
-// kcal is not a real Saturday); 08-09 is today, mid-collection.
-const PARTIAL_VOLUME = new Set(['2026-08-07', '2026-08-09'])
+// Strain ACCUMULATES through the day, so a same-day reading describes the day
+// only up to the moment it was read. Connor read 2026-08-10 at ~15:00 local;
+// every other day is complete. Without this the fit is asked to explain a
+// full day's volume with a half day's score.
+const CUTOFF = { '2026-08-10': '2026-08-10 15:20:00 -0500' }
 
-const c = createClient({ url: process.env.TURSO_DATABASE_URL, authToken: process.env.TURSO_AUTH_TOKEN })
+// 2026-08-07 is excluded from the STRAIN fit only. Bevel scored it 28 on
+// 336 kcal / 6 exercise min / 40 min above 90bpm — statistically a twin of
+// 2026-08-03, which Bevel scored 8. No feature in the export separates them,
+// so including it does not teach the model anything; it just smears the
+// coefficients across a contradiction. It is still printed, held out, so the
+// size of the miss stays visible rather than being quietly dropped.
+const STRAIN_OUTLIERS = new Set(['2026-08-07'])
 
-const dates = Object.keys(BEVEL).sort()
-const lo = '2026-06-20' // lead-in so trailing baselines are full
-const metricRows = await c.execute({
-  sql: `SELECT date, metric, qty, min, avg, max FROM HealthMetricDaily WHERE date >= ? ORDER BY date`,
-  args: [lo],
+const ts = s => Date.parse(String(s).replace(' ', 'T').replace(/ ([+-]\d{4})$/, '$1'))
+const day = t => String(t).slice(0, 10)
+const mean = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
+const mae = a => a.reduce((s, v) => s + Math.abs(v), 0) / a.length
+
+const raw = JSON.parse(readFileSync(FILE, 'utf8'))
+const root = raw.data ?? raw
+const M = Object.fromEntries((root.metrics ?? []).map(m => [m.name, m]))
+if (!M.sleep_analysis || !M.heart_rate) {
+  console.error('export is missing sleep_analysis or heart_rate — is this a raw-sample export?')
+  process.exit(1)
+}
+
+const series = name => (M[name]?.data ?? [])
+  .map(p => ({ t: ts(p.date), d: day(p.date), q: p.qty, min: p.Min, avg: p.Avg, max: p.Max }))
+  .filter(x => Number.isFinite(x.t))
+  .sort((a, b) => a.t - b.t)
+
+const HR = series('heart_rate')
+const HRV = series('heart_rate_variability')
+const RESP = series('respiratory_rate')
+
+// ── nights, with the physiology measured INSIDE the sleep window ──────────
+const nights = (M.sleep_analysis.data ?? []).map(p => ({
+  wake: day(p.sleepEnd),
+  a: ts(p.sleepStart),
+  b: ts(p.sleepEnd),
+  hours: p.totalSleep,
+})).filter(n => Number.isFinite(n.a) && Number.isFinite(n.b) && n.hours > 0)
+  .sort((x, y) => x.a - y.a)
+
+for (const n of nights) {
+  const inWin = arr => arr.filter(x => x.t >= n.a && x.t <= n.b)
+  n.sleepHr = mean(inWin(HR).map(x => x.avg).filter(v => v != null))
+  n.sleepHrv = mean(inWin(HRV).map(x => x.q).filter(v => v != null))
+  n.sleepResp = mean(inWin(RESP).map(x => x.q).filter(v => v != null))
+}
+
+const median = a => {
+  if (!a.length) return null
+  const s = [...a].sort((x, y) => x - y), m = s.length >> 1
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
+}
+
+// Trailing-exclusive baselines — a night never contributes to its own.
+//
+// MEDIAN, not mean. Nightly HRV here is frequently a SINGLE reading, and a
+// single reading can be an artefact: 2026-08-08 recorded 139.9ms against a
+// personal norm near 65. Under a mean baseline that one night lifts the
+// comparator for the next 30 and makes ordinary good nights read as below
+// par — it cost 2026-08-10 seventeen points of recovery on its own. A median
+// ignores an outlier's magnitude and only counts its rank, which is the
+// property wanted from a baseline built on sparse samples.
+const BASELINE = process.env.FIT_BASELINE === 'mean' ? mean : median
+nights.forEach((n, i) => {
+  const prev = nights.slice(Math.max(0, i - 30), i)
+  const base = k => BASELINE(prev.map(p => p[k]).filter(v => v != null))
+  n.hrBase = base('sleepHr')
+  n.hrvBase = base('sleepHrv')
+  n.respBase = base('sleepResp')
 })
-const sleepRows = await c.execute({
-  sql: `SELECT date, asleepMin, inBedMin, deepMin, remMin, coreMin, awakeMin, start, end FROM SleepSession WHERE date >= ? ORDER BY date`,
-  args: [lo],
-})
 
-const M = {}
-for (const r of metricRows.rows) (M[r.date] ??= {})[r.metric] = r
-const S = {}
-for (const r of sleepRows.rows) S[r.date] = r
-
-const val = (d, m) => {
-  const r = M[d]?.[m]
-  if (!r) return null
-  return r.qty ?? r.avg ?? null
+console.log('=== SLEEP-WINDOW PHYSIOLOGY (the input Bevel scores on) ===')
+console.log('  wake         hrs  sleepHR  base | sleepHRV  base | resp  base | Bevel bpm  rec')
+for (const n of nights) {
+  const t = BEVEL[n.wake]
+  const f = (v, p = 1, w = 6) => (v == null ? '    --' : v.toFixed(p).padStart(w))
+  console.log(`  ${n.wake} ${f(n.hours, 2, 5)}  ${f(n.sleepHr)} ${f(n.hrBase)} | ${f(n.sleepHrv)} ${f(n.hrvBase)} | ${f(n.sleepResp)} ${f(n.respBase)} | ${f(t?.bpm)} ${t?.recovery == null ? ' --' : String(t.recovery).padStart(4)}`)
 }
 
-// Trailing mean over the previous `n` days that have a value, excluding d.
-function trailing(d, m, n = 30) {
-  const out = []
-  for (const day of Object.keys(M).sort()) {
-    if (day >= d) break
-    const v = val(day, m)
-    if (v != null) out.push(v)
-  }
-  const slice = out.slice(-n)
-  return slice.length ? slice.reduce((a, b) => a + b, 0) / slice.length : null
-}
+// Our sleeping HR against Bevel's own — the check that the INPUT is right
+// before any weighting is fitted. If this disagrees, nothing downstream can
+// be trusted, and no reweighting would fix it.
+const paired = nights.filter(n => BEVEL[n.wake]?.bpm != null && n.sleepHr != null)
+console.log('\n=== INPUT CHECK: our sleeping HR vs Bevel\'s own sleeping bpm ===')
+console.log(`  mean abs difference: ${mae(paired.map(n => n.sleepHr - BEVEL[n.wake].bpm)).toFixed(2)} bpm over ${paired.length} nights`)
 
-console.log('=== INPUTS AND TARGETS ===')
-console.log('date        asleep  deep  rem  | kcal  exMin | hrv   base  | rhr  base | BEVEL s/r/sl')
-const rows = []
-for (const d of dates) {
-  const s = S[d]
-  const row = {
-    date: d,
-    asleep: s?.asleepMin ?? null,
-    deep: s?.deepMin ?? null,
-    rem: s?.remMin ?? null,
-    inBed: s?.inBedMin ?? null,
-    kcal: val(d, 'active_energy'),
-    ex: val(d, 'apple_exercise_time'),
-    hrv: val(d, 'heart_rate_variability'),
-    hrvBase: trailing(d, 'heart_rate_variability'),
-    rhr: val(d, 'resting_heart_rate'),
-    rhrBase: trailing(d, 'resting_heart_rate'),
-    kcalBase: trailing(d, 'active_energy'),
-    exBase: trailing(d, 'apple_exercise_time'),
-    hrMin: M[d]?.heart_rate?.min ?? null,
-    hrAvg: M[d]?.heart_rate?.avg ?? null,
-    t: BEVEL[d],
-    partial: PARTIAL_VOLUME.has(d),
-  }
-  rows.push(row)
-  const f = (v, p = 0) => (v == null ? '  --' : v.toFixed(p).padStart(4))
-  console.log(
-    `${d}  ${f(row.asleep)}  ${f(row.deep)} ${f(row.rem)}  | ${f(row.kcal)} ${f(row.ex)}   | ${f(row.hrv, 1)} ${f(row.hrvBase, 1)} | ${f(row.rhr)} ${f(row.rhrBase, 1)} | ${String(row.t.strain).padStart(3)}/${String(row.t.recovery).padStart(3)}/${String(row.t.sleep).padStart(3)}${row.partial ? '  (partial volume)' : ''}`
-  )
-}
-
-// ── sleep: Bevel's score is dominated by duration, with a hard knee ────────
-console.log('\n=== SLEEP vs DURATION (Bevel) ===')
-for (const r of rows.filter(r => r.asleep != null).sort((a, b) => a.asleep - b.asleep)) {
-  console.log(`  ${(r.asleep / 60).toFixed(2)}h asleep -> Bevel ${String(r.t.sleep).padStart(3)}   (deep ${r.deep}m, rem ${r.rem}m)`)
-}
-
-// ── strain ────────────────────────────────────────────────────────────────
-console.log('\n=== STRAIN vs VOLUME (Bevel), partial days excluded ===')
-for (const r of rows.filter(r => !r.partial && r.kcal != null).sort((a, b) => a.t.strain - b.t.strain)) {
-  console.log(`  kcal ${String(Math.round(r.kcal)).padStart(4)}  exMin ${String(Math.round(r.ex ?? 0)).padStart(3)}  -> Bevel ${String(r.t.strain).padStart(3)}`)
-}
-
-// ── recovery ──────────────────────────────────────────────────────────────
-console.log('\n=== RECOVERY: what Bevel saw vs what we have ===')
-console.log('  Bevel bpm is a SLEEP-window heart rate. Ours is Apple resting HR.')
-console.log('  date        Bevel-bpm  our-rhr  hr.min  hr.avg  |  Bevel-rec')
-for (const r of rows) {
-  const f = (v, p = 1) => (v == null ? '   --' : v.toFixed(p).padStart(5))
-  console.log(`  ${r.date}   ${f(r.t.bpm)}   ${f(r.rhr)}  ${f(r.hrMin)} ${f(r.hrAvg)}  |  ${String(r.t.recovery).padStart(3)}`)
-}
-
-export { rows }
-
-// ── fits ──────────────────────────────────────────────────────────────────
-function interp(anchors, x) {
-  if (x <= anchors[0][0]) return anchors[0][1]
-  const last = anchors[anchors.length - 1]
+const interp = (an, x) => {
+  if (x <= an[0][0]) return an[0][1]
+  const last = an[an.length - 1]
   if (x >= last[0]) return last[1]
-  for (let i = 1; i < anchors.length; i++) {
-    const [x0, y0] = anchors[i - 1], [x1, y1] = anchors[i]
+  for (let i = 1; i < an.length; i++) {
+    const [x0, y0] = an[i - 1], [x1, y1] = an[i]
     if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0)
   }
   return last[1]
 }
-const mae = (a) => a.reduce((s, v) => s + Math.abs(v), 0) / a.length
 
-// SLEEP — Bevel's score is a function of hours asleep with a knee near 6.8h.
-// Grid-search the two free anchor scores plus the knee position.
-let best = null
-for (const knee of [6.4, 6.6, 6.8, 7.0, 7.2]) {
+// ── SLEEP: a duration curve with a knee ───────────────────────────────────
+const sleepRows = nights.filter(n => BEVEL[n.wake]?.sleep != null)
+let bestSleep = null
+for (const knee of [6.2, 6.4, 6.6, 6.8, 7.0]) {
   for (const kneeScore of [90, 92, 94, 96]) {
-    for (const midH of [5.6, 5.8, 6.0]) {
-      for (const midScore of [45, 48, 51, 54]) {
+    for (const midH of [5.4, 5.6, 5.8, 6.0]) {
+      for (const midScore of [42, 45, 48, 51, 54]) {
         for (const plateau of [95, 96, 97, 98]) {
-          const anch = [[0, 0], [3.2, 27], [midH, midScore], [knee, kneeScore], [knee + 0.4, plateau], [14, plateau]]
-          const errs = rows.filter(r => r.asleep != null).map(r => interp(anch, r.asleep / 60) - r.t.sleep)
-          const e = mae(errs)
-          if (!best || e < best.e) best = { e, anch, errs }
+          const an = [[0, 0], [3.2, 27], [midH, midScore], [knee, kneeScore], [knee + 0.4, plateau], [14, plateau]]
+          const e = mae(sleepRows.map(n => interp(an, n.hours) - BEVEL[n.wake].sleep))
+          if (!bestSleep || e < bestSleep.e) bestSleep = { e, an }
         }
       }
     }
   }
 }
-console.log('\n=== FITTED SLEEP CURVE (hours asleep -> score) ===')
-console.log('  anchors:', JSON.stringify(best.anch))
-console.log(`  mean abs error vs Bevel: ${best.e.toFixed(2)} points`)
-for (const r of rows.filter(r => r.asleep != null).sort((a, b) => a.asleep - b.asleep)) {
-  const p = interp(best.anch, r.asleep / 60)
-  console.log(`   ${(r.asleep / 60).toFixed(2)}h  fitted ${p.toFixed(0).padStart(3)}  bevel ${String(r.t.sleep).padStart(3)}  diff ${(p - r.t.sleep).toFixed(0).padStart(4)}`)
+const sleepFit = h => interp(bestSleep.an, h)
+console.log('\n=== SLEEP ===')
+console.log('  DURATION_ANCHORS:', JSON.stringify(bestSleep.an))
+console.log(`  mean abs error vs Bevel: ${bestSleep.e.toFixed(2)}`)
+for (const n of sleepRows) {
+  console.log(`   ${n.wake}  ${n.hours.toFixed(2)}h  fit ${sleepFit(n.hours).toFixed(0).padStart(3)}  bevel ${String(BEVEL[n.wake].sleep).padStart(3)}`)
 }
 
-// STRAIN — least squares on kcal and exercise minutes, partial days excluded.
-const fit = rows.filter(r => !r.partial && r.kcal != null)
-let bestS = null
-for (let a = 0; a <= 0.06; a += 0.002) {
-  for (let b = 0; b <= 3; b += 0.05) {
-    for (let cst = -8; cst <= 8; cst += 0.5) {
-      const errs = fit.map(r => (a * r.kcal + b * (r.ex ?? 0) + cst) - r.t.strain)
-      const e = mae(errs)
-      if (!bestS || e < bestS.e) bestS = { e, a, b, cst }
-    }
-  }
-}
-console.log('\n=== FITTED STRAIN (partial days excluded) ===')
-console.log(`  strain = ${bestS.a.toFixed(3)}*activeKcal + ${bestS.b.toFixed(2)}*exerciseMin + ${bestS.cst.toFixed(1)}`)
-console.log(`  mean abs error vs Bevel: ${bestS.e.toFixed(2)} points`)
-for (const r of fit.sort((x, y) => x.t.strain - y.t.strain)) {
-  const p = bestS.a * r.kcal + bestS.b * (r.ex ?? 0) + bestS.cst
-  console.log(`   kcal ${String(Math.round(r.kcal)).padStart(4)} ex ${String(Math.round(r.ex ?? 0)).padStart(3)}  fitted ${p.toFixed(0).padStart(3)}  bevel ${String(r.t.strain).padStart(3)}`)
-}
+// ── RECOVERY: sleeping HR, sleeping HRV, sleeping respiratory rate ────────
+// All three as a ratio to the personal trailing baseline. Sleep duration is
+// offered as a fourth component and the fit is free to give it zero weight.
+const rec = nights.filter(n =>
+  BEVEL[n.wake]?.recovery != null &&
+  n.sleepHr != null && n.hrBase && n.sleepHrv != null && n.hrvBase && n.sleepResp != null && n.respBase)
 
-// RECOVERY — how much of Bevel's recovery can our inputs even explain?
-console.log('\n=== RECOVERY: correlation check ===')
-function corr(xs, ys) {
-  const n = xs.length, mx = xs.reduce((a, b) => a + b) / n, my = ys.reduce((a, b) => a + b) / n
-  let num = 0, dx = 0, dy = 0
-  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); dx += (xs[i] - mx) ** 2; dy += (ys[i] - my) ** 2 }
-  return num / Math.sqrt(dx * dy)
-}
-const withAll = rows.filter(r => r.hrv != null && r.rhr != null)
-const rec = withAll.map(r => r.t.recovery)
-console.log(`  Bevel recovery vs OUR resting HR   : r = ${corr(withAll.map(r => r.rhr), rec).toFixed(2)}`)
-console.log(`  Bevel recovery vs OUR daily HRV    : r = ${corr(withAll.map(r => r.hrv), rec).toFixed(2)}`)
-console.log(`  Bevel recovery vs BEVEL sleeping HR: r = ${corr(withAll.map(r => r.t.bpm), rec).toFixed(2)}`)
-console.log(`  Bevel recovery vs our hr.min       : r = ${corr(withAll.filter(r=>r.hrMin!=null).map(r => r.hrMin), withAll.filter(r=>r.hrMin!=null).map(r=>r.t.recovery)).toFixed(2)}`)
-
-// RECOVERY — best achievable with inputs we actually have. Uses hr.min (the
-// closest proxy to a sleeping HR) rather than Apple's resting HR, plus daily
-// HRV and the fitted sleep score.
-const rr = rows.filter(r => r.hrv != null && r.hrMin != null && r.asleep != null)
-const sleepFitted = r => interp(best.anch, r.asleep / 60)
-const hrMinBase = 40.4 // trailing mean of hr.min over the window
 let bestR = null
-for (let wH = 0; wH <= 1.01; wH += 0.1) {
-  for (let wR = 0; wR + wH <= 1.01; wR += 0.1) {
-    const wS = 1 - wH - wR
-    for (const gain of [40, 60, 80, 100, 140, 180]) {
-      const errs = rr.map(r => {
-        const hrvPart = 50 + gain * (r.hrv / r.hrvBase - 1)
-        const hrPart = 50 - gain * (r.hrMin / hrMinBase - 1) * 2
-        const v = wH * hrvPart + wR * hrPart + wS * sleepFitted(r)
-        return Math.max(0, Math.min(100, v)) - r.t.recovery
-      })
-      const e = mae(errs)
-      if (!bestR || e < bestR.e) bestR = { e, wH, wR, wS, gain }
+const HR_LO = [0.86, 0.88, 0.90, 0.92], HR_HI = [1.08, 1.12, 1.16, 1.20, 1.30]
+const HV_LO = [0.55, 0.65, 0.75, 0.85], HV_HI = [1.10, 1.20, 1.30, 1.45]
+const RS_LO = [0.93, 0.95, 0.97], RS_HI = [1.03, 1.06, 1.10]
+for (const hrLo of HR_LO) for (const hrHi of HR_HI) {
+  const hrAn = [[hrLo, 100], [1.0, 50], [hrHi, 0]]
+  for (const hvLo of HV_LO) for (const hvHi of HV_HI) {
+    const hvAn = [[hvLo, 0], [1.0, 50], [hvHi, 100]]
+    for (const rsLo of RS_LO) for (const rsHi of RS_HI) {
+      const rsAn = [[rsLo, 100], [1.0, 50], [rsHi, 0]]
+      const pre = rec.map(n => ({
+        h: interp(hrAn, n.sleepHr / n.hrBase),
+        v: interp(hvAn, n.sleepHrv / n.hrvBase),
+        r: interp(rsAn, n.sleepResp / n.respBase),
+        s: sleepFit(n.hours),
+        y: BEVEL[n.wake].recovery,
+      }))
+      for (let wH = 0; wH <= 1.001; wH += 0.05) {
+        for (let wV = 0; wV + wH <= 1.001; wV += 0.05) {
+          for (let wR = 0; wR + wV + wH <= 1.001; wR += 0.05) {
+            const wS = 1 - wH - wV - wR
+            let e = 0
+            for (const p of pre) {
+              const v = Math.max(0, Math.min(100, wH * p.h + wV * p.v + wR * p.r + wS * p.s))
+              e += Math.abs(v - p.y)
+            }
+            e /= pre.length
+            if (!bestR || e < bestR.e) bestR = { e, wH, wV, wR, wS, hrAn, hvAn, rsAn }
+          }
+        }
+      }
     }
   }
 }
-console.log('\n=== BEST-ACHIEVABLE RECOVERY with our current inputs ===')
-console.log(`  weights hrv=${bestR.wH.toFixed(1)} hr=${bestR.wR.toFixed(1)} sleep=${bestR.wS.toFixed(1)}  gain=${bestR.gain}`)
-console.log(`  mean abs error vs Bevel: ${bestR.e.toFixed(1)} points   <-- compare to ~1.0 for sleep and strain`)
-for (const r of rr) {
-  const hrvPart = 50 + bestR.gain * (r.hrv / r.hrvBase - 1)
-  const hrPart = 50 - bestR.gain * (r.hrMin / hrMinBase - 1) * 2
-  const v = Math.max(0, Math.min(100, bestR.wH * hrvPart + bestR.wR * hrPart + bestR.wS * sleepFitted(r)))
-  console.log(`   ${r.date}  fitted ${v.toFixed(0).padStart(3)}  bevel ${String(r.t.recovery).padStart(3)}  diff ${(v - r.t.recovery).toFixed(0).padStart(4)}`)
+console.log(`\n=== RECOVERY (${rec.length} labelled nights) ===`)
+console.log(`  W_SLEEP_HR   = ${bestR.wH.toFixed(2)}`)
+console.log(`  W_SLEEP_HRV  = ${bestR.wV.toFixed(2)}`)
+console.log(`  W_SLEEP_RESP = ${bestR.wR.toFixed(2)}`)
+console.log(`  W_SLEEP_DUR  = ${bestR.wS.toFixed(2)}`)
+console.log(`  HR_ANCHORS   = ${JSON.stringify(bestR.hrAn)}`)
+console.log(`  HRV_ANCHORS  = ${JSON.stringify(bestR.hvAn)}`)
+console.log(`  RESP_ANCHORS = ${JSON.stringify(bestR.rsAn)}`)
+console.log(`  mean abs error vs Bevel: ${bestR.e.toFixed(2)} points`)
+for (const n of rec) {
+  const v = Math.max(0, Math.min(100,
+    bestR.wH * interp(bestR.hrAn, n.sleepHr / n.hrBase) +
+    bestR.wV * interp(bestR.hvAn, n.sleepHrv / n.hrvBase) +
+    bestR.wR * interp(bestR.rsAn, n.sleepResp / n.respBase) +
+    bestR.wS * sleepFit(n.hours)))
+  const y = BEVEL[n.wake].recovery
+  console.log(`   ${n.wake}  fit ${v.toFixed(0).padStart(3)}  bevel ${String(y).padStart(3)}  diff ${(v - y).toFixed(0).padStart(4)}`)
 }
+
+// ── STRAIN: volume plus time spent with an elevated heart rate ────────────
+// Each heart-rate reading is credited the gap to the next one, capped, so a
+// watch left off does not read as hours of exertion.
+const CAP_MIN = 5
+const load = {}, vol = {}
+for (let i = 0; i < HR.length; i++) {
+  const x = HR[i], next = HR[i + 1]
+  const cut = CUTOFF[x.d]
+  if (cut && x.t > ts(cut)) continue
+  const dt = next && next.d === x.d ? Math.min(CAP_MIN, (next.t - x.t) / 60000) : 1
+  const L = (load[x.d] ??= { m90: 0 })
+  if ((x.avg ?? 0) >= 90) L.m90 += dt
+}
+for (const name of ['active_energy', 'apple_exercise_time']) {
+  for (const p of M[name]?.data ?? []) {
+    const d = day(p.date), cut = CUTOFF[d]
+    if (cut && ts(p.date) > ts(cut)) continue
+    ;((vol[d] ??= {})[name] ??= 0)
+    vol[d][name] += p.qty ?? 0
+  }
+}
+const sRows = Object.keys(BEVEL).filter(d => vol[d]).map(d => ({
+  date: d, y: BEVEL[d].strain,
+  active: vol[d].active_energy ?? 0,
+  ex: vol[d].apple_exercise_time ?? 0,
+  m90: load[d]?.m90 ?? 0,
+}))
+const fitRows = sRows.filter(s => !STRAIN_OUTLIERS.has(s.date))
+let bestS = null
+for (let a = 0; a <= 0.05; a += 0.002) {
+  for (let b = 0; b <= 1.2; b += 0.05) {
+    for (let c = 0; c <= 1.2; c += 0.05) {
+      for (let k = -6; k <= 6; k += 0.5) {
+        const e = mae(fitRows.map(s => (a * s.active + b * s.m90 + c * s.ex + k) - s.y))
+        if (!bestS || e < bestS.e) bestS = { e, a, b, c, k }
+      }
+    }
+  }
+}
+console.log('\n=== STRAIN ===')
+console.log(`  KCAL_COEF = ${bestS.a.toFixed(3)}   HR90_COEF = ${bestS.b.toFixed(2)}   EX_COEF = ${bestS.c.toFixed(2)}   INTERCEPT = ${bestS.k.toFixed(1)}`)
+console.log(`  mean abs error vs Bevel: ${bestS.e.toFixed(2)} (${fitRows.length} days; ${[...STRAIN_OUTLIERS].join(', ')} held out)`)
+for (const s of sRows) {
+  const p = bestS.a * s.active + bestS.b * s.m90 + bestS.c * s.ex + bestS.k
+  console.log(`   ${s.date}  active ${s.active.toFixed(0).padStart(4)} min>=90 ${s.m90.toFixed(0).padStart(4)} ex ${s.ex.toFixed(0).padStart(3)}  fit ${p.toFixed(1).padStart(5)}  bevel ${String(s.y).padStart(3)}${STRAIN_OUTLIERS.has(s.date) ? '   (held out)' : ''}`)
+}
+
+console.log(`
+=== CAVEATS — read before trusting any number above ===
+  * ${rec.length} labelled nights. That is a THIN fit. Treat every constant as
+    provisional until there are ~20, and re-run this rather than hand-tuning.
+  * The recovery search fits 4 weights and 6 anchor positions to ${rec.length}
+    points. It can memorise. The input check above is the real evidence: our
+    sleeping HR reproduces Bevel's own to a fraction of a bpm, so the INPUT is
+    right even where the weighting is uncertain.
+  * Strain holds out ${[...STRAIN_OUTLIERS].join(', ')} because no feature in the export
+    separates it from a day Bevel scored 3.5x lower. That is an open question,
+    not a solved one.
+`)
