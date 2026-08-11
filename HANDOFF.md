@@ -3,6 +3,14 @@
 > State only. Rules are in `CLAUDE.md`, component detail in `docs/NOTES.md`,
 > cross-project traps in `dev\TRAPS.md`.
 
+_Overnight: 2026-08-10 · ⚠️ **`new changes\` does not exist right now** — the
+**32 approved work orders + a README index** were moved to
+`overnight\pre-test-queue-backup\` so the rewritten `/audit` could be tested
+against the same 32 candidates. **Re-run `/audit productivity-tracker`, compare
+against the backup, then delete it.** 12 killed + 1 declined are already
+permanent in `overnight\rejected.md`; per-item evidence is in
+`overnight\audits\`._
+
 _Last updated: 2026-08-10 — **the automation was silently destroying every
 day's data**, and recovery now scores sleep-window physiology so it holds still
 all day. Root cause found, ingest rebuilt on raw samples, models refit,
@@ -194,14 +202,14 @@ and `npm run build` both clean.
 ## ⚠️ NOT verified
 
 Dashboard, Sleep, Lifts and Trends were driven for real on desktop on
-2026-08-09. **Recovery and Strain have still never been opened in a browser**,
-and 2026-08-10 rewrote the whole Recovery tab — it now shows sleeping HR/HRV
-and a reworked breakdown, verified only by `tsc`, `next build` and the API
-response. The Bevel tab has never rendered at phone width; a 414px attempt
-wedged the Chrome extension. `docs/BEVEL-QA.md` remains unrun as a checklist.
+2026-08-09. **Recovery and Strain were rendered for the first time on
+2026-08-10** by the overnight review — Chrome, 390/768/1440, computed styles
+probed — which is where four of the work orders came from. That pass **looked;
+it did not drive**: no day was selected and no control was clicked, because the
+DB is shared with production and a click is a real write.
 
-Also outstanding from an earlier session: **Scratchpad checklist buttons
-visible without hover** on the phone.
+Still unverified: the Bevel tab **on the iPhone PWA itself** (an earlier 414px
+attempt wedged the Chrome extension), and `docs/BEVEL-QA.md` as a checklist.
 
 ## ✅ RESOLVED 2026-08-09 — the phone automation
 
@@ -247,12 +255,16 @@ sleeping-HR input check above is the real evidence. Add rows to `BEVEL` in
 2. **Raw-sample export for 2026-06-01 → 08-10**, then re-run
    `scripts/fit-bevel.mjs` — the only route to closing today's 16-point
    recovery gap, which is a baseline-history problem, not a model one.
+   ⚠️ **Land the `recomputeDerived` batching work order first** — it writes one
+   Turso round trip per row, and 70 days of it runs inside a 60s route.
 3. **Rotate `HEALTH_IMPORT_KEY`** — it is in the 2026-08-09 transcript AND in
    plaintext in the automation config file Connor uploaded 2026-08-10.
-4. **Device QA on the iPhone PWA** (`docs/BEVEL-QA.md`) — still unrun, and
-   Recovery and Strain have never been opened in a browser at any width.
-5. **Delete `scripts/migrate-from-neon.mjs` and `npm uninstall pg @types/pg`.**
-   The Neon project was to be decommissioned ~one week after 2026-05-09.
+4. **Device QA on the iPhone PWA** (`docs/BEVEL-QA.md`) — still unrun.
+5. **Work through the queue.** The 32 approved work orders are the backlog now;
+   the Neon/`pg` deletion and the doc cleanups are among them, so they are no
+   longer tracked separately here. Start with the token fix — one missing
+   `<alpha-value>` blanks 227 classes across 37 files, and it changes what every
+   later visual check is looking at.
 
 **Schema is fully applied to Turso**: `HealthSample` via `db:push`; the six
 `SleepSession` columns and `HealthImportLog.source` via hand-written

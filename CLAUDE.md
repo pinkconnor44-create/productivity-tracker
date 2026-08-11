@@ -12,8 +12,7 @@ is the Apple Watch health tab (Dashboard / Sleep / Recovery / Strain / **Lifts**
 - **3D is desktop-only and gated.** `three` + `@react-three/*` power only the
   calendar orrery: dynamic import, `ssr:false`, IntersectionObserver-gated —
   **never the initial bundle, never a phone.**
-- Layout: `src/app/` + `api/` · `src/components/` + `Shell.tsx` · `bevel/`
-  sub-tabs · `src/lib/` · `scripts/`. **`schema.prisma` is the source of truth.**
+- **`schema.prisma` is the source of truth.** Layout is conventional Next.js.
 - **Use `src/components/ui/` primitives**, not local copies — they route through
   the semantic token ladder so the palette stays consistent (read the folder).
 
@@ -55,12 +54,11 @@ is the Apple Watch health tab (Dashboard / Sleep / Recovery / Strain / **Lifts**
 
 ## Deployment
 
-`npx vercel --prod` — **not** GitHub auto-deploy, always manual. Build is
-`prisma generate && next build`; the schema is **not** pushed at build time, so
-run `npm run db:push` before any deploy with schema changes. Env:
-`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `HEALTH_IMPORT_KEY`,
-`DATABASE_URL=file:./prisma/dev.db` (typegen only).
-Prod: `productivity-tracker-murex.vercel.app`.
+`npx vercel --prod` — **not** GitHub auto-deploy, always manual. Build is `prisma
+generate && next build`; the schema is **not** pushed at build time, so run `npm run
+db:push` before any deploy with schema changes. Env: `TURSO_DATABASE_URL`,
+`TURSO_AUTH_TOKEN`, `HEALTH_IMPORT_KEY`, `DATABASE_URL=file:./prisma/dev.db`
+(typegen only). Prod: `productivity-tracker-murex.vercel.app`.
 
 ## Design tokens (Void / Electric Iris)
 
@@ -77,6 +75,8 @@ Prod: `productivity-tracker-murex.vercel.app`.
 
 ## Conventions
 
+- **Approved work lives in `new changes/`** (`/audit` writes it) — a candidate or an
+  audit is a proposal; only that folder is built. `overnight/rejected.md` is final.
 - **Every delete goes through `useConfirm()`** — no `window.confirm`, no inline
   `setConfirming` toggles, even for checklist items.
 - **Page wrapper is `min-h-screen md:flex`**, never plain `flex` — the mobile
