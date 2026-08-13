@@ -2,25 +2,42 @@
 import { useState } from 'react'
 import { PageHeader, Card } from '@/components/ui'
 
-// Diet planner — Bulk + Post-Bulk Cut (Connor, 2026-08-12). Ported from a
-// standalone HTML calculator; the original's Cut panel was dropped on
-// purpose. Pure calculator, NO persistence by design — numbers reset on
-// reload, exactly like the original.
+// Diet planner — Bulk + Post-Bulk Cut. v2 (2026-08-12): research-grounded
+// energetics. Still a pure calculator with NO persistence by design.
 //
-// Model notes, preserved from the source:
-// - A month is 30 days; weight = calories / 3500.
-// - Training-frequency derate applies ONLY to bulk normal days: untrained
-//   days shift surplus calories from muscle to fat (adjMuscle = m·f,
-//   adjFat = fat + m·(1−f)). Loss-side partitioning (mini-cuts, post-bulk
-//   cut) uses the entered % raw — there is no equivalent mechanism for it.
-// - Fail days are an unknown-mix calorie pool; when the post-bulk cut
-//   auto-computes "fat to lose", the bulk's fail-day pounds are counted as
-//   fat to be safe.
+// THE MODEL, and where each number comes from:
+//
+// - Tissue energy densities (v2's core fix — v1 used 3,500 kcal/lb for
+//   everything, which is the density of FAT ONLY):
+//     fat        3,500 kcal/lb  (either direction)
+//     muscle       700 kcal/lb  when LOST   (~70% water; Hall: FFM ≈ 1,000 kcal/kg)
+//     muscle     2,000 kcal/lb  when GAINED (deposition + synthesis overhead;
+//                               Slater 2019 ranges 6,050–7,440 kJ/kg plus
+//                               training cost — the softest constant here)
+//   The muscle/fat % keeps its v1 meaning — SHARE OF POUNDS — so a calorie
+//   stream converts at the blended density λ·muscle + (1−λ)·fat.
+//
+// - Suggested partitioning (Forbes/Hall p-ratio): the lean fraction of a
+//   weight change is ≈ 10.4 / (10.4 + fat-mass-kg). Loss-side suggestion is
+//   derated ×0.5 for resistance training (this app's user lifts) and by
+//   protein intake (Helms: 2.3–3.1 g/kg while cutting): <1.6 g/kg ×1.0,
+//   1.6–2.29 ×0.75, ≥2.3 ×0.6. Gain-side uses the Forbes value directly.
+//   Suggestions are hints with a tap-to-use — never auto-applied.
+//
+// - Metabolic adaptation (post-bulk cut only): the effective deficit decays
+//   linearly to (100−A)% of entered by the end of the cut, so the average
+//   deficit is D·(1−A/200). Literature: ~90–180 kcal/day typical, −240 to
+//   −430 kcal/day at months 3–6 in controlled studies. Default 10%.
+//
+// - Unchanged from v1: 30-day months; fail days are an unknown-mix calorie
+//   pool converted at fat density and excluded from the muscle/fat split;
+//   the post-cut "fat to lose" auto-fills from bulk fat + fail-day pounds;
+//   training-frequency derate shifts bulk-day partition from muscle to fat.
 
-// Divide by 3500 directly — multiplying by a precomputed 1/3500 differs in
-// the last floating-point bit, which flips .toFixed(1) at exact .x5
-// boundaries (0.35 lb rendered 0.4 where the source calculator showed 0.3).
-const CAL_PER_LB = 3500
+const FAT_KCAL_LB = 3500
+const MUSCLE_LOSS_KCAL_LB = 700
+const MUSCLE_GAIN_KCAL_LB = 2000
+const FORBES_C_KG = 10.4
 const DAYS_IN_MONTH = 30
 
 function toNum(s: string): number {
@@ -32,6 +49,15 @@ function fmtCal(n: number): string {
 }
 function fmtLbs(n: number): string {
   return (n > 0 ? '+' : '') + n.toFixed(1) + ' lb'
+}
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, v))
+}
+
+/** kcal per pound of a mixed gain/loss where λ = muscle share of the POUNDS. */
+function blendedDensity(muscleFrac: number, gaining: boolean): number {
+  const m = gaining ? MUSCLE_GAIN_KCAL_LB : MUSCLE_LOSS_KCAL_LB
+  return muscleFrac * m + (1 - muscleFrac) * FAT_KCAL_LB
 }
 
 // ── shared UI bits ─────────────────────────────────────────────────────────
@@ -59,6 +85,20 @@ function Field({ label, value, onChange, placeholder, readOnly = false, accent }
         onBlur={e => { e.currentTarget.style.borderColor = '' }}
       />
     </div>
+  )
+}
+
+/** "suggested 12% · use" hint under a partition input. */
+function Suggest({ pct, onUse }: { pct: number | null; onUse: (v: string) => void }) {
+  if (pct === null) return null
+  const v = (pct * 100).toFixed(0)
+  return (
+    <button
+      onClick={() => onUse(v)}
+      className="mt-1 text-micro text-primary-400/80 hover:text-primary-300 transition-colors"
+    >
+      suggested {v}% (Forbes p-ratio) · tap to use
+    </button>
   )
 }
 
@@ -105,6 +145,10 @@ function PanelHeader({ dotClass, title, open, onToggle }: {
 // ── the view ───────────────────────────────────────────────────────────────
 
 export default function DietView() {
+  // Profile (drives the Forbes suggestions; optional)
+  const [bodyweight, setBodyweight] = useState('')
+  const [bodyFatPct, setBodyFatPct] = useState('')
+  const [proteinG, setProteinG] = useState('')
   // Bulk inputs
   const [surplus, setSurplus] = useState('300')
   const [planDays, setPlanDays] = useState('120')
@@ -117,40 +161,60 @@ export default function DietView() {
   const [trainPct, setTrainPct] = useState('')
   // Post-bulk cut inputs
   const [deficit, setDeficit] = useState('500')
+  const [adaptPct, setAdaptPct] = useState('10')
   const [fatTargetInput, setFatTargetInput] = useState('')
   const [fatTargetEdited, setFatTargetEdited] = useState(false)
   const [cutMusclePct, setCutMusclePct] = useState('')
   // Panels
+  const [profileOpen, setProfileOpen] = useState(true)
   const [bulkOpen, setBulkOpen] = useState(true)
   const [cutOpen, setCutOpen] = useState(true)
 
-  // ── bulk maths ──
-  const bulkFatPct = bulkMusclePct !== '' ? 100 - Math.min(100, Math.max(0, toNum(bulkMusclePct))) : null
-  const miniFatPct = miniMusclePct !== '' ? 100 - Math.min(100, Math.max(0, toNum(miniMusclePct))) : null
-  const trainFrac = Math.min(100, Math.max(0, trainPct !== '' ? toNum(trainPct) : 100)) / 100
+  // ── Forbes suggestions ──
+  const bwLb = toNum(bodyweight)
+  const bfFrac = clamp(toNum(bodyFatPct), 0, 100) / 100
+  const haveProfile = bodyweight !== '' && bodyFatPct !== '' && bwLb > 0
+  const fatMassKg = bwLb * bfFrac * 0.45359237
+  const forbesLean = haveProfile ? FORBES_C_KG / (FORBES_C_KG + fatMassKg) : null
+  // Protein modifier for the loss side (Helms tiers, g/kg of bodyweight).
+  const gPerKg = haveProfile && proteinG !== '' ? toNum(proteinG) / (bwLb * 0.45359237) : null
+  const proteinMod = gPerKg === null ? 1.0 : gPerKg >= 2.3 ? 0.6 : gPerKg >= 1.6 ? 0.75 : 1.0
+  // ×0.5: resistance-trained (this whole app assumes lifting).
+  const suggestLoss = forbesLean !== null ? clamp(forbesLean * 0.5 * proteinMod, 0.05, 0.40) : null
+  const suggestGain = forbesLean !== null ? clamp(forbesLean, 0.10, 0.60) : null
 
+  // ── bulk maths (calorie streams → blended-density pounds) ──
+  const trainFrac = clamp(trainPct !== '' ? toNum(trainPct) : 100, 0, 100) / 100
   const normalDaysPerMonth = Math.max(0, DAYS_IN_MONTH - toNum(failDays) - toNum(minicutDays))
   const normalTotal = normalDaysPerMonth * toNum(surplus)
   const monthlyNet = normalTotal + toNum(minicutTotal) + toNum(failTotal)
   const scale = toNum(planDays) / DAYS_IN_MONTH
-  const normalWeightLbs = (normalTotal * scale) / CAL_PER_LB
-  const minicutWeightLbs = (toNum(minicutTotal) * scale) / CAL_PER_LB
-  const failWeightLbs = (toNum(failTotal) * scale) / CAL_PER_LB
-  const totalWeightLbs = (monthlyNet * scale) / CAL_PER_LB
+  const normalCal = normalTotal * scale
+  const minicutCal = toNum(minicutTotal) * scale
+  const failCal = toNum(failTotal) * scale
+  // Fail days: unknown-mix pool, fat density, excluded from the split (v1 rule).
+  const failWeightLbs = failCal / FAT_KCAL_LB
 
   let bulkMuscleLbs: number | null = null
   let bulkFatLbs: number | null = null
-  if (bulkMusclePct !== '' && bulkFatPct !== null) {
-    const m = toNum(bulkMusclePct)
-    const adjMuscle = m * trainFrac
-    const adjFat = bulkFatPct + m * (1 - trainFrac)
-    bulkMuscleLbs = normalWeightLbs * (adjMuscle / 100)
-    bulkFatLbs = normalWeightLbs * (adjFat / 100)
-    if (miniMusclePct !== '' && miniFatPct !== null) {
-      bulkMuscleLbs += minicutWeightLbs * (toNum(miniMusclePct) / 100)
-      bulkFatLbs += minicutWeightLbs * (miniFatPct / 100)
+  let normalWeightLbs = normalCal / FAT_KCAL_LB   // fallback when no % entered
+  let minicutWeightLbs = minicutCal / FAT_KCAL_LB
+  if (bulkMusclePct !== '') {
+    // Training derate shifts the POUND share from muscle to fat, as in v1.
+    const lam = clamp(toNum(bulkMusclePct), 0, 100) / 100 * trainFrac
+    const density = blendedDensity(lam, normalCal >= 0)
+    normalWeightLbs = normalCal / density
+    bulkMuscleLbs = normalWeightLbs * lam
+    bulkFatLbs = normalWeightLbs * (1 - lam)
+    if (miniMusclePct !== '') {
+      const lamM = clamp(toNum(miniMusclePct), 0, 100) / 100
+      const densityM = blendedDensity(lamM, minicutCal >= 0)
+      minicutWeightLbs = minicutCal / densityM
+      bulkMuscleLbs += minicutWeightLbs * lamM
+      bulkFatLbs += minicutWeightLbs * (1 - lamM)
     }
   }
+  const totalWeightLbs = normalWeightLbs + minicutWeightLbs + failWeightLbs
   const minicutWarn = toNum(minicutDays) > 0 && miniMusclePct === ''
 
   // ── post-bulk cut maths ──
@@ -159,25 +223,52 @@ export default function DietView() {
     ? fatTargetInput
     : (fatTargetInput !== '' ? fatTargetInput : (autoFatTarget !== null ? autoFatTarget.toFixed(1) : ''))
   const fatTarget = toNum(fatTargetStr)
-  const cutFatPct = cutMusclePct !== '' ? 100 - Math.min(100, Math.max(0, toNum(cutMusclePct))) : null
 
   let daysNeeded: number | null = null
   let muscleLost: number | null = null
   let totalLost: number | null = null
-  if (toNum(deficit) > 0 && fatTarget > 0 && cutMusclePct !== '' && cutFatPct !== null && cutFatPct > 0) {
-    const fatPerDay = (toNum(deficit) * (cutFatPct / 100)) / CAL_PER_LB
+  let avgDeficit: number | null = null
+  if (toNum(deficit) > 0 && fatTarget > 0 && cutMusclePct !== '' && toNum(cutMusclePct) < 100) {
+    const lam = clamp(toNum(cutMusclePct), 0, 100) / 100
+    // Adaptation: effective deficit decays linearly to (100−A)% by the end
+    // of the cut, so the average is D·(1−A/200).
+    const A = clamp(adaptPct !== '' ? toNum(adaptPct) : 0, 0, 50)
+    avgDeficit = toNum(deficit) * (1 - A / 200)
+    const density = blendedDensity(lam, false)
+    const lbsPerDay = avgDeficit / density
+    const fatPerDay = lbsPerDay * (1 - lam)
     daysNeeded = fatTarget / fatPerDay
-    muscleLost = ((toNum(deficit) * (toNum(cutMusclePct) / 100)) / CAL_PER_LB) * daysNeeded
+    muscleLost = lbsPerDay * lam * daysNeeded
     totalLost = fatTarget + muscleLost
   }
   const netMuscle = bulkMuscleLbs !== null && muscleLost !== null ? bulkMuscleLbs - muscleLost : null
 
   const accentBulk = '#ffb829'
   const accentCut = 'rgb(74 222 128)'
+  const accentProfile = '#8052ff'
 
   return (
     <div className="space-y-4">
       <PageHeader eyebrow="Diet" title="Bulk & post-bulk cut planner" />
+
+      {/* ── Profile ─────────────────────────────────────────────────── */}
+      <Card className="overflow-hidden" padding={0}>
+        <PanelHeader dotClass="bg-primary-400" title="Profile" open={profileOpen} onToggle={() => setProfileOpen(o => !o)} />
+        {profileOpen && (
+          <div className="px-5 pb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <Field label="Bodyweight (lb)" value={bodyweight} onChange={setBodyweight} placeholder="e.g. 180" accent={accentProfile} />
+              <Field label="Body fat %" value={bodyFatPct} onChange={setBodyFatPct} placeholder="e.g. 18" accent={accentProfile} />
+              <Field label="Protein (g/day)" value={proteinG} onChange={setProteinG} placeholder="e.g. 160" accent={accentProfile} />
+            </div>
+            <div className="text-micro text-on-surface-variant/45 mt-2">
+              {haveProfile
+                ? <>Drives the suggested partitioning below (Forbes p-ratio, derated for lifting{gPerKg !== null ? ` · protein ${gPerKg.toFixed(1)} g/kg${gPerKg >= 2.3 ? ' — cut-protective' : gPerKg >= 1.6 ? ' — adequate' : ' — low for a cut (Helms: 2.3–3.1 g/kg)'}` : ''}).</>
+                : 'Optional — fill in bodyweight + body fat % to get suggested muscle percentages instead of guessing.'}
+            </div>
+          </div>
+        )}
+      </Card>
 
       {/* ── Bulk ─────────────────────────────────────────────────────── */}
       <Card className="overflow-hidden" padding={0}>
@@ -204,14 +295,20 @@ export default function DietView() {
 
             <SectionLabel>Mini-cut partitioning</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Muscle loss %" value={miniMusclePct} onChange={setMiniMusclePct} placeholder="e.g. 15" accent={accentBulk} />
-              <Field label="Fat loss % (auto)" value={miniFatPct !== null ? miniFatPct.toFixed(0) : ''} readOnly accent={accentBulk} />
+              <div>
+                <Field label="Muscle loss %" value={miniMusclePct} onChange={setMiniMusclePct} placeholder="e.g. 15" accent={accentBulk} />
+                <Suggest pct={suggestLoss} onUse={setMiniMusclePct} />
+              </div>
+              <Field label="Fat loss % (auto)" value={miniMusclePct !== '' ? (100 - clamp(toNum(miniMusclePct), 0, 100)).toFixed(0) : ''} readOnly accent={accentBulk} />
             </div>
 
             <SectionLabel>Bulk partitioning</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Muscle gain %" value={bulkMusclePct} onChange={setBulkMusclePct} placeholder="e.g. 35" accent={accentBulk} />
-              <Field label="Fat gain % (auto)" value={bulkFatPct !== null ? bulkFatPct.toFixed(0) : ''} readOnly accent={accentBulk} />
+              <div>
+                <Field label="Muscle gain %" value={bulkMusclePct} onChange={setBulkMusclePct} placeholder="e.g. 35" accent={accentBulk} />
+                <Suggest pct={suggestGain} onUse={setBulkMusclePct} />
+              </div>
+              <Field label="Fat gain % (auto)" value={bulkMusclePct !== '' ? (100 - clamp(toNum(bulkMusclePct), 0, 100)).toFixed(0) : ''} readOnly accent={accentBulk} />
             </div>
 
             <SectionLabel>Training frequency</SectionLabel>
@@ -236,6 +333,9 @@ export default function DietView() {
               <MiniStat num={bulkMuscleLbs !== null ? `${bulkMuscleLbs.toFixed(3)} lb${minicutWarn ? ' ⚠' : ''}` : '—'} label={`Est. muscle gained${minicutWarn ? ' · mini-cut % missing' : ''}`} />
               <MiniStat num={bulkFatLbs !== null ? `${bulkFatLbs.toFixed(3)} lb${minicutWarn ? ' ⚠' : ''}` : '—'} label={`Est. fat gained${minicutWarn ? ' · mini-cut % missing' : ''}`} />
             </div>
+            <div className="text-micro text-on-surface-variant/40 mt-2">
+              Muscle counted at {MUSCLE_GAIN_KCAL_LB.toLocaleString()} cal/lb to gain, {MUSCLE_LOSS_KCAL_LB} to lose; fat at {FAT_KCAL_LB.toLocaleString()}. Fail-day calories count toward total weight (as fat) but not the split.
+            </div>
           </div>
         )}
       </Card>
@@ -257,10 +357,21 @@ export default function DietView() {
               </div>
             )}
 
+            <SectionLabel>Metabolic adaptation</SectionLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Adaptation % by cut end" value={adaptPct} onChange={setAdaptPct} placeholder="10" accent={accentCut} />
+            </div>
+            <div className="text-micro text-on-surface-variant/45 mt-1.5">
+              TDEE drifts down as a cut drags on (studies: ~90–430 cal/day). The effective deficit decays to {(100 - clamp(adaptPct !== '' ? toNum(adaptPct) : 0, 0, 50)).toFixed(0)}% of entered by the end{avgDeficit !== null ? ` — average ${Math.round(avgDeficit)} cal/day` : ''}. Set 0 to disable.
+            </div>
+
             <SectionLabel>Partitioning</SectionLabel>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Muscle loss %" value={cutMusclePct} onChange={setCutMusclePct} placeholder="e.g. 15" accent={accentCut} />
-              <Field label="Fat loss % (auto)" value={cutFatPct !== null ? cutFatPct.toFixed(0) : ''} readOnly accent={accentCut} />
+              <div>
+                <Field label="Muscle loss %" value={cutMusclePct} onChange={setCutMusclePct} placeholder="e.g. 15" accent={accentCut} />
+                <Suggest pct={suggestLoss} onUse={setCutMusclePct} />
+              </div>
+              <Field label="Fat loss % (auto)" value={cutMusclePct !== '' ? (100 - clamp(toNum(cutMusclePct), 0, 100)).toFixed(0) : ''} readOnly accent={accentCut} />
             </div>
 
             <div className="bg-surface-container-low rounded-xl px-4 py-3.5 mt-5">
