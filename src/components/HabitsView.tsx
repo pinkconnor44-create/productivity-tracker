@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { isHabitActiveOnDate } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, StatCard, scoreColor, useConfirm } from '@/components/ui'
+import { PageHeader, StatCard, scoreColor, WeightPicker, useConfirm } from '@/components/ui'
 
 type HabitCompletion = { id: number; habitId: number; date: string }
 type Habit = {
@@ -120,31 +120,6 @@ function parseSchedule(recurringDays?: string|null): { preset: string|null; cust
 
 const card = 'glass rounded-2xl border overflow-hidden'
 
-function WeightPicker({ value, onChange }: { value: number; onChange: (w: number) => void }) {
-  const labels = ['','Normal (×1)','Important (×2)','Critical (×3)']
-  const descriptions = ['','Counts once toward daily score','Counts twice toward daily score','Counts three times toward daily score']
-  return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1.5">
-        <span className="text-tiny text-on-surface-variant font-medium">Weight</span>
-        <div className="flex bg-surface-container-low rounded-lg p-0.5 gap-0.5">
-          {[1,2,3].map(w => (
-            <button key={w} type="button" onClick={() => onChange(w)} title={labels[w]}
-              className={`w-6 h-5 rounded-md text-tiny font-bold transition-all ${
-                value === w
-                  ? w === 1 ? 'bg-surface-container text-on-surface-variant/70 shadow-sm'
-                  : w === 2 ? 'bg-blue-500 text-white shadow-sm'
-                  : 'bg-orange-500 text-white shadow-sm'
-                  : 'text-on-surface-variant/30 hover:text-on-surface-variant/70'
-              }`}>{w}</button>
-          ))}
-        </div>
-      </div>
-      <span className="text-micro text-on-surface-variant/30">{descriptions[value]}</span>
-    </div>
-  )
-}
-
 export default function HabitsView() {
   const [habits, setHabits] = useState<Habit[]>([])
   const [loading, setLoading] = useState(true)
@@ -153,6 +128,7 @@ export default function HabitsView() {
   const [submitting, setSubmitting] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null)
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
   const todayStr = today()
   const fetchHabits = useCallback(async () => {
@@ -186,16 +162,22 @@ export default function HabitsView() {
     setSubmitting(false)
   }
   async function toggleToday(habitId: number) {
+    // Same guard as CalendarView: /api/habit-completions is a toggle, so a
+    // double-tap nets to zero or races into a @@unique violation (item 06).
+    const key = `habit-${habitId}-${todayStr}`
+    if (togglingIds.has(key)) return
+    setTogglingIds(prev => new Set(Array.from(prev).concat(key)))
     try {
       const res = await fetch('/api/habit-completions',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ habitId, date:todayStr }) })
       if (!res.ok) throw new Error()
-      fetchHabits()
+      await fetchHabits()
       window.dispatchEvent(new Event('score-refresh'))
     } catch { toast('Failed to update habit', 'warning') }
+    setTogglingIds(prev => { const n = new Set(prev); n.delete(key); return n })
   }
   async function deleteHabit(id: number) {
     try {
-      const res = await fetch(`/api/habits/${id}`,{ method:'DELETE' })
+      const res = await fetch(`/api/habits/${id}?date=${todayStr}`,{ method:'DELETE' })
       if (!res.ok) throw new Error()
       toast('Habit deleted', 'warning')
       fetchHabits()
@@ -291,7 +273,7 @@ export default function HabitsView() {
             )}
           </div>
           <div className="flex items-center justify-between border-t border-outline-variant/40 pt-2">
-            <WeightPicker value={form.weight} onChange={v => setField('weight',v)} />
+            <WeightPicker value={form.weight} onChange={v => setField('weight',v)} hint />
             <div className="flex gap-2">
               <button type="button" onClick={() => { setShowForm(false); setForm(blankForm()) }}
                 className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
@@ -647,7 +629,7 @@ function InlineHabitEditor({ habit, onSave, onCancel }: {
         )}
       </div>
       <div className="flex items-center justify-between border-t border-primary-500/30 pt-2">
-        <WeightPicker value={weight} onChange={setWeight} />
+        <WeightPicker value={weight} onChange={setWeight} hint />
         <div className="flex gap-2">
           <button type="button" onClick={onCancel} className="px-3 py-1.5 text-xs text-on-surface-variant/70 hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-all">Cancel</button>
           <button type="button" onClick={handleSave} disabled={!name.trim()||(schedulePreset==='custom'&&customDays.length===0)} className="px-3 py-1.5 text-xs font-semibold bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-40 transition-colors shadow-sm">Save</button>

@@ -1,9 +1,11 @@
 # Bevel Health Tab + Apple Watch Data — productivity-tracker
 
-> Approved plan, saved 2026-07-21 for later implementation. **Not yet executed.**
-> Note: an Ultraplan cloud session is also executing a refined copy of this plan
-> remotely — results will land as a GitHub PR. When that PR arrives (or the
-> session is teleported back), diff it against this file and merge refinements.
+> **HISTORICAL RECORD** — the plan approved 2026-07-21, relocated from the repo
+> root to `docs/` on 2026-08-12. **Phases 0–8 are built and in production**;
+> nothing here is pending work except the explicitly-marked backlog at the
+> bottom. Where this document contradicts `CLAUDE.md`, `CLAUDE.md` wins —
+> notably the palette: `primary-*`, **never** `violet-*` (the ramp was renamed
+> 2026-08-06, after this was written).
 
 ## Context
 Connor wants two things in `C:\dev\Code\Coding_Projects\productivity-tracker`:
@@ -74,7 +76,7 @@ New: `GET /api/health?start&end` (`src/app/api/health/route.ts`, pattern copied 
   - **Empty state** (Bevel's own first-run weakness): onboarding card with numbered HAE setup steps; loading skeletons; "Calibrating" rings.
 - **Wiring / nav restructure**: `Shell.tsx` Tab union (~L23): add `'bevel'`, **remove `'lifts'` and `'scratchpad'`**; NAV_ITEMS (~L38): add `{id:'bevel', label:'Bevel', icon:<IconBevel/>}`, remove the Lifts and Scratchpad entries; wide-container check (L348) → `bevel` wide; `page.tsx` views map → add `bevel: <BevelView/>`, remove `lifts`/`scratchpad` entries. Nav-order localStorage is safe both ways: loadOrder auto-appends new ids and filters removed ones (verified).
 - **Scratchpad → Calendar tab**: embed the existing `<Scratchpad/>` component inside CalendarView — a collapsible `.glass` section below the month grid on mobile, side/below placement on desktop depending on space. Component and its API (`/api/scratchpad`) unchanged; only its mount point moves. Its drafts/state survive tab switches via Shell's keep-mounted pattern (CalendarView never unmounts).
-- Follow repo conventions: dark-only, violet-* for accent, portal tooltips inside `.neon-card`, mousedown+touchstart, no hover-gated actions on touch.
+- Follow repo conventions: dark-only, the accent ramp (then `violet-*`; renamed `primary-*` on 2026-08-06 — never write `violet-*` now), portal tooltips inside `.neon-card`, mousedown+touchstart, no hover-gated actions on touch.
 
 ### Phase 5 — Live sync + backfill
 - HAE automation: POST → `https://productivity-tracker-murex.vercel.app/api/health-import`, header `X-Api-Key`, JSON, **Aggregate: Days**, hourly cadence; metrics list + workouts enabled.
@@ -130,7 +132,7 @@ a preview deploy. Prod is untouched.
   moved inside Bevel; Scratchpad→Calendar was already done on 2026-08-06.
 - **Phase 5 tooling** — `backfill-health.mjs` written and ready; the HAE
   purchase and phone automation are still blocked on Connor.
-- **Phase 6** — was already delivered as C6 last session.
+- **Phase 6** — was already delivered as C6 on 2026-08-06.
 
 ## Deviations from the plan as written
 - `Ring`, `TrendChart` and `SegmentedControl` already existed (extracted during

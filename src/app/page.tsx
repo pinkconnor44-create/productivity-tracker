@@ -7,9 +7,9 @@ import HabitsView from '@/components/HabitsView'
 import StatsView from '@/components/StatsView'
 import SettingsView from '@/components/SettingsView'
 import BevelView from '@/components/BevelView'
+import DietView from '@/components/DietView'
 import ProjectsView from '@/components/ProjectsView'
 import ToastContainer from '@/components/ToastContainer'
-import { StopwatchProvider } from '@/lib/stopwatch'
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>('calendar')
@@ -21,6 +21,7 @@ export default function Home() {
     tasks: <TasksView />,
     habits: <HabitsView />,
     bevel: <BevelView />,
+    diet: <DietView />,
     stats: <StatsView />,
     projects: <ProjectsView />,
     settings: <SettingsView />,
@@ -50,9 +51,7 @@ export default function Home() {
         </defs>
       </svg>
 
-      <StopwatchProvider>
-        <Shell activeTab={activeTab} onTabChange={setActiveTab} views={views} />
-      </StopwatchProvider>
+      <Shell activeTab={activeTab} onTabChange={setActiveTab} views={views} />
 
       <ToastContainer />
     </div>

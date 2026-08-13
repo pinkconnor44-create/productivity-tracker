@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { isTaskActiveOnDate, recurringLabel } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, KindChip, KindPicker, useConfirm } from '@/components/ui'
+import { PageHeader, KindChip, KindPicker, WeightPicker, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
@@ -106,26 +106,6 @@ function blankForm() {
 // Shared card style
 const card = 'glass card-lift rounded-2xl border overflow-hidden'
 
-function WeightPicker({ value, onChange }: { value: number; onChange: (w: number) => void }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-tiny text-on-surface-variant font-medium">Weight</span>
-      <div className="flex bg-surface-container-low rounded-lg p-0.5 gap-0.5">
-        {[1,2,3].map(w => (
-          <button key={w} type="button" onClick={() => onChange(w)}
-            title={W_LABEL[w]}
-            className={`w-6 h-5 rounded-md text-tiny font-bold transition-all ${
-              value === w
-                ? w === 1 ? 'bg-surface-container text-on-surface-variant/70 shadow-sm'
-                : w === 2 ? 'bg-blue-500 text-white shadow-sm'
-                : 'bg-orange-500 text-white shadow-sm'
-                : 'text-on-surface-variant/30 hover:text-on-surface-variant/70'
-            }`}>{w}</button>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function TasksView() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -135,6 +115,10 @@ export default function TasksView() {
   const [submitting, setSubmitting] = useState(false)
   const [showCompleted, setShowCompleted] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  // Same guard as CalendarView: the completion endpoints are toggles
+  // (find → delete-or-create), so a double-tap nets to zero or races into a
+  // @@unique violation. One in-flight toggle per item (item 06).
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set())
 
   const fetchTasks = useCallback(async () => {
     const res = await fetch('/api/tasks')
@@ -154,7 +138,7 @@ export default function TasksView() {
     if (!form.title.trim()) return
     setSubmitting(true)
     try {
-      const body: Record<string,unknown> = { title:form.title, description:form.description, dueDate:form.dueDate, time:form.time, endTime:form.endTime, weight:form.weight, kind: form.kind }
+      const body: Record<string,unknown> = { title:form.title, description:form.description, dueDate:form.dueDate, time:form.time, endTime:form.endTime, weight:form.weight, kind: form.kind, startDate: today() }
       if (form.isRecurring) {
         body.recurringType = form.recurringType
         body.recurringDays = form.recurringType === 'weekly' ? form.recurringDays.join(',') : null
@@ -168,23 +152,31 @@ export default function TasksView() {
     setSubmitting(false)
   }
   async function toggleTask(task: Task) {
+    const key = `task-${task.id}`
+    if (togglingIds.has(key)) return
+    setTogglingIds(prev => new Set(Array.from(prev).concat(key)))
     try {
-      const res = await fetch(`/api/tasks/${task.id}`,{ method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ completed:!task.completed }) })
+      const res = await fetch(`/api/tasks/${task.id}`,{ method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ completed:!task.completed, completedAt: today() }) })
       if (!res.ok) throw new Error()
       if (!task.completed) toast('Task complete ✓')
-      fetchTasks()
+      await fetchTasks()
       window.dispatchEvent(new Event('score-refresh'))
     } catch { toast('Failed to update task', 'warning') }
+    setTogglingIds(prev => { const n = new Set(prev); n.delete(key); return n })
   }
   async function toggleRecurringToday(task: Task) {
+    const key = `task-${task.id}-${today()}`
+    if (togglingIds.has(key)) return
+    setTogglingIds(prev => new Set(Array.from(prev).concat(key)))
     const completing = !task.completions.some(c => c.date === today())
     try {
       const res = await fetch('/api/task-completions',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ taskId:task.id, date:today() }) })
       if (!res.ok) throw new Error()
       if (completing) toast('Task complete ✓')
-      fetchTasks()
+      await fetchTasks()
       window.dispatchEvent(new Event('score-refresh'))
     } catch { toast('Failed to update task', 'warning') }
+    setTogglingIds(prev => { const n = new Set(prev); n.delete(key); return n })
   }
   async function deleteTask(id: number) {
     try {

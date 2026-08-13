@@ -1,9 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, ReactNode, useCallback } from 'react'
 import { scoreColor, Ring } from '@/components/ui'
-import DockedStopwatch from '@/components/DockedStopwatch'
-import FloatingStopwatch from '@/components/FloatingStopwatch'
-import { useStopwatch } from '@/lib/stopwatch'
+import { calcCurrentStreak } from '@/lib/streak'
 
 // ──────────────────────────────────────────────────────────────────────────
 // Z-INDEX LADDER (documented for future modals — keep in sync with new code)
@@ -23,7 +21,7 @@ import { useStopwatch } from '@/lib/stopwatch'
 
 export type Tab =
   | 'calendar' | 'tasks' | 'habits' | 'bevel'
-  | 'stats' | 'projects' | 'settings'
+  | 'diet' | 'stats' | 'projects' | 'settings'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -44,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   // so a stored order containing 'lifts' self-heals in both directions and
   // reverting this commit restores the old nav exactly.
   { id: 'bevel',         label: 'Bevel',         icon: <IconBevel    /> },
+  { id: 'diet',          label: 'Diet',          icon: <IconDiet     /> },
   { id: 'stats',         label: 'Stats',         icon: <IconStats    /> },
   { id: 'calendar',      label: 'Calendar',      icon: <IconCalendar /> },
   { id: 'projects',      label: 'Projects',      icon: <IconProjects /> },
@@ -73,28 +72,6 @@ function todayStr(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
-function addDays(s: string, n: number): string {
-  const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n)
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-}
-function calcStreak(scores: ScoreData): number {
-  const t = todayStr()
-  let check = scores[t]?.completed > 0 ? t : addDays(t, -1)
-  let streak = 0, emptyRun = 0
-  for (let i = 0; i < 400; i++) {
-    const s = scores[check]
-    if (!s) {
-      emptyRun++
-      if (emptyRun > 7) break
-      check = addDays(check, -1); continue
-    }
-    emptyRun = 0
-    if (s.completed === 0) break
-    streak++
-    check = addDays(check, -1)
-  }
-  return streak
-}
 function greeting(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -106,7 +83,6 @@ function fmtToday(): string {
 }
 
 export default function Shell({ activeTab, onTabChange, views }: Props) {
-  const { liftsActive, running } = useStopwatch()
   const [mounted, setMounted] = useState<Set<Tab>>(() => new Set([activeTab]))
   const [scores, setScores] = useState<ScoreData>({})
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -183,7 +159,7 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
 
   const todayScore = scores[todayStr()]
   const todayPct = todayScore?.pct ?? 0
-  const streak = calcStreak(scores)
+  const streak = calcCurrentStreak(scores)
 
   const onNavClick = useCallback((t: Tab) => {
     onTabChange(t)
@@ -365,19 +341,6 @@ export default function Shell({ activeTab, onTabChange, views }: Props) {
           )
         })}
       </main>
-      {/* The rest timer belongs to the LIFTS sub-tab, not to Bevel as a whole
-          (Connor, 2026-08-09) — it was showing over Sleep, Recovery, Strain
-          and Trends, which have nothing to do with it. `liftsActive` is set by
-          BevelView; it is rendered HERE rather than inside BevelView because
-          `tab-fade` animates `transform` and would trap these fixed overlays
-          inside the tab panel. A running timer is exempt: hiding a live count
-          because the user glanced at Recovery would lose their rest interval. */}
-      {activeTab === 'bevel' && (liftsActive || running) && (
-        <>
-          <FloatingStopwatch />
-          <DockedStopwatch />
-        </>
-      )}
     </>
   )
 }
@@ -674,6 +637,15 @@ function IconBevel() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 12h3.5l2-5 3 10 2.5-5H21" />
+    </svg>
+  )
+}
+function IconDiet() {
+  // Fork and knife — diet/nutrition.
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 2v20" /><path d="M4 2v5a3 3 0 0 0 6 0V2" />
+      <path d="M18 2c-2 2.5-3 5-3 7.5 0 2 1.2 3.5 3 3.5v9" />
     </svg>
   )
 }

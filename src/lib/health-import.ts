@@ -84,8 +84,8 @@ const MAX_WARNINGS = 20
  *  want to key on. Parsing to a Date and reading UTC fields would be wrong:
  *  it would push evening entries onto the next day.
  *
- *  This is the single highest-risk assumption in the import path (plan.md
- *  "Key risks"). Every raw timestamp is stored alongside, so if the first live
+ *  This is the single highest-risk assumption in the import path
+ *  (docs/BEVEL-PLAN.md "Key risks"). Every raw timestamp is stored alongside, so if the first live
  *  payload disagrees, history can be reprocessed rather than re-exported. */
 export function toLocalDay(ts: unknown): string | null {
   if (typeof ts !== 'string') return null

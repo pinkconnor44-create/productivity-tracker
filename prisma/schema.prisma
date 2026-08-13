@@ -24,6 +24,7 @@ model Task {
   kind           String?          // meeting | focus | personal | admin | planning — UI tag for color stripes
   active         Boolean          @default(true)
   deletedAt      String?          // YYYY-MM-DD — set on soft-delete to preserve history
+  startDate      String?          // YYYY-MM-DD local day the task was created — the completion-window cap (matches Habit)
   createdAt      DateTime         @default(now())
   completions    TaskCompletion[]
   skips          TaskSkip[]
@@ -52,6 +53,7 @@ model Habit {
   name           String
   description    String?
   active         Boolean           @default(true)
+  deletedAt      String?           // YYYY-MM-DD — set on soft-delete to preserve history
   recurringDays  String?           // null = every day; "1,2,3,4,5" = weekdays; "0,6" = weekends; custom
   weight         Int               @default(1) // 1=normal, 2=important, 3=critical
   startDate      String?           // YYYY-MM-DD local date when habit was created

@@ -3,19 +3,19 @@
 > State only. Rules are in `CLAUDE.md`, component detail in `docs/NOTES.md`,
 > cross-project traps in `dev\TRAPS.md`.
 
-_Overnight: 2026-08-10 · ⚠️ **`new changes\` does not exist right now** — the
-**32 approved work orders + a README index** were moved to
-`overnight\pre-test-queue-backup\` so the rewritten `/audit` could be tested
-against the same 32 candidates. **Re-run `/audit productivity-tracker`, compare
-against the backup, then delete it.** 12 killed + 1 declined are already
-permanent in `overnight\rejected.md`; per-item evidence is in
-`overnight\audits\`._
-
-_Last updated: 2026-08-10 — **the automation was silently destroying every
-day's data**, and recovery now scores sleep-window physiology so it holds still
-all day. Root cause found, ingest rebuilt on raw samples, models refit,
-2026-08-08→10 repaired. **Merged to `main` (`2b84222`, `--no-ff`) and deployed
-to production.**_
+_Last updated: 2026-08-12 — **all 31 approved work orders (01–31) implemented
+and deployed to prod** on Connor's instruction; **32 (the `dev\TRAPS.md` edit)
+excluded by Connor and still open**. Boxes ticked in
+`overnight\pre-test-queue-backup\README.md`, which also lists what was verified
+from the CLI vs what still needs a device pass (13/14/16 visuals, 06/10/11
+throttled-network). Decisions taken: DESIGN.md **deleted** (not rewritten);
+`Habit.deletedAt` + `Task.startDate` columns added to the live Turso DB and the
+12 soft-deleted habits backfilled (last completion + 1 day, else creation day).
+New gates: `npm run check` = tsc + scripts-tsc + eslint (react-hooks rules);
+`npm test` refuses non-disposable targets; wipe script needs
+`--target <db-host>`. The queue folder can be renamed back to `new changes\`
+whenever the /audit comparison it was parked for is done — 01–32 are taken,
+next promotion starts at 33._
 
 ⚠️ **The repair had to be done twice.** The first pass was applied through
 `localhost` while production still ran the old code, so the next phone export
@@ -166,7 +166,8 @@ Deployed and verified in production. No schema change anywhere, so **no
    inside the tab panel. A **running** timer is exempt from the gate — hiding a
    live count because you glanced at Recovery would lose the rest interval.
 3. **Import log now records rejected requests** — the change that made the
-   sync diagnosable. See `docs/BEVEL-OPEN-ISSUES.md` § 2026-08-09.
+   sync diagnosable. (Full detail was in `docs/BEVEL-OPEN-ISSUES.md`, deleted
+   2026-08-12 — both its issues closed; the resolution is recorded below.)
 4. **Sleep, strain and recovery calibrated against Bevel** (`2fea961`) — see
    its own section below.
 
@@ -272,9 +273,5 @@ sleeping-HR input check above is the real evidence. Add rows to `BEVEL` in
 
 ## Open questions
 
-- Orrery tuning is open and cheap (`src/components/orrery/Orrery3D.tsx`).
-  ⚠️ It also **wedges the Chrome extension** — script injection times out
-  while the Calendar tab is mounted, which cost real time this session.
-  Work around it by opening a fresh tab straight onto another view.
 - Backlog, unstarted: per-screen depth / hero imagery — Connor, 2026-08-07,
   *"don't make it yet, keep it in mind."*

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { PageHeader, StatCard, Card, Section, scoreColor, SegmentedControl, TrendChart, Ring } from '@/components/ui'
+import { PageHeader, StatCard, Card, Section, scoreColor, scoreColorAlpha, SegmentedControl, TrendChart, Ring } from '@/components/ui'
+import { calcCurrentStreak, calcLongestStreak } from '@/lib/streak'
 
 type DayScore = { completed: number; total: number; pct: number }
 type ScoreData = Record<string, DayScore>
@@ -20,29 +21,6 @@ function formatLabel(dateStr: string): string {
 function formatDateLong(s: string): string {
   return new Date(s+'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }
-function calcCurrentStreak(scores: ScoreData): number {
-  const t = today()
-  let check = scores[t]?.completed > 0 ? t : addDays(t,-1)
-  let streak = 0
-  for (let i = 0; i < 400; i++) {
-    const s = scores[check]
-    if (!s || s.completed === 0) break
-    streak++
-    check = addDays(check,-1)
-  }
-  return streak
-}
-function calcLongestStreak(scores: ScoreData): number {
-  const dates = Object.keys(scores).filter(d => scores[d].completed > 0).sort()
-  let longest = 0, cur = 0, prev: string|null = null
-  for (const d of dates) {
-    if (prev && d === addDays(prev,1)) cur++; else cur = 1
-    if (cur > longest) longest = cur
-    prev = d
-  }
-  return longest
-}
-
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 type Range = '30' | '90' | '365'
@@ -98,15 +76,14 @@ function YearHeatmap({ scores, todayStr, onHover }: {
     if (m !== prevM) monthLabels.push({ label: MONTHS[m], col })
   })
 
-  function cellBg(score: DayScore | undefined, isFuture: boolean, isOutOfRange: boolean): string {
-    if (isFuture || isOutOfRange) return 'bg-transparent'
-    if (!score || score.total === 0) return 'bg-surface-container-low'
+  // One ladder: hue comes from scoreGrade via scoreColor (item 15 — this
+  // ladder had drifted, painting a 60% day Iris while the rest of the page
+  // painted it amber). Intensity, not hue, marks the perfect day.
+  function cellPaint(score: DayScore | undefined, isFuture: boolean, isOutOfRange: boolean): { className: string; style?: React.CSSProperties } {
+    if (isFuture || isOutOfRange) return { className: 'bg-transparent' }
+    if (!score || score.total === 0) return { className: 'bg-surface-container-low' }
     const p = score.pct
-    if (p === 100) return 'bg-emerald-400'
-    if (p >= 75)  return 'bg-emerald-500/70'
-    if (p >= 50)  return 'bg-primary-500/70'
-    if (p >= 25)  return 'bg-amber-500/65'
-    return 'bg-rose-500/70'
+    return { className: '', style: { background: p === 100 ? scoreColor(p) : scoreColorAlpha(p, 0.7) } }
   }
 
   return (
@@ -137,16 +114,17 @@ function YearHeatmap({ scores, todayStr, onHover }: {
                 const isOutOfRange = date < startDate
                 const score = scores[date]
                 const isToday = date === todayStr
-                const bg = cellBg(score, isFuture, isOutOfRange)
+                const paint = cellPaint(score, isFuture, isOutOfRange)
                 const interactive = !isFuture && !isOutOfRange
                 return (
                   <div
                     key={date}
-                    className={`w-[14px] h-[14px] rounded-sm transition-all duration-150 ${bg}
+                    className={`w-[14px] h-[14px] rounded-sm transition-all duration-150 ${paint.className}
                       ${interactive ? 'hover:brightness-110 hover:scale-125' : ''}
                       ${isToday ? 'ring-2 ring-primary-500 ring-offset-1 ring-offset-surface' : ''}
                       ${score?.pct === 100 ? 'shadow-sm shadow-emerald-400/40' : ''}
                     `}
+                    style={paint.style}
                     onMouseMove={e => { if (interactive) onHover({ date, x: e.clientX, y: e.clientY }) }}
                     onMouseLeave={() => onHover(null)}
                   />
@@ -254,7 +232,9 @@ export default function StatsView() {
       {/* Stat strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         <StatCard label="Today" value={todayScore?.pct ?? 0} suffix="%" sub={`${todayScore?.completed ?? 0}/${todayScore?.total ?? 0} weighted`} color={scoreColor(todayScore?.pct)} barPct={todayScore?.pct ?? 0} />
-        <StatCard label="Last 7 days" value={avg7} suffix="%" sub={`${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta)} pts vs prior week`} color={delta >= 0 ? '#10b981' : '#f43f5e'} barPct={avg7} />
+        {/* scoreColor at the poles, not a hand-typed hex — this card sat next
+            to one painting the SAME state a different green (item 15). */}
+        <StatCard label="Last 7 days" value={avg7} suffix="%" sub={`${delta >= 0 ? '↑' : '↓'} ${Math.abs(delta)} pts vs prior week`} color={delta >= 0 ? scoreColor(100) : scoreColor(0)} barPct={avg7} />
         <StatCard label={`Last ${range} days`} value={avgPct ?? '—'} suffix={avgPct != null ? '%' : undefined} sub="weighted average" color={avgPct != null ? scoreColor(avgPct) : undefined} barPct={avgPct ?? 0} />
         <StatCard label="Current streak" value={currentStreak} suffix="d" sub={`longest ${longestStreak}d`} color="#fb923c" barPct={Math.min(100, currentStreak * 6)} />
       </div>
@@ -330,8 +310,11 @@ export default function StatsView() {
             : <YearHeatmap scores={scores365} todayStr={t} onHover={setHeatTip} />}
           <div className="flex items-center gap-2 mt-4">
             <span className="text-micro text-on-surface-variant/60">Less</span>
-            {['bg-surface-container-low', 'bg-rose-500/70', 'bg-amber-500/65', 'bg-primary-500/70', 'bg-emerald-500/70', 'bg-emerald-400']
-              .map((c, i) => <div key={i} className={`w-[14px] h-[14px] rounded-sm ${c}`} />)}
+            <div className="w-[14px] h-[14px] rounded-sm bg-surface-container-low" />
+            {[0, 50, 75].map(p => (
+              <div key={p} className="w-[14px] h-[14px] rounded-sm" style={{ background: scoreColorAlpha(p, 0.7) }} />
+            ))}
+            <div className="w-[14px] h-[14px] rounded-sm" style={{ background: scoreColor(100) }} />
             <span className="text-micro text-on-surface-variant/60">More</span>
           </div>
         </Card>

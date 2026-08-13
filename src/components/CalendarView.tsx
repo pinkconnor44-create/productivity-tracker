@@ -3,10 +3,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { isTaskActiveOnDate, isHabitActiveOnDate, recurringLabel } from '@/lib/recurring'
 import { toast } from '@/lib/toast'
-import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, useConfirm } from '@/components/ui'
+import { PageHeader, StatCard, Card, Section, KindChip, KindPicker, kindStyle, scoreColor, scoreGrade, SegmentedControl, useConfirm } from '@/components/ui'
 import type { Kind } from '@/components/ui'
 import Scratchpad from '@/components/Scratchpad'
-import OrreryHero from '@/components/orrery/OrreryHero'
 
 type TaskCompletion = { id: number; taskId: number; date: string }
 type Task = {
@@ -67,9 +66,11 @@ function getMonthDays(year: number, month: number) {
 const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
-// Circular mini-wheel for calendar cells and headers
-function wheelGrad(pct: number) { return pct >= 75 ? 'url(#wGreen)' : pct >= 50 ? 'url(#wYellow)' : 'url(#wRed)' }
-function wheelColor(pct: number) { return pct >= 75 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#f43f5e' }
+// Circular mini-wheel for calendar cells and headers. The gradient defs live
+// in page.tsx; the THRESHOLDS live in scoreGrade — this file no longer keeps
+// its own ladder (item 15: it had drifted to #10b981/#f59e0b).
+const WHEEL_GRADS = { high: 'url(#wGreen)', mid: 'url(#wYellow)', low: 'url(#wRed)' } as const
+function wheelGrad(pct: number) { return WHEEL_GRADS[scoreGrade(pct)] }
 
 // Animates both the arc value (for CSS transition) and a display number (via rAF)
 function useWheelAnim(target: number, duration = 900) {
@@ -141,7 +142,12 @@ export default function CalendarView() {
     if (res.ok) setSummaryScores(await res.json())
   }, [])
 
-  const fetchScores = useCallback(async () => {
+  // Abort-and-check guard, same hazard as Shell's score refresh: this is
+  // keyed on (currentDate, view) and re-runs on every arrow press. Both
+  // routes filter to the requested range, so a LATE response REPLACES state —
+  // a stale August payload would leave every June cell undefined, a
+  // populated-looking month reading 0% everywhere (item 10).
+  const fetchScores = useCallback(async (signal?: AbortSignal) => {
     const d = new Date(currentDate + 'T12:00:00')
     let start: string, end: string
     if (view === 'month') {
@@ -151,16 +157,21 @@ export default function CalendarView() {
       start = startOfWeek(currentDate); end = addDays(start, 6)
     } else { start = end = currentDate }
     const [scoresRes, notesRes] = await Promise.all([
-      fetch(`/api/scores?startDate=${start}&endDate=${end}`),
-      fetch(`/api/notes?startDate=${start}&endDate=${end}`, { cache: 'no-store' })
+      fetch(`/api/scores?startDate=${start}&endDate=${end}`, { signal }),
+      fetch(`/api/notes?startDate=${start}&endDate=${end}`, { cache: 'no-store', signal })
     ])
+    if (signal?.aborted) return
     if (scoresRes.ok) setScores(await scoresRes.json())
     if (notesRes.ok) setNotes(await notesRes.json())
   }, [currentDate, view])
 
   useEffect(() => {
+    const ctrl = new AbortController()
     setLoading(true)
-    Promise.all([fetchData(), fetchScores(), fetchSummary()]).finally(() => setLoading(false))
+    Promise.all([fetchData(), fetchScores(ctrl.signal), fetchSummary()])
+      .catch(() => {})
+      .finally(() => { if (!ctrl.signal.aborted) setLoading(false) })
+    return () => ctrl.abort()
   }, [fetchData, fetchScores, fetchSummary])
 
   const tasksForDate   = (date: string) => tasks.filter(t => isTaskActiveOnDate(t, date))
@@ -172,7 +183,9 @@ export default function CalendarView() {
     setNavDir(dir === 1 ? 'right' : 'left')
     setNavKey(k => k + 1)
     const d = new Date(currentDate + 'T12:00:00')
-    if (view === 'month') { d.setMonth(d.getMonth()+dir); d.setDate(1) }
+    // setDate(1) FIRST: setMonth from the 31st overflows into the month after
+    // the target (Jan 31 next → Mar 1) and prev from the 31st goes nowhere.
+    if (view === 'month') { d.setDate(1); d.setMonth(d.getMonth()+dir) }
     else if (view === 'week') d.setDate(d.getDate() + dir*7)
     else d.setDate(d.getDate() + dir)
     setCurrentDate(localDate(d))
@@ -199,7 +212,7 @@ export default function CalendarView() {
       if (task.recurringType) {
         res = await fetch('/api/task-completions', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ taskId: task.id, date }) })
       } else {
-        res = await fetch(`/api/tasks/${task.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ completed: !task.completed }) })
+        res = await fetch(`/api/tasks/${task.id}`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ completed: !task.completed, completedAt: today() }) })
       }
       if (!res.ok) throw new Error()
       if (completing) toast('Task complete ✓')
@@ -223,8 +236,15 @@ export default function CalendarView() {
     setTogglingIds(prev => { const n = new Set(prev); n.delete(key); return n })
   }
 
+  // Every mutation below checks res.ok, and every success toast lives inside
+  // the success branch. Next returns a thrown handler as a 500 and there is
+  // no error.tsx anywhere in src/, so res.ok is the ONLY failure signal these
+  // call sites have — ignoring it toasted "Task deleted" over a task still on
+  // screen (item 11).
+
   async function saveNote(date: string, content: string) {
-    await fetch('/api/notes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ date, content }) })
+    const res = await fetch('/api/notes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ date, content }) }).catch(() => null)
+    if (!res?.ok) { toast('Failed to save note', 'warning'); return }
     setNotes(prev => content.trim()
       ? { ...prev, [date]: content }
       : Object.fromEntries(Object.entries(prev).filter(([k]) => k !== date))
@@ -232,48 +252,70 @@ export default function CalendarView() {
   }
 
   async function addTask(title: string, date: string, time?: string, endTime?: string) {
-    await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, dueDate: date, time: time || null, endTime: endTime || null }) })
+    const res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, dueDate: date, time: time || null, endTime: endTime || null, startDate: today() }) }).catch(() => null)
+    if (!res?.ok) { toast('Failed to add task', 'warning'); return }
     toast('Task added', 'info')
     await fetchData(); fetchScores(); fetchSummary()
   }
 
   async function skipTask(taskId: number, date: string) {
-    await fetch('/api/task-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, date }) })
+    const res = await fetch('/api/task-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId, date }) }).catch(() => null)
+    if (!res?.ok) { toast('Failed to skip task', 'warning'); return }
     toast('Skipped for today', 'warning')
     fetchData(); fetchScores(); fetchSummary()
   }
 
   async function deleteTask(id: number) {
-    await fetch(`/api/tasks/${id}?date=${today()}`, { method: 'DELETE' })
+    const res = await fetch(`/api/tasks/${id}?date=${today()}`, { method: 'DELETE' }).catch(() => null)
+    if (!res?.ok) { toast('Failed to delete task', 'warning'); return }
     toast('Task deleted', 'warning')
     fetchData(); fetchScores(); fetchSummary()
   }
 
   async function deleteHabit(id: number) {
-    await fetch(`/api/habits/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/habits/${id}?date=${today()}`, { method: 'DELETE' }).catch(() => null)
+    if (!res?.ok) { toast('Failed to delete habit', 'warning'); return }
     toast('Habit deleted', 'warning')
     fetchData(); fetchScores(); fetchSummary()
   }
 
   async function skipHabit(habitId: number, date: string) {
-    await fetch('/api/habit-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ habitId, date }) })
+    const res = await fetch('/api/habit-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ habitId, date }) }).catch(() => null)
+    if (!res?.ok) { toast('Failed to skip habit', 'warning'); return }
     toast('Skipped for today', 'warning')
     fetchData(); fetchScores(); fetchSummary()
   }
 
   async function updateTask(id: number, data: Record<string, unknown>) {
-    await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+    const res = await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => null)
+    if (!res?.ok) { toast('Failed to save task', 'warning'); return }
     fetchData(); fetchScores(); fetchSummary()
   }
 
   async function replaceRecurringDay(task: Task, date: string, data: Record<string, unknown>) {
-    await fetch('/api/task-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId: task.id, date }) })
-    await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data, dueDate: date }) })
+    // Skip-then-create, WITH a rollback: if the create fails after the skip
+    // succeeded, the occurrence would otherwise be permanently and silently
+    // destroyed. /api/task-skips is a toggle, so re-POSTing undoes the skip.
+    // The source task's fields are the base so the one-day copy keeps weight
+    // and kind unless the form changed them.
+    const skipRes = await fetch('/api/task-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId: task.id, date }) }).catch(() => null)
+    if (!skipRes?.ok) { toast('Failed to update task', 'warning'); return }
+    const createRes = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      title: task.title, time: task.time, endTime: task.endTime, weight: task.weight, kind: task.kind,
+      ...data, dueDate: date,
+    }) }).catch(() => null)
+    if (!createRes?.ok) {
+      await fetch('/api/task-skips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ taskId: task.id, date }) }).catch(() => null)
+      toast('Failed to update task', 'warning')
+      fetchData(); fetchScores(); fetchSummary()
+      return
+    }
     fetchData(); fetchScores(); fetchSummary()
   }
 
   async function updateHabit(id: number, data: Record<string, unknown>) {
-    await fetch(`/api/habits/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+    const res = await fetch(`/api/habits/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => null)
+    if (!res?.ok) { toast('Failed to save habit', 'warning'); return }
     fetchData(); fetchScores(); fetchSummary()
   }
 
@@ -283,28 +325,19 @@ export default function CalendarView() {
 
   return (
     <div>
-      {/* Sibling of the content, never a wrapper — DayModal is position:fixed
-          and lives in the column below, so an ancestor with a transform would
-          become its containing block and break it. */}
-      <OrreryHero dayPct={dayPct} weekPct={weekPct} monthPct={monthPct} yearPct={yearPct} />
       <PageHeader
         eyebrow="Calendar"
         title={periodLabel()}
         right={
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex glass rounded-lg p-0.5 gap-0.5">
-              {(['month','week','day'] as View[]).map(v => (
-                <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded-md text-caption font-semibold capitalize transition-colors ${
-                    view === v ? 'bg-primary-500/16 text-primary-300 border border-primary-400/30' : 'text-on-surface-variant/70 hover:text-on-surface'
-                  }`}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
+            {/* The shared control, not a local fork — the fork dropped
+                role="tablist"/"tab" and aria-selected (item 15). */}
+            <SegmentedControl
+              ariaLabel="Calendar view"
+              options={(['month','week','day'] as View[]).map(v => ({ value: v, label: <span className="capitalize">{v}</span> }))}
+              value={view}
+              onChange={setView}
+            />
             <div className="flex items-center gap-2">
               <button onClick={() => navigate(-1)} aria-label="Previous" className="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface border border-outline-variant/40 transition-colors">←</button>
               <button onClick={() => setCurrentDate(today())} className="px-3 h-8 text-caption font-semibold glass rounded-lg text-on-surface-variant hover:text-primary-300 transition-colors">Today</button>
@@ -743,7 +776,7 @@ function DayScoreWheel({ score }: { score: DayScore }) {
   const { arc, display } = useWheelAnim(score.pct, 900)
   const r = 15.9, circ = 2 * Math.PI * r
   const fill = (arc / 100) * circ
-  const color = wheelColor(score.pct)
+  const color = scoreColor(score.pct)
   const animCompleted = score.pct > 0 ? Math.round((display / score.pct) * score.completed) : 0
   return (
     <div className="flex flex-col items-center">

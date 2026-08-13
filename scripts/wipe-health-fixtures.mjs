@@ -3,7 +3,12 @@
 // seed-health-fixtures.mjs would otherwise contaminate the trailing baselines
 // that every score is computed against.
 //
-//   node scripts/wipe-health-fixtures.mjs --yes
+//   node scripts/wipe-health-fixtures.mjs --target <db-hostname> --yes
+//
+// --target must be the HOSTNAME of the database this will delete from
+// (printed by a dry run). Forcing it to be typed is the item-20 guard: with
+// preview, prod and local dev all on one Turso instance, "the" database is
+// always production, and a delete must never be one habitual --yes away.
 //
 // Touches ONLY the health tables. Tasks, habits, lifts, notes, projects and
 // scores are never referenced here.
@@ -25,9 +30,18 @@ for (const t of TABLES) {
 }
 console.log('Current rows:', counts)
 
-if (!process.argv.includes('--yes')) {
-  console.log('\nDry run. Re-run with --yes to delete these rows.')
-  process.exit(0)
+const dbHost = new URL(url.replace(/^libsql:/, 'https:')).hostname
+const targetIdx = process.argv.indexOf('--target')
+const target = targetIdx !== -1 ? process.argv[targetIdx + 1] : null
+
+if (!process.argv.includes('--yes') || !target) {
+  console.log(`\nDry run. This would delete from: ${dbHost}`)
+  console.log(`Re-run with --target ${dbHost} --yes to delete these rows.`)
+  process.exit(process.argv.includes('--yes') ? 1 : 0)
+}
+if (target !== dbHost) {
+  console.error(`refusing: --target ${target} does not match the connected database ${dbHost}`)
+  process.exit(1)
 }
 
 for (const t of TABLES) {

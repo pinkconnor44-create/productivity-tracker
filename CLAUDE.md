@@ -2,16 +2,18 @@
 
 Next.js 16 App Router · React 19 · TS · Prisma + libSQL (Turso) · Tailwind · PWA.
 Charts are hand-rolled SVG — no libraries, so they stay on the design tokens.
-Tabs: `tasks | habits | bevel | stats | calendar | projects | settings`. **Bevel**
+Tabs: `tasks | habits | bevel | diet | stats | calendar | projects | settings`.
+**Diet** is a stateless bulk/post-bulk-cut calculator — no persistence by
+design. **Bevel**
 is the Apple Watch health tab (Dashboard / Sleep / Recovery / Strain / **Lifts**
 / Trends) — the Lift Tracker lives inside it, with no tab of its own.
 
 - **Dark-only.** `dark` is hard-coded on `<html>`; do **not** add `dark:`
   prefixes. **No accent-theme switcher** — nothing sets `data-theme`, and the
   `accent-theme` localStorage key is inert.
-- **3D is desktop-only and gated.** `three` + `@react-three/*` power only the
-  calendar orrery: dynamic import, `ssr:false`, IntersectionObserver-gated —
-  **never the initial bundle, never a phone.**
+- **No 3D.** The calendar orrery and `three`/`@react-three/*` were removed
+  entirely on 2026-08-12 (Connor's call). Don't reintroduce a WebGL dependency
+  without asking.
 - **`schema.prisma` is the source of truth.** Layout is conventional Next.js.
 - **Use `src/components/ui/` primitives**, not local copies — they route through
   the semantic token ladder so the palette stays consistent (read the folder).
@@ -62,7 +64,8 @@ db:push` before any deploy with schema changes. Env: `TURSO_DATABASE_URL`,
 
 ## Design tokens (Void / Electric Iris)
 
-`globals.css` via `tailwind.config.ts`. **Full spec in `docs/DESIGN.md`.**
+`globals.css` via `tailwind.config.ts` — **those two files ARE the spec** (the
+old `docs/DESIGN.md` described the pre-2026-08-06 system and was deleted).
 - **The rgb tuples MUST stay space-separated.** Tailwind emits
   `rgb(var(--x) / <alpha>)`; commas with the slash are invalid CSS and
   **silently fall back to white**.
@@ -97,4 +100,4 @@ db:push` before any deploy with schema changes. Env: `TURSO_DATABASE_URL`,
   ⚠️ **`db:push` only emits `CREATE TABLE`** (its diff is `--from-empty`), so a
   new COLUMN is silently "skipped (already existed)" — use `ALTER TABLE`.
 
-**See also:** `HANDOFF.md` · `docs/NOTES.md` · `docs/DESIGN.md` · `dev\TRAPS.md`
+**See also:** `HANDOFF.md` · `docs/NOTES.md` · `dev\TRAPS.md`

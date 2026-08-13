@@ -16,7 +16,7 @@ type Props<T extends string> = {
 
 // Pill-in-a-trough segmented control. Extracted verbatim from StatsView's
 // 30/90/365 range picker so the Bevel sub-tab bar consumes it instead of
-// forking the styling (which is what plan.md originally called for).
+// forking the styling (which is what docs/BEVEL-PLAN.md originally called for).
 export function SegmentedControl<T extends string>({
   options, value, onChange, scrollable = false, className = '', ariaLabel,
 }: Props<T>) {

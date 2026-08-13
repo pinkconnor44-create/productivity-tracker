@@ -151,6 +151,7 @@ for (const knee of [6.2, 6.4, 6.6, 6.8, 7.0]) {
     }
   }
 }
+if (!bestSleep) throw new Error('sleep grid search found no candidate — no sleep rows?')
 const sleepFit = h => interp(bestSleep.an, h)
 console.log('\n=== SLEEP ===')
 console.log('  DURATION_ANCHORS:', JSON.stringify(bestSleep.an))
@@ -200,6 +201,7 @@ for (const hrLo of HR_LO) for (const hrHi of HR_HI) {
     }
   }
 }
+if (!bestR) throw new Error('recovery grid search found no candidate — no labelled nights?')
 console.log(`\n=== RECOVERY (${rec.length} labelled nights) ===`)
 console.log(`  W_SLEEP_HR   = ${bestR.wH.toFixed(2)}`)
 console.log(`  W_SLEEP_HRV  = ${bestR.wV.toFixed(2)}`)
@@ -258,6 +260,7 @@ for (let a = 0; a <= 0.05; a += 0.002) {
     }
   }
 }
+if (!bestS) throw new Error('strain grid search found no candidate — no strain rows?')
 console.log('\n=== STRAIN ===')
 console.log(`  KCAL_COEF = ${bestS.a.toFixed(3)}   HR90_COEF = ${bestS.b.toFixed(2)}   EX_COEF = ${bestS.c.toFixed(2)}   INTERCEPT = ${bestS.k.toFixed(1)}`)
 console.log(`  mean abs error vs Bevel: ${bestS.e.toFixed(2)} (${fitRows.length} days; ${[...STRAIN_OUTLIERS].join(', ')} held out)`)

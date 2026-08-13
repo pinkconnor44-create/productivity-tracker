@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import { SegmentedControl } from '@/components/ui'
 import LiftTracker from '@/components/LiftTracker'
-import { useStopwatch } from '@/lib/stopwatch'
 import { useHealthData, LoadingBlock, latestDayWith, today } from './bevel/shared'
 import { DayScroller } from './bevel/DayScroller'
 import { ImportStatus } from './bevel/ImportStatus'
@@ -44,7 +43,6 @@ export default function BevelView() {
   const [tab, setTab] = useState<BevelTab>('dashboard')
   const [windowDays, setWindowDays] = useState(INITIAL_WINDOW)
   const { data, loading, error, anchor } = useHealthData(windowDays)
-  const { setLiftsActive } = useStopwatch()
 
   // The day every sub-tab renders. Null until the first response, then the
   // most recent day carrying anything — which in the morning is yesterday,
@@ -66,15 +64,6 @@ export default function BevelView() {
     setTab(t)
     setVisited(prev => prev.has(t) ? prev : new Set(prev).add(t))
   }
-
-  // The rest timer belongs to Lifts and nothing else. Shell renders it (it must
-  // sit outside the transformed tab-fade subtree, or `position: fixed` would be
-  // trapped) but only Bevel knows which sub-tab is open, so the flag is shared
-  // through the stopwatch context rather than drilled through Shell's props.
-  useEffect(() => {
-    setLiftsActive(tab === 'lifts')
-    return () => setLiftsActive(false)
-  }, [tab, setLiftsActive])
 
   const healthEmpty = !loading && !error && (data?.empty ?? true)
   const canLoadEarlier = WINDOW_STEPS.some(s => s > windowDays)

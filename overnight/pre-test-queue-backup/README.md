@@ -16,6 +16,14 @@ straight into this folder and does not update this file, so a later run's items 
 be present as files but absent from the lists below. **Numbers 01–32 are taken** —
 the next promotion starts at 33.
 
+**2026-08-12 — items 01–31 implemented and deployed to prod** (Connor's "complete
+all 31" instruction; DESIGN.md deleted rather than rewritten, per his call). **32
+was excluded by Connor** — the `dev\TRAPS.md` edit stays with him. Verified from
+the CLI: built CSS emits the /NN variants; streak invariant holds on prod data
+(current 25 ≤ longest 52); DB columns added + 12 habits backfilled; `npm run
+check` (tsc + scripts-tsc + eslint) exits 0. **Not yet re-verified on devices:**
+13/14/16's visual checks and 06/10/11's throttled-network checks.
+
 ## Declined — do not implement
 
 - **Excused days count as misses in every habit percentage** (run-3 finding 6,
@@ -26,43 +34,43 @@ the next promotion starts at 33.
 
 ## Bugs — defects visible on screen today
 
-- [ ] **01** [Add `<alpha-value>` to `on-surface-variant`](01-tailwind-alpha-value.md) — minutes · `tailwind.config.ts:23` · 227 dead classes, 37 files
-- [ ] **02** [Fix month navigation off-by-one](02-calendar-month-nav.md) — minutes · `CalendarView.tsx:175`
-- [ ] **03** [One shared, gap-tolerant `calcStreak`](03-streak-mismatch.md) — ~45min · `Shell.tsx:82` + `StatsView.tsx:25` · 47 vs 22 on one screen
-- [ ] **04** [Fix the Scratchpad flush effect](04-scratchpad-autosave-deps.md) — ~30min · `Scratchpad.tsx:168`
-- [ ] **05** [Lifts "All-time" must not be a 90-day window](05-lifts-all-time-window.md) — minutes · `LiftTracker.tsx:57` · 7 of 36 entries
-- [ ] **06** [Re-entrancy guards on the completion toggles](06-toggle-reentrancy-guards.md) — ~30min · `TasksView.tsx:170`, `HabitsView.tsx:188`
-- [ ] **07** [Fix the HAE instructions in the empty state](07-health-empty-state-instructions.md) — minutes · `HealthEmptyState.tsx:19`
+- [x] **01** [Add `<alpha-value>` to `on-surface-variant`](01-tailwind-alpha-value.md) — minutes · `tailwind.config.ts:23` · 227 dead classes, 37 files
+- [x] **02** [Fix month navigation off-by-one](02-calendar-month-nav.md) — minutes · `CalendarView.tsx:175`
+- [x] **03** [One shared, gap-tolerant `calcStreak`](03-streak-mismatch.md) — ~45min · `Shell.tsx:82` + `StatsView.tsx:25` · 47 vs 22 on one screen
+- [x] **04** [Fix the Scratchpad flush effect](04-scratchpad-autosave-deps.md) — ~30min · `Scratchpad.tsx:168`
+- [x] **05** [Lifts "All-time" must not be a 90-day window](05-lifts-all-time-window.md) — minutes · `LiftTracker.tsx:57` · 7 of 36 entries
+- [x] **06** [Re-entrancy guards on the completion toggles](06-toggle-reentrancy-guards.md) — ~30min · `TasksView.tsx:170`, `HabitsView.tsx:188`
+- [x] **07** [Fix the HAE instructions in the empty state](07-health-empty-state-instructions.md) — minutes · `HealthEmptyState.tsx:19`
 
 ## Risks — correct today, wrong under a condition that will occur
 
-- [ ] **08** [Deleting a habit rewrites its history](08-habit-deleted-at.md) — ~1h · `schema.prisma` · needs `ALTER TABLE`
-- [ ] **09** [Strain's 21-day strip ignores the selected day](09-strain-strip-selected-day.md) — ~30min · `BevelStrain.tsx:30`
-- [ ] **10** [CalendarView needs an `AbortController`](10-calendar-abortcontroller.md) — ~30min · `CalendarView.tsx:161`
-- [ ] **11** [14 mutations ignore `res.ok`](11-unchecked-res-ok.md) — ~2h · `CalendarView`, `LiftTracker`
-- [ ] **12** [`ImportStatus` needs a `source: "other"` branch](12-import-status-source.md) — ~20min · `ImportStatus.tsx:66` · **blocks the automation question**
-- [ ] **13** [Trend charts are unreadable on a phone](13-trendchart-phone.md) — ~1h · `ui/TrendChart.tsx` · 3.16px text, no touch
-- [ ] **14** [`MetricRow` clips at iPad-portrait width](14-metricrow-ipad-clip.md) — ~30min · 768–819px
-- [ ] **15** [Collapse the four score-colour ladders](15-score-colour-ladders.md) — ~2h
-- [ ] **16** [Restore `prefers-reduced-motion` or delete the comment](16-prefers-reduced-motion.md) — ~1h · `globals.css:356`
-- [ ] **17** [Rewrite or delete `docs/DESIGN.md`](17-design-md-stale.md) — ~2h · ⚠️ **Connor still owes the rewrite-or-delete call**
-- [ ] **18** [Add a linter and a test gate](18-no-lint-or-test-gate.md) — ~1h · `package.json`
-- [ ] **19** [Batch `recomputeDerived`'s writes](19-recompute-derived-batching.md) — ~45min · ⚠️ **do this before the 2026-06-01 → 08-10 backfill**
-- [ ] **20** [Bring `scripts/` under the gate](20-scripts-outside-gate.md) — ~1h · 4 of 8 scripts never reviewed
-- [ ] **21** [Three server "today" helpers return UTC](21-server-today-utc.md) — ~45min
-- [ ] **22** [Score non-recurring tasks from `completedAt`](22-completed-at-unread.md) — ~1h
-- [ ] **23** [`matchesPattern` swallows an unknown type](23-matches-pattern-default.md) — ~20min · `lib/recurring.ts`
-- [ ] **24** [Give `Task` a `startDate`](24-task-start-date.md) — ~45min · 0 rows affected today
+- [x] **08** [Deleting a habit rewrites its history](08-habit-deleted-at.md) — ~1h · `schema.prisma` · needs `ALTER TABLE`
+- [x] **09** [Strain's 21-day strip ignores the selected day](09-strain-strip-selected-day.md) — ~30min · `BevelStrain.tsx:30`
+- [x] **10** [CalendarView needs an `AbortController`](10-calendar-abortcontroller.md) — ~30min · `CalendarView.tsx:161`
+- [x] **11** [14 mutations ignore `res.ok`](11-unchecked-res-ok.md) — ~2h · `CalendarView`, `LiftTracker`
+- [x] **12** [`ImportStatus` needs a `source: "other"` branch](12-import-status-source.md) — ~20min · `ImportStatus.tsx:66` · **blocks the automation question**
+- [x] **13** [Trend charts are unreadable on a phone](13-trendchart-phone.md) — ~1h · `ui/TrendChart.tsx` · 3.16px text, no touch
+- [x] **14** [`MetricRow` clips at iPad-portrait width](14-metricrow-ipad-clip.md) — ~30min · 768–819px
+- [x] **15** [Collapse the four score-colour ladders](15-score-colour-ladders.md) — ~2h
+- [x] **16** [Restore `prefers-reduced-motion` or delete the comment](16-prefers-reduced-motion.md) — ~1h · `globals.css:356`
+- [x] **17** [Rewrite or delete `docs/DESIGN.md`](17-design-md-stale.md) — ~2h · Connor chose **delete**, done 2026-08-12
+- [x] **18** [Add a linter and a test gate](18-no-lint-or-test-gate.md) — ~1h · `package.json`
+- [x] **19** [Batch `recomputeDerived`'s writes](19-recompute-derived-batching.md) — ~45min · ⚠️ **do this before the 2026-06-01 → 08-10 backfill**
+- [x] **20** [Bring `scripts/` under the gate](20-scripts-outside-gate.md) — ~1h · 4 of 8 scripts never reviewed
+- [x] **21** [Three server "today" helpers return UTC](21-server-today-utc.md) — ~45min
+- [x] **22** [Score non-recurring tasks from `completedAt`](22-completed-at-unread.md) — ~1h
+- [x] **23** [`matchesPattern` swallows an unknown type](23-matches-pattern-default.md) — ~20min · `lib/recurring.ts`
+- [x] **24** [Give `Task` a `startDate`](24-task-start-date.md) — ~45min · 0 rows affected today
 
 ## Cleanups — no behaviour change
 
-- [ ] **25** [The orrery gate can never be false](25-orrery-gate-and-bundle.md) — ~15min · 347KB gzip, not the "~170KB" the comment claims
-- [ ] **26** [Delete `docs/BEVEL-OPEN-ISSUES.md`](26-delete-bevel-open-issues.md) — minutes
-- [ ] **27** [Relocate `plan.md`, re-point 6 citations](27-relocate-plan-md.md) — ~45min · ⚠️ 2 cite it by line number
-- [ ] **28** [Retire `update.md`, keep its deferred block](28-retire-update-md.md) — ~15min
-- [ ] **29** [Remove `pg`, `@types/pg`, the Neon script](29-remove-pg-and-neon-script.md) — ~15min
-- [ ] **30** [Pin Prisma for real, or stop saying "pinned"](30-prisma-pin-wording.md) — minutes
-- [ ] **31** [Drop the fixed Scratchpad claim from 2 docs](31-stale-scratchpad-claim.md) — minutes
+- [x] **25** [The orrery gate can never be false](25-orrery-gate-and-bundle.md) — superseded 2026-08-12: Connor had the **orrery removed entirely** (`three`/`@react-three/*` uninstalled)
+- [x] **26** [Delete `docs/BEVEL-OPEN-ISSUES.md`](26-delete-bevel-open-issues.md) — minutes
+- [x] **27** [Relocate `plan.md`, re-point 6 citations](27-relocate-plan-md.md) — ~45min · ⚠️ 2 cite it by line number
+- [x] **28** [Retire `update.md`, keep its deferred block](28-retire-update-md.md) — ~15min
+- [x] **29** [Remove `pg`, `@types/pg`, the Neon script](29-remove-pg-and-neon-script.md) — ~15min
+- [x] **30** [Pin Prisma for real, or stop saying "pinned"](30-prisma-pin-wording.md) — minutes
+- [x] **31** [Drop the fixed Scratchpad claim from 2 docs](31-stale-scratchpad-claim.md) — minutes
 
 ## Rule challenge
 

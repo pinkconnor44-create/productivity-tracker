@@ -22,7 +22,10 @@ function addDays(dateStr: string, n: number): string {
   d.setDate(d.getDate() + n)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
-function today(): string {
+// ⚠️ The SERVER's day — UTC on Vercel, one day ahead of the user between
+// 00:00 and 08:00 Central (item 21). Only the default when the client sends
+// no ?end=; BevelView always passes explicit browser-local dates.
+function serverUtcDay(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -47,7 +50,7 @@ async function latestImport(): Promise<HealthResponse['lastImport']> {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const t = today()
+  const t = serverUtcDay()
   const end = searchParams.get('end') ?? t
   const start = searchParams.get('start') ?? addDays(end, -29)
 

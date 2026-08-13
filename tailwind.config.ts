@@ -11,16 +11,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        surface: 'var(--surface)',
-        'surface-dim': 'var(--surface-dim)',
-        'surface-bright': 'var(--surface-bright)',
-        'surface-container-lowest': 'var(--surface-container-lowest)',
-        'surface-container-low': 'var(--surface-container-low)',
-        'surface-container': 'var(--surface-container)',
-        'surface-container-high': 'var(--surface-container-high)',
-        'surface-container-highest': 'var(--surface-container-highest)',
-        'on-surface': 'var(--on-surface)',
-        'on-surface-variant': 'var(--on-surface-variant)',
+        // Every token here MUST use the rgb(var(--x-rgb) / <alpha-value>)
+        // form. A bare var(--x) hex emits no /NN variants at all — Tailwind
+        // silently drops the class and the element inherits pure white
+        // (item 01: 227 dead classes, 37 files). The -rgb tuples live in
+        // globals.css beside their hex twins.
+        surface: 'rgb(var(--surface-rgb) / <alpha-value>)',
+        'surface-dim': 'rgb(var(--surface-dim-rgb) / <alpha-value>)',
+        'surface-bright': 'rgb(var(--surface-bright-rgb) / <alpha-value>)',
+        'surface-container-lowest': 'rgb(var(--surface-container-lowest-rgb) / <alpha-value>)',
+        'surface-container-low': 'rgb(var(--surface-container-low-rgb) / <alpha-value>)',
+        'surface-container': 'rgb(var(--surface-container-rgb) / <alpha-value>)',
+        'surface-container-high': 'rgb(var(--surface-container-high-rgb) / <alpha-value>)',
+        'surface-container-highest': 'rgb(var(--surface-container-highest-rgb) / <alpha-value>)',
+        'on-surface': 'rgb(var(--on-surface-rgb) / <alpha-value>)',
+        'on-surface-variant': 'rgb(var(--on-surface-variant-rgb) / <alpha-value>)',
         outline: 'rgb(var(--outline-rgb) / <alpha-value>)',
         'outline-variant': 'rgb(var(--outline-variant-rgb) / <alpha-value>)',
         // Electric Iris. Shaped deliberately like Tailwind's violet ramp so the
@@ -58,8 +63,8 @@ const config: Config = {
           800: '#7a4f00',
           900: '#523500',
         },
-        secondary: 'var(--secondary)',
-        'secondary-container': 'var(--secondary-container)',
+        secondary: 'rgb(var(--secondary-rgb) / <alpha-value>)',
+        'secondary-container': 'rgb(var(--secondary-container-rgb) / <alpha-value>)',
       },
       // Semantic scale. Deliberately does NOT reuse Tailwind's xs/sm/base/lg
       // names — redefining those would move 200+ existing call sites and this

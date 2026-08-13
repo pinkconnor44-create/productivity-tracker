@@ -13,9 +13,9 @@
   - `setPointerCapture` must use an element grabbed synchronously in `pointerdown` — React nulls `e.currentTarget` before the long-press timer fires.
   - The mobile drawer carries `data-no-swipe`. The document-level tab-swipe listener is `passive` and ignores `touch-action`, so without it a horizontal reorder drag also switches tabs.
 - Tabs: `tasks | habits | bevel | stats | calendar | projects | settings`
-- The floating + docked stopwatch are gated on `activeTab === 'bevel'` (was `'lifts'`), so they show across all Bevel sub-tabs, not just Lifts. Deliberate — the plan called for tab-level gating.
-- **Lazy-mount + keep-mounted**: views render in `<div className={tab===activeTab ? '' : 'hidden'}>` once visited and never unmount on tab switch. State survives nav (Lifts stopwatch, scratchpad drafts, in-progress edits). Cost: concurrent fetches once a view's been opened.
-- **Z-index ladder**: aurora `-10` / content `0` / sidebar `30` / mobile drawer `40` / modals (createPortal at body) `50` / Floating Stopwatch `55` / toasts + portal tooltips `60`
+- The rest-timer stopwatch (floating + docked) was **removed entirely on 2026-08-12** (Connor's call) — components, `lib/stopwatch.tsx` and the provider are gone.
+- **Lazy-mount + keep-mounted**: views render in `<div className={tab===activeTab ? '' : 'hidden'}>` once visited and never unmount on tab switch. State survives nav (scratchpad drafts, in-progress edits, lift set drafts). Cost: concurrent fetches once a view's been opened.
+- **Z-index ladder**: aurora `-10` / content `0` / sidebar `30` / mobile drawer `40` / modals (createPortal at body) `50` / toasts + portal tooltips `60`
 - `score-refresh` window event dispatched on every tab change so any view listening to it refetches
 
 
@@ -33,10 +33,21 @@
 
 ### LiftTracker
 - 2-layer navigation: `activeGroupId === null` = Layer 1 (workout day cards), `number` = Layer 2 (exercises in that day), `'ungrouped'` = Layer 2 ungrouped list. `AddExerciseToGroup` handles autocomplete add at the bottom of Layer 2.
-- Floating Stopwatch state must live in `LiftTracker` via `useStopwatchState()` hook, **not** in the inner `<FloatingStopwatch>`. Otherwise it resets on layer change. The widget's DOM remounts in each layer's return path, but state survives because the hook is owned by the parent.
-- Floating Stopwatch is draggable via pointer events; position persists to `localStorage('stopwatch-pos-v1')`.
 - Lift session drafts: stacked-set inputs in `InlineLogForm` auto-save to `localStorage('lift-draft-{date}-{exerciseName}')` per keystroke. "Finish session" groups consecutive same-weight rows into single `LiftEntry` POSTs (schema is one weight per entry, JSON `[reps]` per set). Always clear the draft after successful submit.
 
 ### ProjectsView
 List shows project name + N/M checklist progress only. Click card → opens modal (`createPortal` to `document.body`) containing title / notes / checklist / delete. Pattern: any "tab switcher + always-visible detail panel" UI in this repo should be a list-of-cards + modal instead.
 
+
+### Deferred / known issues (rescued from `update.md`, 2026-05-11, still true 2026-08-12)
+- **API routes don't wrap `req.json()` or Prisma mutations in try/catch.** Bad
+  input returns 500 instead of 400; a missing row (e.g., `PATCH
+  /api/tasks/<gone>`) returns 500 instead of 404. 16 bare `await req.json()`
+  sites. Personal PWA, single client, low impact — defer until it bites.
+  (Reads wrapped / writes not is a deliberate asymmetry; the CALL SITES now
+  check `res.ok` — that was work order 11.)
+- **`parseInt(idStr)` on route params** silently returns `NaN` for malformed
+  URLs (5 sites, zero guards), and Prisma queries with `NaN` do unexpected
+  things. Same low-priority caveat.
+- **N+1 / fat `include` on `/api/scores` and `/api/habits`** — `take: 400`
+  with an unbounded include. Fine at current volume; revisit if sluggish.

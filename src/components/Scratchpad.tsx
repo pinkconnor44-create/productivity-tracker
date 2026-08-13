@@ -15,6 +15,10 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editText, setEditText] = useState('')
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Refs, not state, for the unmount flush: the flush effect must run with
+  // [] deps (see below), so it reads the latest value from here.
+  const notesRef = useRef('')
+  const dirtyRef = useRef(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
@@ -37,6 +41,7 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
       .then(r => r.json().catch(() => ({ notes: '', checklist: [] })))
       .then(data => {
         setNotes(data.notes ?? '')
+        notesRef.current = data.notes ?? ''
         setChecklist(data.checklist ?? [])
         setLoaded(true)
       })
@@ -45,12 +50,17 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
   // Expand textarea to fit content whenever notes change
   useEffect(() => { adjustHeight() }, [notes, adjustHeight])
 
-  // Auto-save notes after 800ms of no typing
+  // Auto-save notes after 800ms of no typing. An empty string saves too —
+  // clearing the notes is a change the user made and must persist.
   function handleNotesChange(val: string) {
     setNotes(val)
+    notesRef.current = val
+    dirtyRef.current = true
     adjustHeight()
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
+      saveTimer.current = null
+      dirtyRef.current = false
       fetch('/api/scratchpad', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,21 +175,31 @@ export default function Scratchpad({ embedded = false }: { embedded?: boolean })
 
   // Flush any pending debounced save when the component is about to unmount
   // (tab switch w/ keep-mounted shouldn't unmount, but a full page nav will).
+  //
+  // [] deps ON PURPOSE, reading refs — this is cleanup-only, and keying it on
+  // [notes] made the cleanup run on EVERY keystroke: it POSTed the previous
+  // render's notes and cancelled the timer that keystroke had just scheduled,
+  // so the debounce never fired, the stored row was permanently one change
+  // stale, and a trailing paste was lost outright (item 04).
   useEffect(() => {
     return () => {
-      if (saveTimer.current && notes !== '') {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current)
+        saveTimer.current = null
+      }
+      if (dirtyRef.current) {
+        dirtyRef.current = false
         try {
           fetch('/api/scratchpad', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ notes }),
+            body: JSON.stringify({ notes: notesRef.current }),
             keepalive: true,
           })
         } catch {}
-        clearTimeout(saveTimer.current)
       }
     }
-  }, [notes])
+  }, [])
 
   if (!loaded) return (
     <div className="flex items-center justify-center py-8">

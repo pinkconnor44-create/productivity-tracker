@@ -33,7 +33,7 @@ for (const stmt of stmts) {
     await client.execute(stmt)
     applied++
   } catch (err) {
-    const msg = err?.message || String(err)
+    const msg = err instanceof Error ? err.message : String(err)
     if (msg.includes('already exists')) {
       skipped++
     } else {

@@ -47,6 +47,23 @@ body {
   --surface-container-highest: #1d1d25;
   --on-surface: #ffffff;
   --on-surface-variant: #9a9a9a;   /* Dala ash gray */
+  /* Space-separated rgb tuples of the ladder above, for Tailwind's
+     rgb(var(--x-rgb) / <alpha-value>) form — without these the /NN variants
+     of these tokens emit nothing and the element inherits pure white
+     (that was item 01: 227 dead classes across 37 files). Keep each tuple in
+     sync with its hex twin, and keep them SPACE-separated. */
+  --surface-rgb: 0 0 0;
+  --surface-dim-rgb: 0 0 0;
+  --surface-bright-rgb: 38 38 46;
+  --surface-container-lowest-rgb: 3 3 4;
+  --surface-container-low-rgb: 8 8 11;
+  --surface-container-rgb: 13 13 17;
+  --surface-container-high-rgb: 21 21 27;
+  --surface-container-highest-rgb: 29 29 37;
+  --on-surface-rgb: 255 255 255;
+  --on-surface-variant-rgb: 154 154 154;
+  --secondary-rgb: 176 150 255;
+  --secondary-container-rgb: 71 33 156;
   --outline: rgb(120 112 150);
   --outline-variant: rgb(84 80 108);
   /* Tuned so the workhorse `border-outline-variant/40` (107 call sites)
@@ -61,11 +78,14 @@ body {
   --secondary: #b096ff;
   --secondary-container: #47219c;
 
-  /* Status */
-  --success: 74, 222, 128;
-  --warn:    255, 184, 41;
-  --danger:  244, 63, 94;
-  --info:    59, 130, 246;
+  /* Status. SPACE-separated (like the -rgb tuples above) so they compose as
+     rgb(var(--success) / 0.7) — commas with the slash are invalid CSS. These
+     are the single source for the score traffic light: scoreColor() in
+     ui/index.ts reads them; nothing may hard-code their hex twins (item 15). */
+  --success: 74 222 128;
+  --warn:    255 184 41;
+  --danger:  244 63 94;
+  --info:    59 130 246;
 }
 
 /* Smooth transitions for interactive elements.
@@ -353,9 +373,22 @@ button, input, textarea, select {
 }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Orrery orbit rotation. Lives here rather than inline so the reduced-motion
-   block at the top of this file can reach it. */
-@keyframes orrery-spin {
-  from { transform: rotateZ(0deg); }
-  to   { transform: rotateZ(360deg); }
+/* ── Reduced motion ───────────────────────────────────────────────────
+   Restored — this block was added and removed on the same day (2026-08-06)
+   while comments kept claiming it existed (item 16). Per dev\TRAPS.md the
+   bar is FEWER AND GENTLER, not zero: the infinite ambient animations stop
+   on a legible still frame; one-shot feedback (toasts, bursts, tab fades)
+   stays, because a 200ms acknowledgement is not vestibular-hostile and
+   removing it reads as breakage. */
+@media (prefers-reduced-motion: reduce) {
+  .streak-glow,
+  .neon-pulse,
+  .gradient-text {
+    animation: none;
+  }
+  /* Still readable as a gradient — just not shifting. */
+  .gradient-text { background-position: 50% 50%; }
+  /* The calendar slide is the largest translation in the app; collapse it
+     to a plain crossfade. */
+  .cal-slide-right, .cal-slide-left { animation: tab-fade-in 0.15s ease; }
 }

@@ -294,8 +294,11 @@ async function recomputeDerived(days: string[]): Promise<{ nights: number; days:
   const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null)
 
   // ── each night's sleep-window physiology ────────────────────────────────
+  // Batched like every other write path: one round trip per CHUNK, not per
+  // row. Unbatched, a multi-day backfill was ~140 sequential Turso round
+  // trips inside maxDuration = 60 (item 19).
   const nights = await prisma.sleepSession.findMany({ where: { date: { in: days } } })
-  let nightsWritten = 0
+  const nightWrites = []
   for (const n of nights) {
     const a = at(n.start), b = at(n.end)
     if (a == null || b == null || b <= a) continue
@@ -304,15 +307,19 @@ async function recomputeDerived(days: string[]): Promise<{ nights: number; days:
       .map(s => s.avg ?? s.qty)
       .filter((v): v is number => v != null)
     const hr = pick('heart_rate'), hrv = pick('heart_rate_variability'), resp = pick('respiratory_rate')
-    await prisma.sleepSession.update({
+    nightWrites.push(prisma.sleepSession.update({
       where: { date: n.date },
       data: {
         sleepHr: mean(hr), sleepHrv: mean(hrv), sleepResp: mean(resp),
         hrN: hr.length, hrvN: hrv.length, respN: resp.length,
       },
-    })
-    nightsWritten++
+    }))
   }
+  const NIGHT_CHUNK = 50
+  for (let i = 0; i < nightWrites.length; i += NIGHT_CHUNK) {
+    await prisma.$transaction(nightWrites.slice(i, i + NIGHT_CHUNK))
+  }
+  const nightsWritten = nightWrites.length
 
   // ── each day's elevated-heart-rate minutes ──────────────────────────────
   // Every reading is credited the gap to the next one, capped: a watch on the
@@ -328,22 +335,25 @@ async function recomputeDerived(days: string[]): Promise<{ nights: number; days:
       : 1
     elevated.set(x.date, (elevated.get(x.date) ?? 0) + dt)
   }
-  let daysWritten = 0
+  const dayWrites = []
   for (const d of days) {
     // Only for days we actually hold readings for. Writing 0 for a day with no
     // samples would assert "no elevated heart rate" where the truth is "no
     // watch data", and that zero would then anchor a baseline.
     if (!hrAll.some(s => s.date === d)) continue
     const qty = Math.round((elevated.get(d) ?? 0) * 10) / 10
-    await prisma.healthMetricDaily.upsert({
+    dayWrites.push(prisma.healthMetricDaily.upsert({
       where: { date_metric: { date: d, metric: 'hr_minutes_above_90' } },
       create: { date: d, metric: 'hr_minutes_above_90', qty, min: null, avg: null, max: null, units: 'min' },
       update: { qty, units: 'min' },
-    })
-    daysWritten++
+    }))
+  }
+  const DAY_CHUNK = 50
+  for (let i = 0; i < dayWrites.length; i += DAY_CHUNK) {
+    await prisma.$transaction(dayWrites.slice(i, i + DAY_CHUNK))
   }
 
-  return { nights: nightsWritten, days: daysWritten }
+  return { nights: nightsWritten, days: dayWrites.length }
 }
 
 /** What to write over an existing daily row.

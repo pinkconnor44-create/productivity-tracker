@@ -28,9 +28,13 @@ export function MetricRow({
   label, value, unit, decimals = 0, delta, status, sub, className = '',
 }: Props) {
   const has = value != null && Number.isFinite(value)
+  // flex-wrap + a real min-width on the label column: at 768–819px (iPad
+  // portrait) flex-1 alone squeezed the label to 57px for a 107px label —
+  // "Sleepin…" (item 14). If the row is genuinely too narrow, the value
+  // wraps under the label instead of clipping it.
   return (
-    <div className={`flex items-center gap-3 py-2.5 border-b border-outline-variant/25 last:border-0 ${className}`}>
-      <div className="min-w-0 flex-1">
+    <div className={`flex flex-wrap items-center gap-3 py-2.5 border-b border-outline-variant/25 last:border-0 ${className}`}>
+      <div className="min-w-[7.5rem] flex-1">
         <div className="text-caption font-medium text-on-surface truncate">{label}</div>
         {sub && <div className="text-micro text-on-surface-variant/45 mt-0.5 truncate">{sub}</div>}
       </div>

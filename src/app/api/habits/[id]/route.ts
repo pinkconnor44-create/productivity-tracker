@@ -24,14 +24,19 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: idStr } = await params
   const id = parseInt(idStr)
+  // Browser-local day from the caller, like the Task DELETE. The fallback is
+  // the server's (UTC) day — callers must pass ?date= or an evening delete
+  // can land on tomorrow. Without a date at all, deleting a habit removed it
+  // from every PAST day's denominator too (item 08).
+  const date = req.nextUrl.searchParams.get('date') || new Date().toISOString().slice(0, 10)
   await prisma.habit.update({
     where: { id },
-    data: { active: false },
+    data: { active: false, deletedAt: date },
   })
   return NextResponse.json({ success: true })
 }

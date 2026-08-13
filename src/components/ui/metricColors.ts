@@ -3,7 +3,7 @@
 // Deliberately separate from scoreColor(): that is a productivity traffic
 // light (>=75 green, >=50 amber, else red) and is wrong for health rings.
 // A 7% Strain day is not a failure — it is a rest day — but scoreColor would
-// paint it red. plan.md:66 originally made scoreColor the Ring default; this
+// paint it red. docs/BEVEL-PLAN.md:68 originally made scoreColor the Ring default; this
 // is the correction.
 //
 // The three hues are not decoration. Dala's reference palette supplies

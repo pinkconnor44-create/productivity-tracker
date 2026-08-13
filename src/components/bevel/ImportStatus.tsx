@@ -65,7 +65,14 @@ export function ImportStatus({ last }: { last: LastImport }) {
               whether you remembered pressing Export. */}
           {last.source === 'phone' && <> · from phone</>}
           {last.source === 'backfill' && <> · manual backfill</>}
-          {last.ok && <> · {rows} row{rows === 1 ? '' : 's'}</>}
+          {/* Anything else — "other", or a value this build doesn't know —
+              still gets a label. A silent fall-through here left the line
+              unable to answer the one question it exists for: an unattended
+              curl probe rendered identically to a phone push (item 12). */}
+          {last.source != null && last.source !== 'phone' && last.source !== 'backfill' && <> · sender unknown</>}
+          {last.ok && (rows > 0
+            ? <> · {rows} row{rows === 1 ? '' : 's'}</>
+            : <> · no rows written</>)}
           {last.span && <> · {last.span}</>}
           {last.skipped > 0 && <> · {last.skipped} skipped</>}
         </span>

@@ -13,9 +13,12 @@
 import 'dotenv/config'
 import { readFileSync } from 'node:fs'
 
-const [file, base = 'https://productivity-tracker-murex.vercel.app'] = process.argv.slice(2)
-if (!file) {
-  console.error('usage: node scripts/backfill-health.mjs <export.json> [baseUrl]')
+// No default base URL (item 20): this script can move totals DOWN via
+// X-Import-Mode: replace, so the production host must be typed, not implied.
+const [file, base] = process.argv.slice(2)
+if (!file || !base) {
+  console.error('usage: node scripts/backfill-health.mjs <export.json> <baseUrl>')
+  console.error('e.g.   node scripts/backfill-health.mjs export.json https://productivity-tracker-murex.vercel.app')
   process.exit(1)
 }
 const key = process.env.HEALTH_IMPORT_KEY
@@ -72,7 +75,7 @@ for (const [i, chunk] of chunks.entries()) {
     headers: { 'Content-Type': 'application/json', 'X-Api-Key': key, 'X-Import-Mode': 'replace' },
     body: JSON.stringify(chunk),
   })
-  const json = await res.json().catch(() => ({}))
+  const json = /** @type {any} */ (await res.json().catch(() => ({})))
   if (!res.ok) {
     console.error(`chunk ${i + 1}/${chunks.length} failed: ${res.status}`, json)
     console.error('Re-run the script — completed chunks are upserts and will not duplicate.')

@@ -3,15 +3,36 @@
 // plan calls for — auth, idempotency, skip-don't-fail, and scores that come
 // back in range.
 //
-//   node scripts/test-health-import.mjs [baseUrl]
+//   HEALTH_TEST_DB_IS_DISPOSABLE=1 node scripts/test-health-import.mjs <baseUrl>
 //
-// Defaults to http://localhost:3000. Reads HEALTH_IMPORT_KEY from .env.
-// Writes fixture rows for 2019-03-05/06; scripts/wipe-health-fixtures.mjs
-// removes everything again.
+// Reads HEALTH_IMPORT_KEY from .env. Writes fixture rows for 2019-03-05/06;
+// scripts/wipe-health-fixtures.mjs removes everything again.
+//
+// ⛔ THE TARGET MUST BE DISPOSABLE (item 18/20). Preview, prod AND a local
+// `npm run dev` all point at the ONE shared Turso database, so "just run it
+// against localhost" is a production write. The gate below therefore demands
+// two things no default can supply: an explicit base URL, and an explicit
+// declaration that the server behind it points at a non-production database
+// (e.g. a dev server started with TURSO_DATABASE_URL overridden to a scratch
+// copy). Vercel hosts are refused outright.
 import 'dotenv/config'
 import { readFileSync } from 'node:fs'
 
-const base = process.argv[2] ?? 'http://localhost:3000'
+const base = process.argv[2]
+if (!base) {
+  console.error('usage: HEALTH_TEST_DB_IS_DISPOSABLE=1 node scripts/test-health-import.mjs <baseUrl>')
+  console.error('No default target on purpose: every reachable server shares the production Turso DB.')
+  process.exit(1)
+}
+if (new URL(base).hostname.endsWith('.vercel.app')) {
+  console.error(`refusing to run against ${base} — that is a deployed environment on the production database.`)
+  process.exit(1)
+}
+if (process.env.HEALTH_TEST_DB_IS_DISPOSABLE !== '1') {
+  console.error('refusing to run: set HEALTH_TEST_DB_IS_DISPOSABLE=1 to declare that the server at')
+  console.error(`${base} points at a disposable database (NOT the shared production Turso).`)
+  process.exit(1)
+}
 const key = process.env.HEALTH_IMPORT_KEY
 if (!key) { console.error('HEALTH_IMPORT_KEY not set in .env'); process.exit(1) }
 
@@ -23,15 +44,25 @@ function check(name, ok, detail = '') {
   if (!ok) failures++
 }
 
+/** @returns {Promise<{status: number, json: any}>} */
 async function post(body, apiKey = key) {
   const res = await fetch(`${base}/api/health-import`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+    headers: { 'Content-Type': 'application/json', 'X-Api-Key': String(apiKey) },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   })
   let json = null
   try { json = await res.json() } catch {}
   return { status: res.status, json }
+}
+
+/** GET a JSON body without caring about its precise shape.
+ *  @param {string} url
+ *  @param {Record<string, string>} [headers]
+ *  @returns {Promise<any>} */
+async function getJson(url, headers) {
+  const res = await fetch(url, headers ? { headers } : undefined)
+  return res.json()
 }
 
 // 1 — wrong key is rejected before anything is parsed
@@ -47,9 +78,9 @@ check('workouts written', first.json?.workouts === 2, `got ${first.json?.workout
 check('malformed points skipped, not fatal', first.json?.skipped === 2, `got ${first.json?.skipped}`)
 
 // 3 — re-POST is a no-op: same counts, and the row totals must not grow
-const before = await fetch(`${base}/api/health-import`, { headers: { 'X-Api-Key': key } }).then(r => r.json())
+const before = await getJson(`${base}/api/health-import`, { 'X-Api-Key': String(key) })
 const second = await post(payload)
-const after = await fetch(`${base}/api/health-import`, { headers: { 'X-Api-Key': key } }).then(r => r.json())
+const after = await getJson(`${base}/api/health-import`, { 'X-Api-Key': String(key) })
 check('re-POST → 200', second.status === 200, `got ${second.status}`)
 check(
   'idempotent: row counts unchanged',
@@ -64,7 +95,7 @@ const notJson = await post('{ this is not json')
 check('malformed JSON → 400', notJson.status === 400, `got ${notJson.status}`)
 
 // 5 — read API returns the days with scores in range
-const read = await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-07`).then(r => r.json())
+const read = await getJson(`${base}/api/health?start=2019-03-01&end=2019-03-07`)
 check('read API returns days', Array.isArray(read.days) && read.days.length === 7, `got ${read.days?.length}`)
 const d6 = read.days?.find(d => d.date === '2019-03-06')
 check('2019-03-06 has sleep', d6?.sleep?.asleepMin != null, `asleepMin=${d6?.sleep?.asleepMin}`)
@@ -118,7 +149,7 @@ const partial = {
   },
 }
 await post(partial)
-const afterPartial = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const afterPartial = await getJson(`${base}/api/health?start=2019-03-01&end=2019-03-10`)
 const d6b = afterPartial.days?.find(d => d.date === DAY)
 check('a partial window cannot shrink a day\'s step total',
   d6b?.metrics?.steps === 11402, `got ${d6b?.metrics?.steps}`)
@@ -145,7 +176,7 @@ await post({
     ],
   },
 })
-const rolled = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const rolled = await getJson(`${base}/api/health?start=2019-03-01&end=2019-03-10`)
 const dr = rolled.days?.find(d => d.date === ROLL)
 check('sub-daily totals SUM into the day', dr?.metrics?.steps === 410, `got ${dr?.metrics?.steps}`)
 check('sub-daily vitals AVERAGE into the day', dr?.metrics?.hr === 75, `got ${dr?.metrics?.hr}`)
@@ -169,7 +200,7 @@ await post({
     ],
   },
 })
-const hourly = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const hourly = await getJson(`${base}/api/health?start=2019-03-01&end=2019-03-10`)
 const dh = hourly.days?.find(d => d.date === HOUR)
 check('hour-grouped: midnight bucket counted, not mistaken for the day',
   dh?.metrics?.steps === 40, `got ${dh?.metrics?.steps}`)
@@ -180,7 +211,7 @@ const AGG = '2019-03-10'
 await post({ data: { metrics: [
   { name: 'step_count', units: 'count', data: [{ date: `${AGG} 00:00:00 -0500`, qty: 8123 }] },
 ] } })
-const agg = await (await fetch(`${base}/api/health?start=2019-03-01&end=2019-03-10`)).json()
+const agg = await getJson(`${base}/api/health?start=2019-03-01&end=2019-03-10`)
 check('aggregated export: lone midnight point is the day total',
   agg.days?.find(d => d.date === AGG)?.metrics?.steps === 8123,
   `got ${agg.days?.find(d => d.date === AGG)?.metrics?.steps}`)

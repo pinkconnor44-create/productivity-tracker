@@ -19,7 +19,7 @@ const VALID_KINDS = ['meeting', 'focus', 'personal', 'admin', 'planning'] as con
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { title, description, dueDate, time, endTime, recurringType, recurringDays, recurringEnd, weight, kind } = body
+  const { title, description, dueDate, time, endTime, recurringType, recurringDays, recurringEnd, weight, kind, startDate } = body
 
   if (!title?.trim()) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -37,6 +37,10 @@ export async function POST(req: NextRequest) {
       recurringEnd: recurringEnd || null,
       weight: weight && [1,2,3].includes(weight) ? weight : 1,
       kind: kind && VALID_KINDS.includes(kind) ? kind : null,
+      // Browser-local day from the client (item 24, matches Habit). No
+      // server fallback on purpose — the server's UTC day is the wrong
+      // boundary for an evening-created task, which was the whole bug.
+      startDate: typeof startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startDate) ? startDate : null,
     },
     include: { completions: true, skips: true },
   })

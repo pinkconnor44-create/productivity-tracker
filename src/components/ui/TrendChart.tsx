@@ -1,5 +1,5 @@
 'use client'
-import { useId } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 export type TrendPoint = { date: string; value: number }
 export type TrendTip = { x: number; y: number; text: string }
@@ -37,7 +37,7 @@ type Props = {
 
 // Score line chart with an optional moving-average overlay.
 // Extracted from StatsView so BevelView's Trends tab consumes it rather than
-// forking a copy (plan.md:73 originally called for a copy).
+// forking a copy (docs/BEVEL-PLAN.md:75 originally called for a copy).
 export function TrendChart({
   data,
   onHover,
@@ -54,6 +54,25 @@ export function TrendChart({
   // the wrong <defs>. Colons from useId are stripped: legal in an HTML id but
   // they break any CSS selector that later needs to reach this element.
   const fillId = `trendFill-${useId().replace(/:/g, '')}`
+
+  // Text must NOT scale with the viewBox: at 390px wide the 1000-unit canvas
+  // renders fontSize=10 user units at 3.16 CSS px — unreadable on the device
+  // this app is built for (item 13). k converts "CSS px wanted" into user
+  // units at the current rendered width, so labels hold ~10px everywhere.
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [k, setK] = useState(1)
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const update = () => {
+      const w = el.getBoundingClientRect().width
+      if (w > 0) setK(Math.max(1, 1000 / w))
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   if (data.length === 0) return (
     <div className="flex flex-col items-center justify-center h-40 gap-2">
@@ -113,7 +132,7 @@ export function TrendChart({
     ({ x: e.clientX, y: e.clientY, text: `${formatLabel(p.date)} · ${format(p.value)}` })
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="w-full">
       <defs>
         <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.30" />
@@ -126,12 +145,12 @@ export function TrendChart({
         return (
           <g key={i}>
             <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="rgba(var(--c-p),0.10)" strokeWidth="1" strokeDasharray={edge ? '' : '2,4'} />
-            <text x={PL-6} y={y+4} textAnchor="end" fontSize="10" fill="#6b7088" fontWeight="600">{Math.round(v)}</text>
+            <text x={PL-6} y={y+4} textAnchor="end" fontSize={10*k} fill="#6b7088" fontWeight="600">{Math.round(v)}</text>
           </g>
         )
       })}
       {monthTicks.map(t => (
-        <text key={t.i} x={xOf(t.i)} y={H-8} textAnchor="start" fontSize="10" fill="#8b8da3" fontWeight="700" letterSpacing="0.08em">{t.label.toUpperCase()}</text>
+        <text key={t.i} x={xOf(t.i)} y={H-8} textAnchor="start" fontSize={10*k} fill="#8b8da3" fontWeight="700" letterSpacing="0.08em">{t.label.toUpperCase()}</text>
       ))}
       {refLine && (
         <g>
@@ -142,7 +161,7 @@ export function TrendChart({
           {refLine.label && (
             <text
               x={W - PR} y={yOf(refLine.value) - 6} textAnchor="end"
-              fontSize="10" fontWeight="700" fill={refLine.color ?? '#9a9a9a'} opacity="0.8"
+              fontSize={10*k} fontWeight="700" fill={refLine.color ?? '#9a9a9a'} opacity="0.8"
             >
               {refLine.label}
             </text>
@@ -156,9 +175,15 @@ export function TrendChart({
         <g key={i}
           onMouseEnter={e => onHover(tipFor(p, e))}
           onMouseMove={e => onHover(tipFor(p, e))}
-          onMouseLeave={() => onHover(null)}>
-          {/* transparent hit area — see CLAUDE.md "SVG chart tooltips" */}
-          <circle cx={p.x} cy={p.y} r="6" fill="transparent" />
+          onMouseLeave={() => onHover(null)}
+          // Touch too — hover never fires on the phone (item 13). A tap opens
+          // the tooltip; tapping another point (or the consumer's outside-tap
+          // handling) replaces or clears it.
+          onTouchStart={e => { const t = e.touches[0]; if (t) onHover(tipFor(p, t)) }}
+          onTouchMove={e => { const t = e.touches[0]; if (t) onHover(tipFor(p, t)) }}>
+          {/* transparent hit area — see CLAUDE.md "SVG chart tooltips".
+              Scaled by k so it stays a finger-sized target on a phone. */}
+          <circle cx={p.x} cy={p.y} r={8*k} fill="transparent" />
           {/* stroke tracks the page canvas; was a hardcoded #0b1326, which
               would have rendered as a navy halo once the surface goes black */}
           {p.date === today() && <circle cx={p.x} cy={p.y} r="4" fill={color} stroke="var(--surface)" strokeWidth="2" />}

@@ -28,12 +28,30 @@ export { InsightCard } from './InsightCard'
 export { METRIC_COLORS, metricColor, STATUS_STYLE, statusFor } from './metricColors'
 export type { Metric, MetricStatus } from './metricColors'
 
-// Score color helper — productivity traffic light, used across views for
-// "today" stats and bars. NOT for health metrics: a low Strain day is a rest
-// day, not a failure. Use metricColor() from ./metricColors for those.
-export function scoreColor(pct: number | null | undefined): string {
+export { WeightPicker } from './WeightPicker'
+
+// Score colour — productivity traffic light, used across views for "today"
+// stats and bars. NOT for health metrics: a low Strain day is a rest day,
+// not a failure. Use metricColor() from ./metricColors for those.
+//
+// This is THE one threshold ladder (item 15): every score-coloured element
+// routes through scoreGrade, and the colours come from the --success/--warn/
+// --danger tokens in globals.css rather than hard-coded hex twins. Four
+// parallel ladders had already drifted — two adjacent StatCards painted
+// different greens, and a 60% day rendered two different hues on one page.
+export type ScoreGrade = 'high' | 'mid' | 'low'
+export function scoreGrade(pct: number | null | undefined): ScoreGrade {
   const p = pct ?? 0
-  if (p >= 75) return '#4ade80'
-  if (p >= 50) return '#ffb829'
-  return '#f43f5e'
+  return p >= 75 ? 'high' : p >= 50 ? 'mid' : 'low'
+}
+const GRADE_VAR: Record<ScoreGrade, string> = {
+  high: '--success', mid: '--warn', low: '--danger',
+}
+export function scoreColor(pct: number | null | undefined): string {
+  return `rgb(var(${GRADE_VAR[scoreGrade(pct)]}))`
+}
+/** Same ladder, translucent — the tokens are space-separated tuples so the
+ *  slash-alpha form is valid. */
+export function scoreColorAlpha(pct: number | null | undefined, alpha: number): string {
+  return `rgb(var(${GRADE_VAR[scoreGrade(pct)]}) / ${alpha})`
 }

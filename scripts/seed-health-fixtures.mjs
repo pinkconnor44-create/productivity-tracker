@@ -12,7 +12,15 @@
 // keeps it idempotent for the same reason the endpoint is.
 import 'dotenv/config'
 
-const [base = 'http://localhost:3000', daysArg] = process.argv.slice(2)
+// No default base URL (item 20): even localhost writes into the shared
+// production Turso database, so the target must be typed deliberately —
+// these are INVENTED values that would sit inside real baselines.
+const [base, daysArg] = process.argv.slice(2)
+if (!base) {
+  console.error('usage: node scripts/seed-health-fixtures.mjs <baseUrl> [days]')
+  console.error('⚠ every reachable server shares the production Turso DB — this seeds FAKE data.')
+  process.exit(1)
+}
 const DAYS = Number(daysArg ?? 75)
 const key = process.env.HEALTH_IMPORT_KEY
 if (!key) { console.error('HEALTH_IMPORT_KEY not set in .env'); process.exit(1) }
@@ -35,13 +43,16 @@ function localDay(offsetFromToday) {
 }
 const stamp = (day, hh, mm) => `${day} ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00 -0400`
 
+/** @type {Record<string, any[]>} */
 const metricPoints = {
   heart_rate_variability: [], resting_heart_rate: [], heart_rate: [],
   respiratory_rate: [], blood_oxygen_saturation: [], vo2_max: [],
   active_energy: [], basal_energy_burned: [], apple_exercise_time: [],
   apple_stand_hour: [], step_count: [],
 }
+/** @type {any[]} */
 const sleepPoints = []
+/** @type {any[]} */
 const workouts = []
 
 for (let i = DAYS - 1; i >= 0; i--) {

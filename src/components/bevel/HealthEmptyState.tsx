@@ -16,7 +16,7 @@ const STEPS = [
   },
   {
     title: 'Create a REST API automation',
-    body: 'Automations → new → REST API. Method POST, format JSON, and set Aggregate to “Days” — this app stores daily aggregates, not minute-level samples.',
+    body: 'Automations → new → REST API. Method POST, format JSON, Aggregate Data OFF, Export Period “Today”, finest time grouping. Aggregated exports carry no timestamps — one destroyed three days of totals with no way back — so the server derives the daily rows itself from raw readings.',
   },
   {
     title: 'Point it at this endpoint',
@@ -28,7 +28,7 @@ const STEPS = [
   },
   {
     title: 'Run it hourly, then backfill',
-    body: 'Set the schedule to hourly. For history, use “Export Now” once per month of data — the endpoint is idempotent, so re-sending a month changes nothing.',
+    body: 'Set the schedule to hourly with Export Period “Today” — never “Since Last Sync”, which labels an hour’s readings as the whole day. For history, send raw-sample exports one month at a time; the importer never shrinks an existing total, so re-sending is safe.',
   },
 ]
 

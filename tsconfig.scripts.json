@@ -1,0 +1,20 @@
+{
+  // Type gate for scripts/ (item 20) — these touch production data and sat
+  // outside every check. checkJs with noImplicitAny OFF: plain JS keeps its
+  // untyped lambdas, but undefined names, misused APIs, wrong argument
+  // counts and syntax errors all fail. Run via `npm run check:scripts`.
+  "compilerOptions": {
+    "lib": ["esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["scripts/**/*.mjs"]
+}

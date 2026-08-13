@@ -11,7 +11,7 @@ Phases 0–8 that cannot be done from this machine.
 
 The tab currently shows ~75 days of **demo** data seeded by
 `scripts/seed-health-fixtures.mjs`. It is not real. Clear it with
-`node scripts/wipe-health-fixtures.mjs --yes` before the first real backfill.
+`node scripts/wipe-health-fixtures.mjs --target <db-hostname> --yes` before the first real backfill.
 
 ## Bevel sub-tabs
 
@@ -49,7 +49,7 @@ The tab currently shows ~75 days of **demo** data seeded by
 The nav restructure touched Shell and page.tsx, so re-check:
 
 - [ ] Calendar loads, Scratchpad checklist edit/delete buttons visible **without
-      hovering** (this was the outstanding bug from the last session).
+      hovering**.
 - [ ] Tasks / Habits / Stats / Projects all render.
 - [ ] Today widget ring + streak still correct in the sidebar and drawer.
 
@@ -58,7 +58,7 @@ The nav restructure touched Shell and page.tsx, so re-check:
 Worth seeing once, since it is what a fresh install shows:
 
 ```
-node scripts/wipe-health-fixtures.mjs --yes
+node scripts/wipe-health-fixtures.mjs --target <db-hostname> --yes
 ```
 
 - [ ] Bevel shows the five numbered HAE setup steps.

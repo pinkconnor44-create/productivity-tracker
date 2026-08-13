@@ -27,7 +27,10 @@ export function BevelStrain({ data, selected }: { data: HealthResponse; selected
 
   const maxKcal = Math.max(1, ...kcalSeries.map(p => p.value))
   // Newest first, and capped: the bar history is a glance, not the archive.
-  const recent = [...data.days].reverse().slice(0, 21)
+  // Anchored to the SELECTED day, not today — with a past day selected, a
+  // strip running to today read eight days into the future relative to the
+  // header beside it (item 09).
+  const recent = data.days.filter(d => d.date <= selected).reverse().slice(0, 21)
 
   return (
     <div className="space-y-5">

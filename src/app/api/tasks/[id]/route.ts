@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-function localDateString() {
+// ⚠️ This is the SERVER's day — UTC on Vercel, where it disagrees with the
+// user's local day between 00:00 and 08:00 Central. It exists only as a
+// last-resort fallback; every caller should pass a browser-local date
+// explicitly (item 21 — the old name, `localDateString`, actively invited
+// trusting it).
+function serverUtcDay() {
   const now = new Date()
   const y = now.getFullYear()
   const m = String(now.getMonth() + 1).padStart(2, '0')
   const d = String(now.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
+
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export async function PATCH(
   req: NextRequest,
@@ -21,7 +28,11 @@ export async function PATCH(
 
   if ('completed' in body) {
     updateData.completed = body.completed
-    updateData.completedAt = body.completed ? localDateString() : null
+    // Prefer the caller's browser-local day — the server fallback is the UTC
+    // day, wrong for late-evening completions (item 21). completedAt is what
+    // /api/scores credits the completion to (item 22).
+    const clientDay = typeof body.completedAt === 'string' && DAY_RE.test(body.completedAt) ? body.completedAt : null
+    updateData.completedAt = body.completed ? (clientDay ?? serverUtcDay()) : null
   }
   if ('title' in body) updateData.title = body.title.trim()
   if ('description' in body) updateData.description = body.description?.trim() || null
@@ -51,7 +62,8 @@ export async function DELETE(
 ) {
   const { id: idStr } = await params
   const id = parseInt(idStr)
-  const date = req.nextUrl.searchParams.get('date') || localDateString()
+  // Callers pass ?date= (browser-local); the UTC fallback is a safety net.
+  const date = req.nextUrl.searchParams.get('date') || serverUtcDay()
   await prisma.task.update({
     where: { id },
     data: { active: false, deletedAt: date },
