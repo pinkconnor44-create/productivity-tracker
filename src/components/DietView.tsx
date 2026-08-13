@@ -233,8 +233,8 @@ export default function DietView() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-3">
-              <MiniStat num={bulkMuscleLbs !== null ? `${bulkMuscleLbs.toFixed(1)} lb${minicutWarn ? ' ⚠' : ''}` : '—'} label={`Est. muscle gained${minicutWarn ? ' · mini-cut % missing' : ''}`} />
-              <MiniStat num={bulkFatLbs !== null ? `${bulkFatLbs.toFixed(1)} lb${minicutWarn ? ' ⚠' : ''}` : '—'} label={`Est. fat gained${minicutWarn ? ' · mini-cut % missing' : ''}`} />
+              <MiniStat num={bulkMuscleLbs !== null ? `${bulkMuscleLbs.toFixed(3)} lb${minicutWarn ? ' ⚠' : ''}` : '—'} label={`Est. muscle gained${minicutWarn ? ' · mini-cut % missing' : ''}`} />
+              <MiniStat num={bulkFatLbs !== null ? `${bulkFatLbs.toFixed(3)} lb${minicutWarn ? ' ⚠' : ''}` : '—'} label={`Est. fat gained${minicutWarn ? ' · mini-cut % missing' : ''}`} />
             </div>
           </div>
         )}
@@ -278,8 +278,8 @@ export default function DietView() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-3">
-              <MiniStat num={fatTarget > 0 && daysNeeded !== null ? `−${fatTarget.toFixed(1)} lb` : '—'} label="Fat lost" />
-              <MiniStat num={muscleLost !== null ? `−${muscleLost.toFixed(1)} lb` : '—'} label="Muscle lost" />
+              <MiniStat num={fatTarget > 0 && daysNeeded !== null ? `−${fatTarget.toFixed(3)} lb` : '—'} label="Fat lost" />
+              <MiniStat num={muscleLost !== null ? `−${muscleLost.toFixed(3)} lb` : '—'} label="Muscle lost" />
             </div>
 
             <div className="bg-surface-container-low rounded-xl px-4 py-3.5 mt-3">
@@ -287,12 +287,12 @@ export default function DietView() {
               <div className="flex items-center justify-between gap-3">
                 <span className="text-caption font-semibold text-on-surface-variant/70">Net muscle after cutting all excess fat</span>
                 <span className={`font-display text-title font-bold tabular-nums ${netMuscle !== null ? (netMuscle >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-on-surface-variant/40'}`}>
-                  {netMuscle !== null ? `${netMuscle >= 0 ? '+' : ''}${netMuscle.toFixed(1)} lb` : '—'}
+                  {netMuscle !== null ? `${netMuscle >= 0 ? '+' : ''}${netMuscle.toFixed(3)} lb` : '—'}
                 </span>
               </div>
               {netMuscle !== null && bulkMuscleLbs !== null && muscleLost !== null && (
                 <div className="text-tiny text-on-surface-variant/50 mt-2">
-                  +{bulkMuscleLbs.toFixed(1)} lb gained in bulk − {muscleLost.toFixed(1)} lb lost re-cutting
+                  +{bulkMuscleLbs.toFixed(3)} lb gained in bulk − {muscleLost.toFixed(3)} lb lost re-cutting
                 </div>
               )}
             </div>
