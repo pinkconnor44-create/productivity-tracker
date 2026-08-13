@@ -17,7 +17,10 @@ import { PageHeader, Card } from '@/components/ui'
 //   auto-computes "fat to lose", the bulk's fail-day pounds are counted as
 //   fat to be safe.
 
-const LB_PER_CAL = 1 / 3500
+// Divide by 3500 directly — multiplying by a precomputed 1/3500 differs in
+// the last floating-point bit, which flips .toFixed(1) at exact .x5
+// boundaries (0.35 lb rendered 0.4 where the source calculator showed 0.3).
+const CAL_PER_LB = 3500
 const DAYS_IN_MONTH = 30
 
 function toNum(s: string): number {
@@ -52,7 +55,6 @@ function Field({ label, value, onChange, placeholder, readOnly = false, accent }
         onChange={e => onChange?.(e.target.value)}
         inputMode="decimal"
         className={`w-full px-3 py-3 text-base rounded-xl border border-outline-variant/60 bg-surface-container-low text-on-surface placeholder-on-surface-variant/30 outline-none tabular-nums transition-colors ${readOnly ? 'text-on-surface-variant/60' : ''}`}
-        style={readOnly ? undefined : undefined}
         onFocus={e => { if (!readOnly) e.currentTarget.style.borderColor = accent }}
         onBlur={e => { e.currentTarget.style.borderColor = '' }}
       />
@@ -131,10 +133,10 @@ export default function DietView() {
   const normalTotal = normalDaysPerMonth * toNum(surplus)
   const monthlyNet = normalTotal + toNum(minicutTotal) + toNum(failTotal)
   const scale = toNum(planDays) / DAYS_IN_MONTH
-  const normalWeightLbs = normalTotal * scale * LB_PER_CAL
-  const minicutWeightLbs = toNum(minicutTotal) * scale * LB_PER_CAL
-  const failWeightLbs = toNum(failTotal) * scale * LB_PER_CAL
-  const totalWeightLbs = monthlyNet * scale * LB_PER_CAL
+  const normalWeightLbs = (normalTotal * scale) / CAL_PER_LB
+  const minicutWeightLbs = (toNum(minicutTotal) * scale) / CAL_PER_LB
+  const failWeightLbs = (toNum(failTotal) * scale) / CAL_PER_LB
+  const totalWeightLbs = (monthlyNet * scale) / CAL_PER_LB
 
   let bulkMuscleLbs: number | null = null
   let bulkFatLbs: number | null = null
@@ -163,9 +165,9 @@ export default function DietView() {
   let muscleLost: number | null = null
   let totalLost: number | null = null
   if (toNum(deficit) > 0 && fatTarget > 0 && cutMusclePct !== '' && cutFatPct !== null && cutFatPct > 0) {
-    const fatPerDay = toNum(deficit) * (cutFatPct / 100) * LB_PER_CAL
+    const fatPerDay = (toNum(deficit) * (cutFatPct / 100)) / CAL_PER_LB
     daysNeeded = fatTarget / fatPerDay
-    muscleLost = toNum(deficit) * (toNum(cutMusclePct) / 100) * LB_PER_CAL * daysNeeded
+    muscleLost = ((toNum(deficit) * (toNum(cutMusclePct) / 100)) / CAL_PER_LB) * daysNeeded
     totalLost = fatTarget + muscleLost
   }
   const netMuscle = bulkMuscleLbs !== null && muscleLost !== null ? bulkMuscleLbs - muscleLost : null
